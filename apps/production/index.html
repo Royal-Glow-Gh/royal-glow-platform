@@ -66,8 +66,38 @@ details summary{cursor:pointer;color:var(--text-2)}
 </style>
 </head>
 <body>
+<!-- ================= CONFIG: paste your Supabase values here ================= -->
+<script>
+  // Supabase dashboard -> Project Settings -> API (or "API Keys")
+  // Use the Project URL and the PUBLISHABLE / anon key. NEVER the secret / service_role key.
+  window.RG_CONFIG = {
+    SUPABASE_URL: 'PASTE_PROJECT_URL_HERE',
+    SUPABASE_KEY: 'PASTE_PUBLISHABLE_KEY_HERE'
+  };
+</script>
+<!-- ========================================================================== -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<section id="gate" class="hidden" style="max-width:420px;margin:60px auto;padding:0 20px">
+  <div class="card">
+    <h1 style="margin-bottom:6px">Royal Glow <span style="color:var(--accent)">· Production</span></h1>
+    <div id="gSetup" class="hidden small"><p>This page is not connected to Supabase yet.</p><p>Open <code>apps/production/index.html</code>, find the <b>CONFIG</b> block near the top, and paste in your Project URL and publishable key.</p></div>
+    <form id="gLogin" class="hidden">
+      <p class="small muted">Staff sign-in</p>
+      <label class="f" style="margin-bottom:10px">Email<input type="email" id="gEmail" autocomplete="username" required></label>
+      <label class="f" style="margin-bottom:14px">Password<input type="password" id="gPass" autocomplete="current-password" required></label>
+      <button class="b p" type="submit" id="gBtn">Sign in</button><span class="msg" id="gMsg"></span>
+    </form>
+    <div id="gNoStaff" class="hidden small"><p>Signed in as <b id="gWho"></b>, but this account is not on the staff list. Ask an admin to add you.</p><button class="b" id="gOut">Sign out</button></div>
+  </div>
+</section>
+
+<div id="app" class="hidden">
 <header>
-  <h1>Royal Glow <span>· Production Batch Costing</span></h1>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+    <h1>Royal Glow <span>· Production Batch Costing</span></h1>
+    <div class="small muted"><span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
+  </div>
   <p class="sub">Log what each batch consumed and what it produced. Cost per unit is tracked across batches, and in-house inputs (like carrot oil) carry their own batch cost forward.</p>
   <nav id="tabs">
     <button data-v="batches" class="on">Batches</button>
@@ -77,7 +107,8 @@ details summary{cursor:pointer;color:var(--text-2)}
   </nav>
 </header>
 <main>
-  <div class="banner" id="sampleBanner">Sample data with illustrative GH₵ prices is loaded so you can explore. <button class="b" id="clearSample">Start with an empty book</button></div>
+  <div class="banner hidden" id="sampleBanner">The database is empty. Load sample data (illustrative GH₵ prices) to try things out, or start adding your real materials under <b>Materials &amp; products</b>. <button class="b" id="loadSample">Load sample data</button></div>
+  <div class="banner hidden" id="roBanner">Your role can view but not change production records.</div>
 
   <!-- BATCHES -->
   <section id="v-batches">
@@ -148,21 +179,17 @@ details summary{cursor:pointer;color:var(--text-2)}
     </div>
     <div class="card">
       <h2>Import</h2>
-      <p class="small muted">Paste or load either a full JSON backup, or an items CSV with columns <code>name,kind,unit,unit_cost</code> (kind = raw, packaging, label or product).</p>
+      <p class="small muted">Paste or load an items CSV with columns <code>name,kind,unit,unit_cost</code> (kind = raw, packaging, label or product). Existing items with the same name get their unit and cost updated.</p>
       <input type="file" id="imFile" accept=".csv,.json,.txt">
       <textarea id="imText" placeholder="…or paste here" style="margin-top:8px"></textarea>
       <div class="row" style="margin-top:8px"><button class="b p" id="imGo">Import</button><span class="msg" id="imMsg"></span></div>
     </div>
-    <div class="card">
-      <h2>Where this is going</h2>
-      <p class="small" style="margin:0">This page keeps data in this browser only. The tables map directly onto the Supabase schema: <code>items</code>, <code>batches</code>, and <code>batch_inputs</code>. Each input line stores the unit cost at the time of the batch, so later price changes never rewrite history.</p>
-    </div>
   </section>
 </main>
+</div>
 
 <script>
 (function(){
-const KEY='rg-batch-costing-v1';
 const KINDS={raw:'Raw material',packaging:'Packaging',label:'Label',product:'Product'};
 const uid=()=>Math.random().toString(36).slice(2,10);
 const money=v=>'GH₵ '+(Number(v)||0).toLocaleString('en-GH',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -200,11 +227,64 @@ function sample(){
   return {items,batches,isSample:true};
 }
 
-// ---------- state ----------
-let S;
-try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-if(!S||!Array.isArray(S.items))S=sample();
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+// ---------- Supabase connection ----------
+const CFG=window.RG_CONFIG||{};
+const cfgOk=!!CFG.SUPABASE_URL&&!/PASTE_/.test(CFG.SUPABASE_URL+CFG.SUPABASE_KEY);
+const sb=cfgOk&&window.supabase?window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_KEY):null;
+let S={items:[],batches:[]}, ME=null;
+const canWrite=()=>ME&&['admin','production'].includes(ME.role);
+const status=t=>{$('status').textContent=t};
+function friendly(err){
+  if(!err)return 'Unknown error';
+  if(err.code==='23505')return 'That name or batch code is already used.';
+  if(err.code==='42501'||/row-level security/i.test(err.message||''))return 'Your role is not allowed to make this change.';
+  if(err.code==='23503')return 'This item is used in batches and cannot be removed.';
+  return err.message||String(err);
+}
+async function q(promise){const r=await promise;if(r.error)throw r.error;return r.data;}
+
+async function loadAll(){
+  status('Loading…');
+  const [items,batches]=await Promise.all([
+    q(sb.from('items').select('*').order('name')),
+    q(sb.from('batches').select('*, batch_inputs(*)').order('batch_date'))
+  ]);
+  S.items=items.map(r=>({id:r.id,name:r.name,kind:r.kind,unit:r.unit,unitCost:Number(r.unit_cost)}));
+  S.batches=batches.map(b=>({id:b.id,productId:b.product_id,date:b.batch_date,code:b.code||'',outputQty:Number(b.output_qty),otherCost:Number(b.other_cost),
+    inputs:(b.batch_inputs||[]).map(x=>({itemId:x.item_id,qty:Number(x.qty),unitCost:Number(x.unit_cost)}))}));
+  status('Connected');
+}
+
+function showGate(which,email){
+  $('app').classList.add('hidden');$('gate').classList.remove('hidden');
+  ['gSetup','gLogin','gNoStaff'].forEach(id=>$(id).classList.add('hidden'));
+  $({setup:'gSetup',login:'gLogin',nostaff:'gNoStaff'}[which]).classList.remove('hidden');
+  if(email)$('gWho').textContent=email;
+}
+async function boot(){
+  if(!sb)return showGate('setup');
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)return showGate('login');
+  const {data:me,error}=await sb.from('staff').select('full_name,role').eq('user_id',session.user.id).maybeSingle();
+  if(error||!me)return showGate('nostaff',session.user.email);
+  ME={...me,email:session.user.email};
+  $('whoami').textContent=ME.full_name+' ('+ME.role+')';
+  try{await loadAll()}catch(e){status('Error: '+friendly(e))}
+  $('gate').classList.add('hidden');$('app').classList.remove('hidden');
+  document.querySelectorAll('#bSave,#bAdd,#iAdd,#imGo,#loadSample').forEach(b=>b.disabled=!canWrite());
+  $('roBanner').classList.toggle('hidden',canWrite());
+  show(location.hash.slice(1)||'batches');
+}
+$('gLogin').addEventListener('submit',async e=>{
+  e.preventDefault();$('gBtn').disabled=true;$('gMsg').textContent='Signing in…';
+  const {error}=await sb.auth.signInWithPassword({email:$('gEmail').value.trim(),password:$('gPass').value});
+  $('gBtn').disabled=false;
+  if(error){$('gMsg').textContent=error.message;return}
+  $('gMsg').textContent='';$('gPass').value='';boot();
+});
+async function signOut(e){if(e)e.preventDefault();await sb.auth.signOut();ME=null;S={items:[],batches:[]};boot();}
+$('gOut').addEventListener('click',signOut);
+$('signOut').addEventListener('click',signOut);
 const item=id=>S.items.find(i=>i.id===id);
 const batchTotal=b=>b.inputs.reduce((s,x)=>s+x.qty*x.unitCost,0)+(Number(b.otherCost)||0);
 const batchUnit=b=>b.outputQty>0?batchTotal(b)/b.outputQty:0;
@@ -247,29 +327,46 @@ $('bProduct').addEventListener('change',()=>{draft=draft.filter(d=>d.itemId!==$(
 $('bDate').addEventListener('change',()=>{draft.forEach(d=>{const it=item(d.itemId);if(it.kind==='product')d.unitCost=unitCostOf(it,$('bDate').value)});renderForm()});
 ['bOut','bOther'].forEach(id=>$(id).addEventListener('input',totals));
 $('bAdd').addEventListener('click',()=>{const id=$('bAddItem').value;if(!id)return;draft.push({itemId:id,qty:0,unitCost:unitCostOf(item(id),$('bDate').value)});renderForm();});
-$('bSave').addEventListener('click',()=>{
+$('bSave').addEventListener('click',async()=>{
   const out=+$('bOut').value,date=$('bDate').value,pid=$('bProduct').value;
   const msg=t=>{$('bMsg').textContent=t};
   if(!pid)return msg('Add a product first (Materials & products tab).');
   if(!date)return msg('Pick a date.'); if(!(out>0))return msg('Enter the output quantity.');
   const inputs=draft.filter(d=>d.qty>0); if(!inputs.length)return msg('Add at least one input with a quantity.');
-  S.batches.push({id:uid(),productId:pid,date,code:$('bCode').value.trim(),outputQty:out,otherCost:+$('bOther').value||0,inputs:inputs.map(d=>({...d}))});
-  save();draft=[];$('bCode').value='';$('bOut').value='';$('bOther').value=0;msg('Saved.');setTimeout(()=>msg(''),2500);render('batches');
+  $('bSave').disabled=true;msg('Saving…');
+  try{
+    await saveBatch({productId:pid,date,code:$('bCode').value.trim(),outputQty:out,otherCost:+$('bOther').value||0,inputs});
+    await loadAll();
+    draft=[];$('bCode').value='';$('bOut').value='';$('bOther').value=0;msg('Saved.');setTimeout(()=>msg(''),2500);render('batches');
+  }catch(e){msg(friendly(e))}
+  finally{$('bSave').disabled=!canWrite()}
 });
+// Insert a batch, then its input lines. If the lines fail, remove the batch so no half-saved batch remains.
+async function saveBatch(b){
+  const row=await q(sb.from('batches').insert({product_id:b.productId,batch_date:b.date,code:b.code||null,output_qty:b.outputQty,other_cost:b.otherCost}).select('id').single());
+  try{
+    await q(sb.from('batch_inputs').insert(b.inputs.map(d=>({batch_id:row.id,item_id:d.itemId,qty:d.qty,unit_cost:+(+d.unitCost).toFixed(4)}))));
+  }catch(e){await sb.from('batches').delete().eq('id',row.id);throw e}
+}
 function renderBatchList(){
   const tb=$('bList');tb.replaceChildren();
   const bs=[...S.batches].sort(byDate).reverse();
   if(!bs.length)tb.appendChild(h('tr',null,h('td',{colspan:7,class:'muted small'},'No batches recorded yet.')));
   bs.forEach(b=>{const p=item(b.productId);
     tb.appendChild(h('tr',null,h('td',null,b.date),h('td',null,b.code||'—'),h('td',null,p?p.name:'?'),h('td',{class:'n'},num(b.outputQty)+' '+(p?p.unit:'')),h('td',{class:'n'},money(batchTotal(b))),h('td',{class:'n'},h('b',null,money(batchUnit(b)))),
-      h('td',null,h('button',{class:'x',title:'Delete batch',on:{click:e=>{const btn=e.currentTarget;if(btn.dataset.arm){S.batches=S.batches.filter(x=>x!==b);save();render('batches')}else{btn.dataset.arm=1;btn.textContent='delete?';btn.style.fontSize='12px';setTimeout(()=>{btn.removeAttribute('data-arm');btn.textContent='×';btn.style.fontSize=''},3000)}}}},'×'))));
+      h('td',null,h('button',{class:'x',title:'Delete batch',on:{click:e=>{const btn=e.currentTarget;if(!canWrite())return;if(btn.dataset.arm){btn.disabled=true;q(sb.from('batches').delete().eq('id',b.id)).then(loadAll).then(()=>render('batches')).catch(err=>{status('Error: '+friendly(err));btn.disabled=false})}else{btn.dataset.arm=1;btn.textContent='delete?';btn.style.fontSize='12px';setTimeout(()=>{btn.removeAttribute('data-arm');btn.textContent='×';btn.style.fontSize=''},3000)}}}},'×'))));
   });
 }
 
 // ---------- items ----------
-$('iAdd').addEventListener('click',()=>{const n=$('iName').value.trim();if(!n)return;
-  S.items.push({id:uid(),name:n,kind:$('iKind').value,unit:$('iUnit').value.trim()||'unit',unitCost:+$('iCost').value||0});save();
-  ['iName','iUnit','iCost'].forEach(id=>$(id).value='');render('items');});
+$('iAdd').addEventListener('click',async()=>{const n=$('iName').value.trim();if(!n)return;
+  try{
+    await q(sb.from('items').insert({name:n,kind:$('iKind').value,unit:$('iUnit').value.trim()||'unit',unit_cost:+$('iCost').value||0}));
+    await loadAll();['iName','iUnit','iCost'].forEach(id=>$(id).value='');render('items');
+  }catch(e){status('Error: '+friendly(e))}
+});
+async function updateCost(it,v){try{await q(sb.from('items').update({unit_cost:v}).eq('id',it.id));it.unitCost=v;status('Saved')}catch(e){status('Error: '+friendly(e))}}
+async function removeItem(it){try{await q(sb.from('items').delete().eq('id',it.id));await loadAll();render('items')}catch(e){status('Error: '+friendly(e))}}
 function renderItems(){
   const tb=$('iList');tb.replaceChildren();
   const order={product:0,raw:1,packaging:2,label:3};
@@ -277,9 +374,9 @@ function renderItems(){
     const used=S.batches.some(b=>b.productId===it.id||b.inputs.some(x=>x.itemId===it.id));
     const costCell=it.kind==='product'
       ? h('td',{class:'n'},money(unitCostOf(it)),h('div',{class:'small muted'},'from latest batch'))
-      : h('td',{class:'n'},h('input',{type:'number',step:'any',min:'0',value:it.unitCost,style:'width:100px;text-align:right',on:{change:e=>{it.unitCost=+e.target.value;save()}}}));
+      : h('td',{class:'n'},h('input',{type:'number',step:'any',min:'0',value:it.unitCost,style:'width:100px;text-align:right',disabled:!canWrite(),on:{change:e=>updateCost(it,+e.target.value)}}));
     tb.appendChild(h('tr',null,h('td',null,it.name),h('td',null,h('span',{class:'pill '+it.kind},KINDS[it.kind])),h('td',null,it.unit),costCell,
-      h('td',null,used?h('span',{class:'small muted',title:'Used in batches'},'in use'):h('button',{class:'x',title:'Remove',on:{click:()=>{S.items=S.items.filter(x=>x!==it);save();render('items')}}},'×'))));
+      h('td',null,used?h('span',{class:'small muted',title:'Used in batches'},'in use'):canWrite()?h('button',{class:'x',title:'Remove',on:{click:()=>removeItem(it)}},'×'):'')));
   });
 }
 
@@ -349,25 +446,45 @@ document.querySelectorAll('[data-copy]').forEach(btn=>btn.addEventListener('clic
   setTimeout(()=>$('cMsg').textContent='',4000);}));
 $('imFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('imText').value=r.result};r.readAsText(f);});
 function parseCSV(t){const rows=[];let row=[],f='',q=false;for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c=='"'&&t[i+1]=='"'){f+='"';i++}else if(c=='"')q=false;else f+=c}else if(c=='"')q=true;else if(c==','){row.push(f);f=''}else if(c=='\n'||c=='\r'){if(c=='\r'&&t[i+1]=='\n')i++;row.push(f);rows.push(row);row=[];f=''}else f+=c}if(f||row.length){row.push(f);rows.push(row)}return rows.filter(r=>r.some(x=>x.trim()))}
-$('imGo').addEventListener('click',()=>{
+$('imGo').addEventListener('click',async()=>{
   const t=$('imText').value.trim(),msg=x=>$('imMsg').textContent=x;if(!t)return msg('Nothing to import.');
-  if(t[0]==='{'){try{const d=JSON.parse(t);if(!Array.isArray(d.items)||!Array.isArray(d.batches))throw 0;S={items:d.items,batches:d.batches};save();$('sampleBanner').classList.add('hidden');return msg('Backup restored: '+d.items.length+' items, '+d.batches.length+' batches.')}catch(e){return msg('That JSON is not a valid backup.')}}
   const rows=parseCSV(t);const hd=rows.shift().map(x=>x.trim().toLowerCase());const ix=k=>hd.indexOf(k);
   if(ix('name')<0)return msg('CSV needs a header row with at least: name,kind,unit,unit_cost');
-  let added=0,updated=0;rows.forEach(r=>{const name=(r[ix('name')]||'').trim();if(!name)return;const kind=(r[ix('kind')]||'raw').trim().toLowerCase();const k=KINDS[kind]?kind:'raw';const unit=(r[ix('unit')]||'unit').trim();const cost=+(r[ix('unit_cost')]||0)||0;
-    const ex=S.items.find(i=>i.name.toLowerCase()===name.toLowerCase());if(ex){ex.unit=unit;if(ex.kind!=='product')ex.unitCost=cost;updated++}else{S.items.push({id:uid(),name,kind:k,unit,unitCost:cost});added++}});
-  save();msg(added+' added, '+updated+' updated.');
+  let added=0,updated=0,failed=[];msg('Importing…');
+  for(const r of rows){
+    const name=(r[ix('name')]||'').trim();if(!name)continue;
+    const kind=(r[ix('kind')]||'raw').trim().toLowerCase();const k=KINDS[kind]?kind:'raw';
+    const unit=(r[ix('unit')]||'unit').trim();const cost=+(r[ix('unit_cost')]||0)||0;
+    const ex=S.items.find(i=>i.name.toLowerCase()===name.toLowerCase());
+    try{
+      if(ex){await q(sb.from('items').update(ex.kind==='product'?{unit}:{unit,unit_cost:cost}).eq('id',ex.id));updated++}
+      else{await q(sb.from('items').insert({name,kind:k,unit,unit_cost:cost}));added++}
+    }catch(e){failed.push(name+': '+friendly(e))}
+  }
+  await loadAll();
+  msg(added+' added, '+updated+' updated'+(failed.length?'. Failed: '+failed.join('; '):'.'));
 });
-$('clearSample').addEventListener('click',e=>{const b=e.currentTarget;if(!b.dataset.arm){b.dataset.arm=1;b.textContent='Click again to clear all data';return}S={items:[],batches:[]};save();$('sampleBanner').classList.add('hidden');show('items');location.hash='items';});
+$('loadSample').addEventListener('click',async()=>{
+  const btn=$('loadSample');btn.disabled=true;btn.textContent='Loading sample…';
+  try{
+    const smp=sample();
+    const rows=await q(sb.from('items').insert(smp.items.map(i=>({name:i.name,kind:i.kind,unit:i.unit,unit_cost:i.unitCost}))).select('id,name'));
+    const idByName=Object.fromEntries(rows.map(r=>[r.name,r.id]));
+    const map=Object.fromEntries(smp.items.map(i=>[i.id,idByName[i.name]]));
+    for(const b of smp.batches)await saveBatch({...b,productId:map[b.productId],inputs:b.inputs.map(x=>({...x,itemId:map[x.itemId]}))});
+    await loadAll();show('trend');location.hash='trend';
+  }catch(e){status('Error: '+friendly(e))}
+  btn.disabled=!canWrite();btn.textContent='Load sample data';
+});
 
 // ---------- render ----------
 function render(v){
-  $('sampleBanner').classList.toggle('hidden',!S.isSample);
+  $('sampleBanner').classList.toggle('hidden',S.items.length>0||!canWrite());
   if(v==='batches'){if(!$('bDate').value)$('bDate').value=new Date().toISOString().slice(0,10);renderForm();renderBatchList();}
   if(v==='items')renderItems();
   if(v==='trend')renderTrend();
 }
-show(location.hash.slice(1)||'batches');
+boot();
 })();
 </script>
 </body>
