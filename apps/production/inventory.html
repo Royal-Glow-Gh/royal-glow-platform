@@ -66,6 +66,10 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 .banner{background:var(--surface-2);border-left:3px solid var(--gold);padding:8px 12px;border-radius:4px;font-size:13px;color:var(--text-2);margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .hidden{display:none}
 .applink{color:var(--accent);font-weight:600;text-decoration:none}
+.apps a{color:var(--text-2);font-weight:600;text-decoration:none;margin-right:12px}
+.apps a:hover{color:var(--text)}
+.apps a[aria-current]{color:var(--accent)}
+.pill.partner,.pill.wholesale{color:var(--accent);border-color:var(--accent)}
 .pill.goods{color:var(--gold);border-color:var(--gold)}
 .brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .logo{height:44px;width:auto}
@@ -98,7 +102,7 @@ details summary{cursor:pointer;color:var(--text-2)}
 <header>
   <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
     <h1 class="brand"><img src="assets/logo.png" alt="Royal Glow" class="logo"><span class="applabel">Inventory</span></h1>
-    <div class="small muted"><a href="index.html" class="applink">← Production</a> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
+    <div class="small muted"><span class="apps"><a href="index.html">Production</a><a href="inventory.html" aria-current="page">Inventory</a><a href="sales.html">Sales</a></span> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
   </div>
   <p class="sub">Stock at every location, worked out from purchases, production batches, transfers and adjustments.</p>
   <nav id="tabs">
