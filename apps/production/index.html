@@ -4,12 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Royal Glow — Production Batch Costing</title>
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#111111">
 <style>
 :root{
   color-scheme: light;
   --bg:#f7f5f2; --surface:#fcfcfb; --surface-2:#f1eee9; --border:#e2ddd5;
   --text:#1b1a18; --text-2:#55524c; --muted:#8a867e;
-  --accent:#6b2d5c; --accent-ink:#fff; --gold:#a8792a;
+  --accent:#9a6b00; --accent-ink:#fff; --gold:#d9a21b;
   --series-1:#2a78d6; --grid:#e8e4dd;
   --good:#1f7a3a; --bad:#b3261e;
 }
@@ -18,7 +22,7 @@
     color-scheme: dark;
     --bg:#121211; --surface:#1a1a19; --surface-2:#232321; --border:#34332f;
     --text:#f0efec; --text-2:#c3c2b7; --muted:#8f8c84;
-    --accent:#c98ab8; --accent-ink:#1a1a19; --gold:#d6a85a;
+    --accent:#f0b429; --accent-ink:#1a1a19; --gold:#f0b429;
     --series-1:#3987e5; --grid:#2c2b28;
     --good:#5cc27a; --bad:#ef7a72;
   }
@@ -61,27 +65,23 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 .tip b{font-size:14px;display:block}
 .banner{background:var(--surface-2);border-left:3px solid var(--gold);padding:8px 12px;border-radius:4px;font-size:13px;color:var(--text-2);margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .hidden{display:none}
+.brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{height:44px;width:auto}
+.applabel{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);border-left:1px solid var(--border);padding-left:14px}
+#gate .applabel{border:0;padding:0}
 details summary{cursor:pointer;color:var(--text-2)}
 .msg{font-size:13px;margin-left:8px}
 </style>
 </head>
 <body>
-<!-- ================= CONFIG: paste your Supabase values here ================= -->
-<script>
-  // Supabase dashboard -> Project Settings -> API (or "API Keys")
-  // Use the Project URL and the PUBLISHABLE / anon key. NEVER the secret / service_role key.
-  window.RG_CONFIG = {
-    SUPABASE_URL: 'PASTE_PROJECT_URL_HERE',
-    SUPABASE_KEY: 'PASTE_PUBLISHABLE_KEY_HERE'
-  };
-</script>
-<!-- ========================================================================== -->
+<!-- Supabase connection values live in config.js (same folder). -->
+<script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <section id="gate" class="hidden" style="max-width:420px;margin:60px auto;padding:0 20px">
   <div class="card">
-    <h1 style="margin-bottom:6px">Royal Glow <span style="color:var(--accent)">· Production</span></h1>
-    <div id="gSetup" class="hidden small"><p>This page is not connected to Supabase yet.</p><p>Open <code>apps/production/index.html</code>, find the <b>CONFIG</b> block near the top, and paste in your Project URL and publishable key.</p></div>
+    <img src="assets/logo.png" alt="Royal Glow" class="logo" style="width:220px;display:block;margin:4px 0 6px"><div class="applabel" style="margin-bottom:10px">Production</div>
+    <div id="gSetup" class="hidden small"><p>This page is not connected to Supabase yet.</p><p>Create <code>apps/production/config.js</code> (copy <code>config.example.js</code>) and paste in your Project URL and publishable key.</p></div>
     <form id="gLogin" class="hidden">
       <p class="small muted">Staff sign-in</p>
       <label class="f" style="margin-bottom:10px">Email<input type="email" id="gEmail" autocomplete="username" required></label>
@@ -95,7 +95,7 @@ details summary{cursor:pointer;color:var(--text-2)}
 <div id="app" class="hidden">
 <header>
   <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
-    <h1>Royal Glow <span>· Production Batch Costing</span></h1>
+    <h1 class="brand"><img src="assets/logo.png" alt="Royal Glow" class="logo"><span class="applabel">Production Batch Costing</span></h1>
     <div class="small muted"><span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
   </div>
   <p class="sub">Log what each batch consumed and what it produced. Cost per unit is tracked across batches, and in-house inputs (like carrot oil) carry their own batch cost forward.</p>
