@@ -65,6 +65,8 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 .tip b{font-size:14px;display:block}
 .banner{background:var(--surface-2);border-left:3px solid var(--gold);padding:8px 12px;border-radius:4px;font-size:13px;color:var(--text-2);margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .hidden{display:none}
+.applink{color:var(--accent);font-weight:600;text-decoration:none}
+.pill.goods{color:var(--gold);border-color:var(--gold)}
 .brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .logo{height:44px;width:auto}
 .applabel{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);border-left:1px solid var(--border);padding-left:14px}
@@ -96,7 +98,7 @@ details summary{cursor:pointer;color:var(--text-2)}
 <header>
   <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
     <h1 class="brand"><img src="assets/logo.png" alt="Royal Glow" class="logo"><span class="applabel">Production Batch Costing</span></h1>
-    <div class="small muted"><span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
+    <div class="small muted"><a href="inventory.html" class="applink">Inventory →</a> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
   </div>
   <p class="sub">Log what each batch consumed and what it produced. Cost per unit is tracked across batches, and in-house inputs (like carrot oil) carry their own batch cost forward.</p>
   <nav id="tabs">
@@ -143,7 +145,7 @@ details summary{cursor:pointer;color:var(--text-2)}
         <label class="f">Name<input id="iName" size="22"></label>
         <label class="f">Type<select id="iKind">
           <option value="raw">Raw material</option><option value="packaging">Packaging</option>
-          <option value="label">Label</option><option value="product">Product (made in-house)</option></select></label>
+          <option value="label">Label</option><option value="product">Product (made in-house)</option><option value="goods">Resale goods (bought in)</option></select></label>
         <label class="f">Unit<input id="iUnit" placeholder="kg, L, piece" size="8"></label>
         <label class="f">Unit cost GH₵<input type="number" id="iCost" step="any" min="0" style="width:110px"></label>
         <button class="b p" id="iAdd">Add</button>
@@ -190,7 +192,7 @@ details summary{cursor:pointer;color:var(--text-2)}
 
 <script>
 (function(){
-const KINDS={raw:'Raw material',packaging:'Packaging',label:'Label',product:'Product'};
+const KINDS={raw:'Raw material',packaging:'Packaging',label:'Label',product:'Product',goods:'Resale goods'};
 const uid=()=>Math.random().toString(36).slice(2,10);
 const money=v=>'GH₵ '+(Number(v)||0).toLocaleString('en-GH',{minimumFractionDigits:2,maximumFractionDigits:2});
 const num=v=>(Number(v)||0).toLocaleString('en-GH',{maximumFractionDigits:3});
@@ -321,7 +323,7 @@ function renderForm(){
 function totals(){
   draft.forEach((d,ix)=>{const c=$('lc'+ix);if(c)c.textContent=money(d.qty*d.unitCost)});
   const mat=draft.reduce((s,d)=>s+d.qty*d.unitCost,0),oth=+$('bOther').value||0,out=+$('bOut').value||0,t=mat+oth;
-  $('bTotals').replaceChildren('Inputs ',h('b',null,money(mat)),' + other ',h('b',null,money(oth)),' = total ',h('b',null,money(t)),out>0?[' → cost per unit ',h('b',null,money(t/out))]:' — enter output quantity to see cost per unit');
+  $('bTotals').replaceChildren('Inputs ',h('b',null,money(mat)),' + other ',h('b',null,money(oth)),' = total ',h('b',null,money(t)),...(out>0?[' → cost per unit ',h('b',null,money(t/out))]:[' — enter output quantity to see cost per unit']));
 }
 $('bProduct').addEventListener('change',()=>{draft=draft.filter(d=>d.itemId!==$('bProduct').value);renderForm()});
 $('bDate').addEventListener('change',()=>{draft.forEach(d=>{const it=item(d.itemId);if(it.kind==='product')d.unitCost=unitCostOf(it,$('bDate').value)});renderForm()});
@@ -369,7 +371,7 @@ async function updateCost(it,v){try{await q(sb.from('items').update({unit_cost:v
 async function removeItem(it){try{await q(sb.from('items').delete().eq('id',it.id));await loadAll();render('items')}catch(e){status('Error: '+friendly(e))}}
 function renderItems(){
   const tb=$('iList');tb.replaceChildren();
-  const order={product:0,raw:1,packaging:2,label:3};
+  const order={product:0,goods:1,raw:2,packaging:3,label:4};
   [...S.items].sort((a,b)=>order[a.kind]-order[b.kind]||a.name.localeCompare(b.name)).forEach(it=>{
     const used=S.batches.some(b=>b.productId===it.id||b.inputs.some(x=>x.itemId===it.id));
     const costCell=it.kind==='product'

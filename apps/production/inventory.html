@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Royal Glow — Inventory</title>
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#111111">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f7f5f2; --surface:#fcfcfb; --surface-2:#f1eee9; --border:#e2ddd5;
+  --text:#1b1a18; --text-2:#55524c; --muted:#8a867e;
+  --accent:#9a6b00; --accent-ink:#fff; --gold:#d9a21b;
+  --series-1:#2a78d6; --grid:#e8e4dd;
+  --good:#1f7a3a; --bad:#b3261e;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --bg:#121211; --surface:#1a1a19; --surface-2:#232321; --border:#34332f;
+    --text:#f0efec; --text-2:#c3c2b7; --muted:#8f8c84;
+    --accent:#f0b429; --accent-ink:#1a1a19; --gold:#f0b429;
+    --series-1:#3987e5; --grid:#2c2b28;
+    --good:#5cc27a; --bad:#ef7a72;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+header{padding:20px 24px 0;max-width:1100px;margin:0 auto}
+h1{font-size:22px;margin:0;letter-spacing:.2px}
+h1 span{color:var(--accent)}
+.sub{color:var(--text-2);margin:4px 0 14px;font-size:14px}
+nav{display:flex;gap:4px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+nav button{background:none;border:0;padding:10px 14px;font:inherit;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+nav button.on{color:var(--text);border-bottom-color:var(--accent);font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:20px 24px 60px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.card h2{font-size:16px;margin:0 0 12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+label.f{display:flex;flex-direction:column;font-size:12px;color:var(--text-2);gap:4px}
+input,select,textarea{font:inherit;padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);min-width:0}
+textarea{width:100%;min-height:120px;font:12px/1.4 ui-monospace,Menlo,monospace}
+button.b{font:inherit;padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer}
+button.b:hover{border-color:var(--muted)}
+button.p{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px}
+button.x:hover{color:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:12px;color:var(--text-2);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--surface-2);color:var(--text-2);border:1px solid var(--border)}
+.pill.product{color:var(--accent);border-color:var(--accent)}
+.muted{color:var(--muted)} .small{font-size:12px}
+.tot{font-size:14px;margin-top:10px;color:var(--text-2)} .tot b{color:var(--text)}
+.tiles{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.tile{flex:1 1 160px;background:var(--surface-2);border-radius:8px;padding:10px 14px}
+.tile .k{font-size:12px;color:var(--text-2)} .tile .v{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.up{color:var(--bad)} .down{color:var(--good)}
+.chart{position:relative}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.12);display:none;white-space:nowrap}
+.tip b{font-size:14px;display:block}
+.banner{background:var(--surface-2);border-left:3px solid var(--gold);padding:8px 12px;border-radius:4px;font-size:13px;color:var(--text-2);margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.hidden{display:none}
+.applink{color:var(--accent);font-weight:600;text-decoration:none}
+.pill.goods{color:var(--gold);border-color:var(--gold)}
+.brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{height:44px;width:auto}
+.applabel{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);border-left:1px solid var(--border);padding-left:14px}
+#gate .applabel{border:0;padding:0}
+details summary{cursor:pointer;color:var(--text-2)}
+.msg{font-size:13px;margin-left:8px}
+</style>
+</head>
+<body>
+<!-- Supabase connection values live in config.js (same folder). -->
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<section id="gate" class="hidden" style="max-width:420px;margin:60px auto;padding:0 20px">
+  <div class="card">
+    <img src="assets/logo.png" alt="Royal Glow" class="logo" style="width:220px;height:auto;display:block;margin:4px 0 6px"><div class="applabel" style="margin-bottom:10px">Inventory</div>
+    <div id="gSetup" class="hidden small"><p>This page is not connected to Supabase yet.</p><p>Create <code>apps/production/config.js</code> (copy <code>config.example.js</code>) and paste in your Project URL and publishable key.</p></div>
+    <form id="gLogin" class="hidden">
+      <p class="small muted">Staff sign-in</p>
+      <label class="f" style="margin-bottom:10px">Email<input type="email" id="gEmail" autocomplete="username" required></label>
+      <label class="f" style="margin-bottom:14px">Password<input type="password" id="gPass" autocomplete="current-password" required></label>
+      <button class="b p" type="submit" id="gBtn">Sign in</button><span class="msg" id="gMsg"></span>
+    </form>
+    <div id="gNoStaff" class="hidden small"><p>Signed in as <b id="gWho"></b>, but this account is not on the staff list. Ask an admin to add you.</p><button class="b" id="gOut">Sign out</button></div>
+  </div>
+</section>
+
+<div id="app" class="hidden">
+<header>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+    <h1 class="brand"><img src="assets/logo.png" alt="Royal Glow" class="logo"><span class="applabel">Inventory</span></h1>
+    <div class="small muted"><a href="index.html" class="applink">← Production</a> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
+  </div>
+  <p class="sub">Stock at every location, worked out from purchases, production batches, transfers and adjustments.</p>
+  <nav id="tabs">
+    <button data-v="stock" class="on">Stock on hand</button>
+    <button data-v="purchases">Purchases</button>
+    <button data-v="transfers">Transfers</button>
+    <button data-v="adjust">Adjustments</button>
+    <button data-v="moves">Movements</button>
+    <button data-v="setup">Setup</button>
+  </nav>
+</header>
+<main>
+  <div class="banner hidden" id="sampleBanner">No purchases, transfers or adjustments yet. Load inventory sample data (purchases, two sample shops, transfers) that matches the production sample batches. <button class="b" id="loadSample">Load inventory sample data</button></div>
+  <div class="banner hidden" id="roBanner">Your role can view stock but not record purchases, transfers or adjustments.</div>
+
+  <!-- STOCK -->
+  <section id="v-stock">
+    <div class="card">
+      <div class="row" style="margin-bottom:14px">
+        <label class="f">Location<select id="sLoc"></select></label>
+        <label class="f">Type<select id="sKind"><option value="">All types</option></select></label>
+        <label class="f">Search<input id="sQ" placeholder="Item name" size="18"></label>
+        <label class="f" style="flex-direction:row;align-items:center;gap:6px;padding-bottom:8px"><input type="checkbox" id="sHideZero"> Hide items with no stock</label>
+      </div>
+      <div class="tiles" id="sTiles"></div>
+      <table><thead><tr><th>Item</th><th>Type</th><th class="n">On hand</th><th class="n">Unit cost</th><th class="n">Value</th><th class="n">Reorder at</th><th>Status</th></tr></thead><tbody id="sBody"></tbody></table>
+    </div>
+  </section>
+
+  <!-- PURCHASES -->
+  <section id="v-purchases" class="hidden">
+    <div class="card">
+      <h2>Record a purchase</h2>
+      <div class="row">
+        <label class="f">Supplier<select id="pSup"></select></label>
+        <label class="f">Received at<select id="pLoc"></select></label>
+        <label class="f">Date<input type="date" id="pDate"></label>
+        <label class="f">Invoice / receipt no.<input id="pRef" size="14"></label>
+      </div>
+      <h3 class="small muted" style="margin:16px 0 6px">ITEMS RECEIVED</h3>
+      <table><thead><tr><th>Item</th><th class="n">Qty</th><th>Unit</th><th class="n">Unit cost GH₵</th><th class="n">Line total</th><th></th></tr></thead><tbody id="pLines"></tbody></table>
+      <div class="row" style="margin-top:8px"><select id="pAddItem"></select><button class="b" id="pAdd">+ Add item</button></div>
+      <div class="tot" id="pTot"></div>
+      <p class="small muted" style="margin:6px 0 0">The price you enter becomes the item's current cost, so new production batches use it.</p>
+      <div class="row" style="margin-top:12px"><button class="b p" id="pSave">Save purchase</button><span class="msg" id="pMsg"></span></div>
+    </div>
+    <div class="card">
+      <h2>Purchase history</h2>
+      <table><thead><tr><th>Date</th><th>Ref</th><th>Supplier</th><th>Received at</th><th>Items</th><th class="n">Total</th><th></th></tr></thead><tbody id="pList"></tbody></table>
+    </div>
+  </section>
+
+  <!-- TRANSFERS -->
+  <section id="v-transfers" class="hidden">
+    <div class="card">
+      <h2>Move stock between locations</h2>
+      <div class="row">
+        <label class="f">From<select id="tFrom"></select></label>
+        <label class="f">To<select id="tTo"></select></label>
+        <label class="f">Date<input type="date" id="tDate"></label>
+        <label class="f">Notes<input id="tNotes" size="22"></label>
+      </div>
+      <h3 class="small muted" style="margin:16px 0 6px">ITEMS MOVED</h3>
+      <table><thead><tr><th>Item</th><th class="n">Available at source</th><th class="n">Qty to move</th><th>Unit</th><th></th></tr></thead><tbody id="tLines"></tbody></table>
+      <div class="row" style="margin-top:8px"><select id="tAddItem"></select><button class="b" id="tAdd">+ Add item</button></div>
+      <div class="row" style="margin-top:12px"><button class="b p" id="tSave">Save transfer</button><span class="msg" id="tMsg"></span></div>
+    </div>
+    <div class="card">
+      <h2>Transfer history</h2>
+      <table><thead><tr><th>Date</th><th>From</th><th>To</th><th>Items</th><th>Notes</th><th></th></tr></thead><tbody id="tList"></tbody></table>
+    </div>
+  </section>
+
+  <!-- ADJUSTMENTS -->
+  <section id="v-adjust" class="hidden">
+    <div class="card">
+      <h2>Record an adjustment</h2>
+      <div class="row">
+        <label class="f">Reason<select id="aReason">
+          <option value="opening">Opening balance</option>
+          <option value="count">Stock count</option>
+          <option value="damaged">Damaged</option>
+          <option value="expired">Expired</option>
+          <option value="internal_use">Internal use / samples</option>
+          <option value="other">Other correction</option></select></label>
+        <label class="f">Location<select id="aLoc"></select></label>
+        <label class="f">Item<select id="aItem"></select></label>
+        <label class="f"><span id="aQtyLabel">Quantity</span><input type="number" step="any" id="aQty" style="width:120px"></label>
+        <label class="f">Date<input type="date" id="aDate"></label>
+        <label class="f">Notes<input id="aNotes" size="18"></label>
+      </div>
+      <div class="tot" id="aHint"></div>
+      <div class="row" style="margin-top:12px"><button class="b p" id="aSave">Save adjustment</button><span class="msg" id="aMsg"></span></div>
+    </div>
+    <div class="card">
+      <h2>Adjustment history</h2>
+      <table><thead><tr><th>Date</th><th>Item</th><th>Location</th><th>Reason</th><th class="n">Change</th><th>Notes</th><th></th></tr></thead><tbody id="aList"></tbody></table>
+    </div>
+  </section>
+
+  <!-- MOVEMENTS -->
+  <section id="v-moves" class="hidden">
+    <div class="card">
+      <div class="row" style="margin-bottom:14px">
+        <label class="f">Item<select id="mItem"></select></label>
+        <label class="f">Location<select id="mLoc"></select></label>
+      </div>
+      <table><thead><tr><th>Date</th><th>Location</th><th>Movement</th><th>Ref</th><th class="n">Change</th><th class="n">Balance</th></tr></thead><tbody id="mList"></tbody></table>
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section id="v-setup" class="hidden">
+    <div class="card">
+      <h2>Locations</h2>
+      <table><thead><tr><th>Name</th><th>Type</th><th class="n">Stock value</th></tr></thead><tbody id="lList"></tbody></table>
+      <div class="row" style="margin-top:10px">
+        <label class="f">Name<input id="lName" size="20"></label>
+        <label class="f">Type<select id="lKind"><option value="shop">Shop</option><option value="warehouse">Warehouse</option><option value="factory">Factory</option></select></label>
+        <button class="b p" id="lAdd">Add location</button><span class="msg" id="lMsg"></span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Suppliers</h2>
+      <table><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th class="n">Purchases</th></tr></thead><tbody id="supList"></tbody></table>
+      <div class="row" style="margin-top:10px">
+        <label class="f">Name<input id="supName" size="20"></label>
+        <label class="f">Phone<input id="supPhone" size="14"></label>
+        <label class="f">Email<input id="supEmail" size="18"></label>
+        <button class="b p" id="supAdd">Add supplier</button><span class="msg" id="supMsg"></span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Reorder levels</h2>
+      <p class="small muted" style="margin-top:0">When total stock across all locations falls to this level, the item is flagged <b>Low</b>. Leave at 0 to turn the flag off.</p>
+      <table><thead><tr><th>Item</th><th>Type</th><th class="n">Total on hand</th><th class="n">Reorder at</th></tr></thead><tbody id="rList"></tbody></table>
+    </div>
+  </section>
+</main>
+</div>
+
+<script>
+(function(){
+const KINDS={raw:'Raw material',packaging:'Packaging',label:'Label',product:'Product',goods:'Resale goods'};
+const KORDER={product:0,goods:1,raw:2,packaging:3,label:4};
+const LKINDS={factory:'Factory',warehouse:'Warehouse',shop:'Shop'};
+const REASONS={opening:'Opening balance',count:'Stock count',damaged:'Damaged',expired:'Expired',internal_use:'Internal use / samples',other:'Other correction'};
+const SOURCES={purchase:'Purchase',production_use:'Used in production',production_output:'Produced',transfer_out:'Transfer out',transfer_in:'Transfer in',adjustment:'Adjustment'};
+const money=v=>'GH₵ '+(Number(v)||0).toLocaleString('en-GH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const num=v=>(Number(v)||0).toLocaleString('en-GH',{maximumFractionDigits:3});
+const signed=v=>(v>0?'+':v<0?'−':'')+num(Math.abs(v));
+const today=()=>new Date().toISOString().slice(0,10);
+const $=id=>document.getElementById(id);
+function h(tag,attrs,...kids){const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==='on')for(const ev in attrs.on)e.addEventListener(ev,attrs.on[ev]);else if(k==='class')e.className=attrs[k];else if(k in e&&k!=='list')e[k]=attrs[k];else e.setAttribute(k,attrs[k]);}for(const c of kids.flat()){if(c==null||c===false)continue;e.appendChild(typeof c==='object'?c:document.createTextNode(String(c)));}return e;}
+function fillSelect(sel,list,keep,first){const cur=sel.value;const opts=list.map(i=>h('option',{value:i.id},i.label||i.name));if(first)opts.unshift(h('option',{value:''},first));sel.replaceChildren(...opts);if(keep&&[...sel.options].some(o=>o.value===cur))sel.value=cur;}
+
+// ---------- Supabase ----------
+const CFG=window.RG_CONFIG||{};
+const cfgOk=!!CFG.SUPABASE_URL&&!/PASTE_/.test(CFG.SUPABASE_URL+CFG.SUPABASE_KEY);
+const sb=cfgOk&&window.supabase?window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_KEY):null;
+let ME=null;
+const canWrite=()=>ME&&['admin','inventory'].includes(ME.role);
+const canReorder=()=>ME&&['admin','inventory','production'].includes(ME.role);
+const status=t=>{$('status').textContent=t};
+function friendly(err){
+  if(!err)return 'Unknown error';
+  if(err.code==='23505')return 'That name is already used.';
+  if(err.code==='42501'||/row-level security/i.test(err.message||''))return 'Your role is not allowed to make this change.';
+  if(err.code==='23503')return 'This record is used elsewhere and cannot be removed.';
+  return err.message||String(err);
+}
+async function q(promise){const r=await promise;if(r.error)throw r.error;return r.data;}
+
+// ---------- data ----------
+let D={items:[],cost:{},locs:[],sups:[],purchases:[],transfers:[],adjs:[],soh:[]};
+async function loadAll(){
+  status('Loading…');
+  const [items,costs,locs,sups,purchases,transfers,adjs,soh]=await Promise.all([
+    q(sb.from('items').select('id,name,kind,unit,unit_cost,reorder_level').order('name')),
+    q(sb.from('item_current_cost').select('id,current_unit_cost')),
+    q(sb.from('locations').select('*').order('created_at')),
+    q(sb.from('suppliers').select('*').order('name')),
+    q(sb.from('purchases').select('*, purchase_lines(*)').order('purchase_date',{ascending:false})),
+    q(sb.from('transfers').select('*, transfer_lines(*)').order('transfer_date',{ascending:false})),
+    q(sb.from('stock_adjustments').select('*').order('adj_date',{ascending:false})),
+    q(sb.from('stock_on_hand').select('*'))
+  ]);
+  D.items=items.map(i=>({...i,unit_cost:Number(i.unit_cost),reorder_level:Number(i.reorder_level)||0}));
+  D.cost=Object.fromEntries(costs.map(c=>[c.id,Number(c.current_unit_cost)]));
+  D.locs=locs;D.sups=sups;D.purchases=purchases;D.transfers=transfers;D.adjs=adjs;
+  D.soh=soh.map(r=>({item_id:r.item_id,location_id:r.location_id,qty:Number(r.qty)}));
+  status('Connected');
+}
+const item=id=>D.items.find(i=>i.id===id);
+const loc=id=>D.locs.find(l=>l.id===id);
+const sup=id=>D.sups.find(s=>s.id===id);
+const costOf=id=>D.cost[id]!=null?D.cost[id]:((item(id)||{}).unit_cost||0);
+const onHand=(itemId,locId)=>D.soh.filter(r=>r.item_id===itemId&&(!locId||r.location_id===locId)).reduce((s,r)=>s+r.qty,0);
+const activeLocs=()=>D.locs.filter(l=>l.active!==false);
+const sortItems=list=>[...list].sort((a,b)=>KORDER[a.kind]-KORDER[b.kind]||a.name.localeCompare(b.name));
+const itemLabel=i=>i.name+' ('+i.unit+')';
+
+// ---------- gate ----------
+function showGate(which,email){
+  $('app').classList.add('hidden');$('gate').classList.remove('hidden');
+  ['gSetup','gLogin','gNoStaff'].forEach(id=>$(id).classList.add('hidden'));
+  $({setup:'gSetup',login:'gLogin',nostaff:'gNoStaff'}[which]).classList.remove('hidden');
+  if(email)$('gWho').textContent=email;
+}
+async function boot(){
+  if(!sb)return showGate('setup');
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)return showGate('login');
+  const {data:me,error}=await sb.from('staff').select('full_name,role').eq('user_id',session.user.id).maybeSingle();
+  if(error||!me)return showGate('nostaff',session.user.email);
+  ME={...me,email:session.user.email};
+  $('whoami').textContent=ME.full_name+' ('+ME.role+')';
+  try{await loadAll()}catch(e){status('Error: '+friendly(e))}
+  $('gate').classList.add('hidden');$('app').classList.remove('hidden');
+  document.querySelectorAll('#pSave,#pAdd,#tSave,#tAdd,#aSave,#lAdd,#supAdd,#loadSample').forEach(b=>b.disabled=!canWrite());
+  $('roBanner').classList.toggle('hidden',canWrite());
+  ['pDate','tDate','aDate'].forEach(id=>{if(!$(id).value)$(id).value=today()});
+  show(location.hash.slice(1)||'stock');
+}
+$('gLogin').addEventListener('submit',async e=>{
+  e.preventDefault();$('gBtn').disabled=true;$('gMsg').textContent='Signing in…';
+  const {error}=await sb.auth.signInWithPassword({email:$('gEmail').value.trim(),password:$('gPass').value});
+  $('gBtn').disabled=false;
+  if(error){$('gMsg').textContent=error.message;return}
+  $('gMsg').textContent='';$('gPass').value='';boot();
+});
+async function signOut(e){if(e)e.preventDefault();await sb.auth.signOut();ME=null;boot();}
+$('gOut').addEventListener('click',signOut);$('signOut').addEventListener('click',signOut);
+
+// ---------- tabs ----------
+const views=['stock','purchases','transfers','adjust','moves','setup'];
+function show(v){if(!views.includes(v))v='stock';views.forEach(x=>$('v-'+x).classList.toggle('hidden',x!==v));document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render(v);}
+$('tabs').addEventListener('click',e=>{const v=e.target.dataset&&e.target.dataset.v;if(v){location.hash=v;show(v)}});
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+function render(v){
+  $('sampleBanner').classList.toggle('hidden',!(canWrite()&&!D.purchases.length&&!D.transfers.length&&!D.adjs.length));
+  ({stock:renderStock,purchases:renderPurchases,transfers:renderTransfers,adjust:renderAdjust,moves:renderMoves,setup:renderSetup})[v]();
+}
+const refresh=async v=>{await loadAll();render(v)};
+// two-click delete button
+function delBtn(onConfirm){
+  if(!canWrite())return '';
+  return h('button',{class:'x',title:'Delete',on:{click:e=>{const b=e.currentTarget;
+    if(b.dataset.arm){b.disabled=true;onConfirm().catch(err=>{status('Error: '+friendly(err));b.disabled=false})}
+    else{b.dataset.arm=1;b.textContent='delete?';b.style.fontSize='12px';setTimeout(()=>{if(!b.disabled){b.removeAttribute('data-arm');b.textContent='×';b.style.fontSize=''}},3000)}}}},'×');
+}
+const linesSummary=(lines,withQty=true)=>h('details',null,h('summary',null,lines.length+' item'+(lines.length===1?'':'s')),
+  h('div',{class:'small',style:'margin-top:4px'},lines.map(l=>{const it=item(l.item_id)||{};return h('div',null,(it.name||'?')+' — '+num(l.qty)+' '+(it.unit||'')+(withQty&&l.unit_cost!=null?' @ '+money(l.unit_cost):''))})));
+
+// ---------- STOCK ----------
+function renderStock(){
+  fillSelect($('sLoc'),activeLocs().map(l=>({id:l.id,name:l.name})),true,'All locations');
+  if($('sKind').options.length===1)Object.entries(KINDS).forEach(([k,v])=>$('sKind').appendChild(h('option',{value:k},v)));
+  const L=$('sLoc').value,K=$('sKind').value,Q=$('sQ').value.trim().toLowerCase(),hide=$('sHideZero').checked;
+  let value=0,low=0,neg=0;
+  D.items.forEach(i=>{const t=onHand(i.id,null);if(i.reorder_level>0&&t<=i.reorder_level)low++;});
+  D.soh.forEach(r=>{if(r.qty<-1e-9&&(!L||r.location_id===L))neg++;});
+  const rows=sortItems(D.items).filter(i=>(!K||i.kind===K)&&(!Q||i.name.toLowerCase().includes(Q)));
+  const tb=$('sBody');tb.replaceChildren();
+  rows.forEach(i=>{
+    const qty=onHand(i.id,L),total=onHand(i.id,null);if(hide&&Math.abs(qty)<1e-9)return;
+    const c=costOf(i.id),v=qty>0?qty*c:0;value+=v;
+    let st='',cls='';
+    if(qty<-1e-9){st='⚠ Negative: check records';cls='up'}
+    else if(Math.abs(qty)<1e-9){st='○ Out of stock';cls='muted'}
+    else if(!L&&i.reorder_level>0&&total<=i.reorder_level){st='▼ Low';cls='up'}
+    const breakdown=!L?D.soh.filter(r=>r.item_id===i.id&&Math.abs(r.qty)>1e-9).map(r=>(loc(r.location_id)||{}).name+' '+num(r.qty)).join(' · '):'';
+    tb.appendChild(h('tr',null,
+      h('td',null,i.name,breakdown&&D.locs.length>1?h('div',{class:'small muted'},breakdown):''),
+      h('td',null,h('span',{class:'pill '+i.kind},KINDS[i.kind]||i.kind)),
+      h('td',{class:'n'},h('b',null,num(qty)),' '+i.unit),
+      h('td',{class:'n'},money(c)),h('td',{class:'n'},money(v)),
+      h('td',{class:'n'},i.reorder_level>0?num(i.reorder_level):'—'),
+      h('td',{class:cls},st)));
+  });
+  if(!tb.children.length)tb.appendChild(h('tr',null,h('td',{colspan:7,class:'muted small'},'No items match.')));
+  const tile=(k,v,cls)=>h('div',{class:'tile'},h('div',{class:'k'},k),h('div',{class:'v'+(cls?' '+cls:'')},v));
+  $('sTiles').replaceChildren(
+    tile('Stock value'+(L?' here':''),money(value)),
+    tile('Items low or out (all locations)',String(low),low?'up':''),
+    tile('Negative balances',String(neg),neg?'up':''));
+}
+['sLoc','sKind','sHideZero'].forEach(id=>$(id).addEventListener('change',renderStock));
+$('sQ').addEventListener('input',renderStock);
+
+// ---------- PURCHASES ----------
+let draftP=[];
+function renderPurchases(){
+  fillSelect($('pSup'),D.sups.filter(s=>s.active!==false),true,'— No supplier —');
+  fillSelect($('pLoc'),activeLocs(),true);
+  fillSelect($('pAddItem'),sortItems(D.items.filter(i=>i.kind!=='product'&&!draftP.some(d=>d.itemId===i.id))).map(i=>({id:i.id,name:itemLabel(i)})),false);
+  const tb=$('pLines');tb.replaceChildren();
+  draftP.forEach((d,ix)=>{const it=item(d.itemId);
+    tb.appendChild(h('tr',null,h('td',null,it.name),
+      h('td',{class:'n'},h('input',{type:'number',step:'any',min:'0',value:d.qty||'',style:'width:90px;text-align:right',on:{input:e=>{d.qty=+e.target.value;pTotals()}}})),
+      h('td',null,it.unit),
+      h('td',{class:'n'},h('input',{type:'number',step:'any',min:'0',value:+(+d.unitCost).toFixed(4),style:'width:100px;text-align:right',on:{input:e=>{d.unitCost=+e.target.value;pTotals()}}})),
+      h('td',{class:'n',id:'plc'+ix}),
+      h('td',null,h('button',{class:'x',title:'Remove',on:{click:()=>{draftP.splice(ix,1);renderPurchases()}}},'×'))));
+  });
+  if(!draftP.length)tb.appendChild(h('tr',null,h('td',{colspan:6,class:'muted small'},'Add the items on the invoice.')));
+  pTotals();
+  const lb=$('pList');lb.replaceChildren();
+  D.purchases.forEach(p=>{const lines=p.purchase_lines||[];const tot=lines.reduce((s,l)=>s+l.qty*l.unit_cost,0);
+    lb.appendChild(h('tr',null,h('td',null,p.purchase_date),h('td',null,p.ref||'—'),h('td',null,(sup(p.supplier_id)||{}).name||'—'),h('td',null,(loc(p.location_id)||{}).name||'?'),
+      h('td',null,linesSummary(lines)),h('td',{class:'n'},money(tot)),
+      h('td',null,delBtn(async()=>{await q(sb.from('purchases').delete().eq('id',p.id));await refresh('purchases')}))));
+  });
+  if(!D.purchases.length)lb.appendChild(h('tr',null,h('td',{colspan:7,class:'muted small'},'No purchases recorded yet.')));
+}
+function pTotals(){
+  draftP.forEach((d,ix)=>{const c=$('plc'+ix);if(c)c.textContent=money((d.qty||0)*d.unitCost)});
+  $('pTot').replaceChildren('Invoice total ',h('b',null,money(draftP.reduce((s,d)=>s+(d.qty||0)*d.unitCost,0))));
+}
+$('pAdd').addEventListener('click',()=>{const id=$('pAddItem').value;if(!id)return;draftP.push({itemId:id,qty:0,unitCost:costOf(id)});renderPurchases();});
+$('pSave').addEventListener('click',async()=>{
+  const msg=t=>{$('pMsg').textContent=t};
+  const lines=draftP.filter(d=>d.qty>0);
+  if(!$('pLoc').value)return msg('Choose where the goods were received.');
+  if(!$('pDate').value)return msg('Pick a date.');
+  if(!lines.length)return msg('Add at least one item with a quantity.');
+  $('pSave').disabled=true;msg('Saving…');
+  try{
+    await savePurchase({supplier_id:$('pSup').value||null,location_id:$('pLoc').value,purchase_date:$('pDate').value,ref:$('pRef').value.trim()||null},lines);
+    draftP=[];$('pRef').value='';await refresh('purchases');msg('Saved.');setTimeout(()=>msg(''),2500);
+  }catch(e){msg(friendly(e))}finally{$('pSave').disabled=!canWrite()}
+});
+async function savePurchase(head,lines){
+  const row=await q(sb.from('purchases').insert(head).select('id').single());
+  try{await q(sb.from('purchase_lines').insert(lines.map(d=>({purchase_id:row.id,item_id:d.itemId,qty:d.qty,unit_cost:+(+d.unitCost).toFixed(4)}))))}
+  catch(e){await sb.from('purchases').delete().eq('id',row.id);throw e}
+}
+
+// ---------- TRANSFERS ----------
+let draftT=[];
+function renderTransfers(){
+  fillSelect($('tFrom'),activeLocs(),true);
+  fillSelect($('tTo'),activeLocs().filter(l=>l.id!==$('tFrom').value),true);
+  const from=$('tFrom').value;
+  const avail=sortItems(D.items.filter(i=>onHand(i.id,from)>1e-9&&!draftT.some(d=>d.itemId===i.id)));
+  fillSelect($('tAddItem'),avail.map(i=>({id:i.id,name:itemLabel(i)+' — '+num(onHand(i.id,from))+' available'})),false);
+  $('tAdd').disabled=!canWrite()||!avail.length;
+  const tb=$('tLines');tb.replaceChildren();
+  draftT.forEach((d,ix)=>{const it=item(d.itemId);const a=onHand(d.itemId,from);
+    const warn=h('div',{class:'small up',id:'tw'+ix},'');
+    tb.appendChild(h('tr',null,h('td',null,it.name,warn),h('td',{class:'n'},num(a)),
+      h('td',{class:'n'},h('input',{type:'number',step:'any',min:'0',value:d.qty||'',style:'width:90px;text-align:right',on:{input:e=>{d.qty=+e.target.value;warn.textContent=d.qty>a+1e-9?'More than the recorded stock at the source.':''}}})),
+      h('td',null,it.unit),h('td',null,h('button',{class:'x',title:'Remove',on:{click:()=>{draftT.splice(ix,1);renderTransfers()}}},'×'))));
+  });
+  if(!draftT.length)tb.appendChild(h('tr',null,h('td',{colspan:5,class:'muted small'},avail.length?'Add the items being moved.':'No stock recorded at this location.')));
+  const lb=$('tList');lb.replaceChildren();
+  D.transfers.forEach(t=>lb.appendChild(h('tr',null,h('td',null,t.transfer_date),h('td',null,(loc(t.from_location)||{}).name),h('td',null,(loc(t.to_location)||{}).name),
+    h('td',null,linesSummary(t.transfer_lines||[],false)),h('td',null,t.notes||''),
+    h('td',null,delBtn(async()=>{await q(sb.from('transfers').delete().eq('id',t.id));await refresh('transfers')})))));
+  if(!D.transfers.length)lb.appendChild(h('tr',null,h('td',{colspan:6,class:'muted small'},'No transfers recorded yet.')));
+}
+$('tFrom').addEventListener('change',()=>{draftT=[];renderTransfers()});
+$('tAdd').addEventListener('click',()=>{const id=$('tAddItem').value;if(!id)return;draftT.push({itemId:id,qty:0});renderTransfers();});
+$('tSave').addEventListener('click',async()=>{
+  const msg=t=>{$('tMsg').textContent=t};
+  const from=$('tFrom').value,to=$('tTo').value,lines=draftT.filter(d=>d.qty>0);
+  if(!from||!to||from===to)return msg('Choose two different locations.');
+  if(!lines.length)return msg('Add at least one item with a quantity.');
+  $('tSave').disabled=true;msg('Saving…');
+  try{
+    await saveTransfer({transfer_date:$('tDate').value||today(),from_location:from,to_location:to,notes:$('tNotes').value.trim()||null},lines);
+    draftT=[];$('tNotes').value='';await refresh('transfers');msg('Saved.');setTimeout(()=>msg(''),2500);
+  }catch(e){msg(friendly(e))}finally{$('tSave').disabled=!canWrite()}
+});
+async function saveTransfer(head,lines){
+  const row=await q(sb.from('transfers').insert(head).select('id').single());
+  try{await q(sb.from('transfer_lines').insert(lines.map(d=>({transfer_id:row.id,item_id:d.itemId,qty:d.qty}))))}
+  catch(e){await sb.from('transfers').delete().eq('id',row.id);throw e}
+}
+
+// ---------- ADJUSTMENTS ----------
+const QLABEL={opening:'Quantity on hand',count:'Counted quantity',damaged:'Quantity removed',expired:'Quantity removed',internal_use:'Quantity removed',other:'Change (+ adds, − removes)'};
+function adjChange(){
+  const r=$('aReason').value,v=+$('aQty').value,cur=onHand($('aItem').value,$('aLoc').value);
+  if($('aQty').value==='')return null;
+  if(r==='opening')return v; if(r==='count')return v-cur; if(r==='other')return v; return -Math.abs(v);
+}
+function aHint(){
+  $('aQtyLabel').textContent=QLABEL[$('aReason').value];
+  const it=item($('aItem').value);if(!it){$('aHint').textContent='';return}
+  const cur=onHand(it.id,$('aLoc').value),ch=adjChange();
+  $('aHint').replaceChildren('Recorded here now: ',h('b',null,num(cur)+' '+it.unit),
+    ...(ch==null?[]:[' · this records ',h('b',null,signed(ch)),' → new balance ',h('b',null,num(cur+ch)+' '+it.unit)]));
+}
+function renderAdjust(){
+  fillSelect($('aLoc'),activeLocs(),true);
+  fillSelect($('aItem'),sortItems(D.items).map(i=>({id:i.id,name:itemLabel(i)})),true);
+  aHint();
+  const lb=$('aList');lb.replaceChildren();
+  D.adjs.forEach(a=>{const it=item(a.item_id)||{};lb.appendChild(h('tr',null,h('td',null,a.adj_date),h('td',null,it.name||'?'),h('td',null,(loc(a.location_id)||{}).name),
+    h('td',null,REASONS[a.reason]||a.reason),h('td',{class:'n'},signed(Number(a.qty_change))+' '+(it.unit||'')),h('td',null,a.notes||''),
+    h('td',null,delBtn(async()=>{await q(sb.from('stock_adjustments').delete().eq('id',a.id));await refresh('adjust')}))))});
+  if(!D.adjs.length)lb.appendChild(h('tr',null,h('td',{colspan:7,class:'muted small'},'No adjustments recorded yet.')));
+}
+['aReason','aLoc','aItem'].forEach(id=>$(id).addEventListener('change',aHint));$('aQty').addEventListener('input',aHint);
+$('aSave').addEventListener('click',async()=>{
+  const msg=t=>{$('aMsg').textContent=t};const ch=adjChange();
+  if(!$('aItem').value||!$('aLoc').value)return msg('Choose an item and a location.');
+  if(ch==null||Math.abs(ch)<1e-9)return msg('No change to record.');
+  $('aSave').disabled=true;msg('Saving…');
+  try{
+    await q(sb.from('stock_adjustments').insert({adj_date:$('aDate').value||today(),item_id:$('aItem').value,location_id:$('aLoc').value,qty_change:+ch.toFixed(4),reason:$('aReason').value,notes:$('aNotes').value.trim()||null}));
+    $('aQty').value='';$('aNotes').value='';await refresh('adjust');msg('Saved.');setTimeout(()=>msg(''),2500);
+  }catch(e){msg(friendly(e))}finally{$('aSave').disabled=!canWrite()}
+});
+
+// ---------- MOVEMENTS ----------
+async function renderMoves(){
+  fillSelect($('mItem'),sortItems(D.items).map(i=>({id:i.id,name:itemLabel(i)})),true);
+  fillSelect($('mLoc'),activeLocs(),true,'All locations');
+  const tb=$('mList');const it=item($('mItem').value);
+  if(!it){tb.replaceChildren(h('tr',null,h('td',{colspan:6,class:'muted small'},'No items yet.')));return}
+  let qy=sb.from('stock_ledger').select('*').eq('item_id',it.id);
+  if($('mLoc').value)qy=qy.eq('location_id',$('mLoc').value);
+  let rows;try{rows=await q(qy.order('move_date').order('created_at'))}catch(e){status('Error: '+friendly(e));return}
+  let bal=0;const out=rows.map(r=>{const c=Number(r.qty_change);bal+=c;
+    const label=SOURCES[r.source]+(r.source==='adjustment'?': '+(REASONS[r.ref]||r.ref):'');
+    return h('tr',null,h('td',null,r.move_date),h('td',null,(loc(r.location_id)||{}).name||'?'),h('td',null,label),h('td',null,r.source==='adjustment'?'':(r.ref||'')),
+      h('td',{class:'n '+(c<0?'up':'down')},signed(c)),h('td',{class:'n'},h('b',null,num(bal))))});
+  tb.replaceChildren(...out.reverse());
+  if(!rows.length)tb.appendChild(h('tr',null,h('td',{colspan:6,class:'muted small'},'No movements recorded for this item.')));
+}
+['mItem','mLoc'].forEach(id=>$(id).addEventListener('change',renderMoves));
+
+// ---------- SETUP ----------
+function renderSetup(){
+  $('lList').replaceChildren(...activeLocs().map(l=>{const v=D.soh.filter(r=>r.location_id===l.id&&r.qty>0).reduce((s,r)=>s+r.qty*costOf(r.item_id),0);
+    return h('tr',null,h('td',null,l.name),h('td',null,LKINDS[l.kind]),h('td',{class:'n'},money(v)))}));
+  $('supList').replaceChildren(...(D.sups.length?D.sups.map(s=>h('tr',null,h('td',null,s.name),h('td',null,s.phone||''),h('td',null,s.email||''),h('td',{class:'n'},String(D.purchases.filter(p=>p.supplier_id===s.id).length))))
+    :[h('tr',null,h('td',{colspan:4,class:'muted small'},'No suppliers yet.'))]));
+  $('rList').replaceChildren(...sortItems(D.items).map(i=>h('tr',null,h('td',null,i.name),h('td',null,h('span',{class:'pill '+i.kind},KINDS[i.kind])),
+    h('td',{class:'n'},num(onHand(i.id,null))+' '+i.unit),
+    h('td',{class:'n'},h('input',{type:'number',step:'any',min:'0',value:i.reorder_level,disabled:!canReorder(),style:'width:100px;text-align:right',
+      on:{change:async e=>{try{await q(sb.rpc('set_reorder_level',{p_item:i.id,p_level:+e.target.value||0}));i.reorder_level=+e.target.value||0;status('Saved')}catch(err){status('Error: '+friendly(err))}}}})))));
+}
+$('lAdd').addEventListener('click',async()=>{const n=$('lName').value.trim();if(!n)return;
+  try{await q(sb.from('locations').insert({name:n,kind:$('lKind').value}));$('lName').value='';$('lMsg').textContent='';await refresh('setup')}catch(e){$('lMsg').textContent=friendly(e)}});
+$('supAdd').addEventListener('click',async()=>{const n=$('supName').value.trim();if(!n)return;
+  try{await q(sb.from('suppliers').insert({name:n,phone:$('supPhone').value.trim()||null,email:$('supEmail').value.trim()||null}));['supName','supPhone','supEmail'].forEach(id=>$(id).value='');$('supMsg').textContent='';await refresh('setup')}catch(e){$('supMsg').textContent=friendly(e)}});
+
+// ---------- SAMPLE DATA ----------
+// Builds purchases from what the sample production batches consumed, so stock never goes negative,
+// then moves finished goods to two sample shops and records a few adjustments.
+$('loadSample').addEventListener('click',async()=>{
+  const btn=$('loadSample');btn.disabled=true;btn.textContent='Loading sample…';
+  try{
+    const byName=n=>D.items.find(i=>i.name===n);
+    const factory=D.locs.find(l=>l.kind==='factory');
+    const s1=await q(sb.from('locations').insert({name:'Walk-in shop 1 (sample)',kind:'shop'}).select('id').single());
+    const s2=await q(sb.from('locations').insert({name:'Walk-in shop 2 (sample)',kind:'shop'}).select('id').single());
+    const supRaw=await q(sb.from('suppliers').insert({name:'Raw materials supplier (sample)'}).select('id').single());
+    const supPack=await q(sb.from('suppliers').insert({name:'Packaging supplier (sample)'}).select('id').single());
+    const batches=await q(sb.from('batches').select('batch_date, batch_inputs(item_id,qty,unit_cost)'));
+    const SPLIT='2026-08-20',periods=[{date:'2026-05-28',test:d=>d<SPLIT,pad:1.1},{date:SPLIT,test:d=>d>=SPLIT,pad:1.25}];
+    let n=1;
+    for(const per of periods){
+      const use={};
+      batches.filter(b=>per.test(b.batch_date)).forEach(b=>(b.batch_inputs||[]).forEach(x=>{const it=item(x.item_id);if(!it||it.kind==='product')return;
+        const u=use[x.item_id]||(use[x.item_id]={qty:0,cost:0});u.qty+=Number(x.qty);u.cost+=Number(x.qty)*Number(x.unit_cost);}));
+      for(const [supId,kinds] of [[supRaw.id,['raw']],[supPack.id,['packaging','label']]]){
+        const lines=Object.entries(use).filter(([id])=>kinds.includes(item(id).kind)).map(([id,u])=>{const it=item(id);
+          const q0=u.qty*per.pad;const qty=it.unit==='piece'?Math.ceil(q0):Math.ceil(q0*2)/2;return {itemId:id,qty,unitCost:u.cost/u.qty};});
+        if(lines.length)await savePurchase({supplier_id:supId,location_id:factory.id,purchase_date:per.date,ref:'S-INV-'+String(n++).padStart(3,'0')},lines);
+      }
+    }
+    const bb=byName('Glow Body Butter 200 ml'),cor=byName('Carrot Oil 100 ml (retail)');
+    if(cor){await saveTransfer({transfer_date:'2026-09-20',from_location:factory.id,to_location:s1.id,notes:'Shop restock'},[{itemId:cor.id,qty:60}]);
+            await saveTransfer({transfer_date:'2026-09-20',from_location:factory.id,to_location:s2.id,notes:'Shop restock'},[{itemId:cor.id,qty:40}]);}
+    if(bb){await saveTransfer({transfer_date:'2026-10-05',from_location:factory.id,to_location:s1.id,notes:'Shop restock'},[{itemId:bb.id,qty:120}]);
+           await saveTransfer({transfer_date:'2026-10-05',from_location:factory.id,to_location:s2.id,notes:'Shop restock'},[{itemId:bb.id,qty:80}]);
+           await q(sb.from('stock_adjustments').insert({adj_date:'2026-10-20',item_id:bb.id,location_id:s1.id,qty_change:-2,reason:'damaged',notes:'Cracked jars'}));}
+    const lid=byName('Lid, gold');
+    if(lid)await q(sb.from('stock_adjustments').insert({adj_date:'2026-10-25',item_id:lid.id,location_id:factory.id,qty_change:-3,reason:'count',notes:'Monthly count'}));
+    for(const [name,lvl] of [['Shea butter (unrefined)',10],['Jar 200 ml amber',150],['Lid, gold',150],['Label, body butter',150],['Glow Body Butter 200 ml',100],['Carrot oil',5]]){
+      const it=byName(name);if(it)await q(sb.rpc('set_reorder_level',{p_item:it.id,p_level:lvl}));
+    }
+    await loadAll();location.hash='stock';show('stock');
+  }catch(e){status('Error: '+friendly(e))}
+  btn.disabled=!canWrite();btn.textContent='Load inventory sample data';
+});
+
+boot();
+})();
+</script>
+</body>
+</html>
