@@ -132,7 +132,7 @@ details summary{cursor:pointer;color:var(--text-2)}
 <header>
   <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
     <h1 class="brand"><img src="assets/logo.png" alt="Royal Glow" class="logo"><span class="applabel">Staff &amp; account</span></h1>
-    <div class="small muted"><span class="apps"><a href="index.html">Production</a><a href="inventory.html">Inventory</a><a href="sales.html">Sales</a><a href="shop-admin.html">Online shop</a><a href="staff.html" aria-current="page">Account</a></span> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
+    <div class="small muted"><span class="apps"><a href="index.html">Production</a><a href="inventory.html">Inventory</a><a href="sales.html">Sales</a><a href="shop-admin.html">Online shop</a><a href="spa.html">Spa</a><a href="staff.html" aria-current="page">Account</a></span> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
   </div>
   <p class="sub">Your account, and (for admins) who has access to the Royal Glow staff apps.</p>
 </header>
@@ -164,7 +164,8 @@ details summary{cursor:pointer;color:var(--text-2)}
           <tr><th>Admin</th><td>Everything, including approving staff and changing roles.</td></tr>
           <tr><th>Production</th><td>Record production batches and items. View inventory and sales.</td></tr>
           <tr><th>Inventory</th><td>Purchases, transfers, adjustments, locations, suppliers, reorder levels. View the rest.</td></tr>
-          <tr><th>Sales</th><td>Sales, customers, payments, returns and selling prices. View the rest.</td></tr>
+          <tr><th>Sales</th><td>Sales, customers, payments, returns, selling prices and online shop orders. View the rest.</td></tr>
+          <tr><th>Spa</th><td>Spa bookings, treatments, therapists, opening hours and spa reports. View the rest.</td></tr>
         </tbody></table>
       </details>
     </div>
@@ -174,7 +175,7 @@ details summary{cursor:pointer;color:var(--text-2)}
 
 <script>
 (function(){
-const ROLES={admin:'Admin',production:'Production',inventory:'Inventory',sales:'Sales'};
+const ROLES={admin:'Admin',production:'Production',inventory:'Inventory',sales:'Sales',spa:'Spa'};
 const $=id=>document.getElementById(id);
 function h(tag,attrs,...kids){const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==='on')for(const ev in attrs.on)e.addEventListener(ev,attrs.on[ev]);else if(k==='class')e.className=attrs[k];else if(k in e&&k!=='list')e[k]=attrs[k];else e.setAttribute(k,attrs[k]);}for(const c of kids.flat()){if(c==null||c===false)continue;e.appendChild(typeof c==='object'?c:document.createTextNode(String(c)));}return e;}
 const when=t=>t?new Date(t).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'never';
