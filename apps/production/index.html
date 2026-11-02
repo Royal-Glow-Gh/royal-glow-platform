@@ -77,6 +77,7 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 #gate .applabel{border:0;padding:0}
 details summary{cursor:pointer;color:var(--text-2)}
 .msg{font-size:13px;margin-left:8px}
+.lnk{color:var(--accent)}
 </style>
 </head>
 <body>
@@ -93,8 +94,9 @@ details summary{cursor:pointer;color:var(--text-2)}
       <label class="f" style="margin-bottom:10px">Email<input type="email" id="gEmail" autocomplete="username" required></label>
       <label class="f" style="margin-bottom:14px">Password<input type="password" id="gPass" autocomplete="current-password" required></label>
       <button class="b p" type="submit" id="gBtn">Sign in</button><span class="msg" id="gMsg"></span>
+      <p class="small" style="margin:14px 0 0"><a href="staff.html#reset" class="lnk">Forgot password?</a> · <a href="staff.html#signup" class="lnk">New staff? Create an account</a></p>
     </form>
-    <div id="gNoStaff" class="hidden small"><p>Signed in as <b id="gWho"></b>, but this account is not on the staff list. Ask an admin to add you.</p><button class="b" id="gOut">Sign out</button></div>
+    <div id="gNoStaff" class="hidden small"><p>Signed in as <b id="gWho"></b>. This account is waiting for an admin to approve it.</p><button class="b" id="gOut">Sign out</button></div>
   </div>
 </section>
 
@@ -102,7 +104,7 @@ details summary{cursor:pointer;color:var(--text-2)}
 <header>
   <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
     <h1 class="brand"><img src="assets/logo.png" alt="Royal Glow" class="logo"><span class="applabel">Production Batch Costing</span></h1>
-    <div class="small muted"><span class="apps"><a href="index.html" aria-current="page">Production</a><a href="inventory.html">Inventory</a><a href="sales.html">Sales</a></span> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
+    <div class="small muted"><span class="apps"><a href="index.html" aria-current="page">Production</a><a href="inventory.html">Inventory</a><a href="sales.html">Sales</a><a href="staff.html">Account</a></span> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
   </div>
   <p class="sub">Log what each batch consumed and what it produced. Cost per unit is tracked across batches, and in-house inputs (like carrot oil) carry their own batch cost forward.</p>
   <nav id="tabs">
