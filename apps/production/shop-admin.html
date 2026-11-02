@@ -114,7 +114,7 @@ details summary{cursor:pointer;color:var(--text-2)}
   </nav>
 </header>
 <main>
-  <div class="banner hidden" id="sampleBanner">The shop has no published products yet. Load shop sample data: publishes the two sample products, sets a delivery fee and pickup points, and places two sample orders. <button class="b" id="loadSample">Load shop sample data</button></div>
+  <div class="banner hidden" id="sampleBanner">The shop has no published products yet. Load shop sample data: publishes the two sample products, sets pickup points and MoMo details, and places three sample orders. <button class="b" id="loadSample">Load shop sample data</button></div>
   <div class="banner hidden" id="roBanner">Your role can view online orders but not manage them.</div>
 
   <!-- ORDERS -->
@@ -141,15 +141,26 @@ details summary{cursor:pointer;color:var(--text-2)}
   <!-- SETTINGS -->
   <section id="v-settings" class="hidden">
     <div class="card">
-      <h2>Payment and delivery</h2>
+      <h2>Payment and contact</h2>
       <div class="row">
-        <label class="f">Delivery fee GH₵<input type="number" id="stFee" min="0" step="any" style="width:110px"></label>
         <label class="f">MoMo number<input id="stMomo" size="14"></label>
         <label class="f">MoMo account name<input id="stMomoName" size="20"></label>
         <label class="f">WhatsApp number<input id="stWa" size="14"></label>
         <button class="b p" id="stSave">Save</button><span class="msg" id="stMsg"></span>
       </div>
       <p class="small muted" style="margin:8px 0 0">Customers paying by MoMo see the number and name, and use their order number as the reference.</p>
+    </div>
+    <div class="card">
+      <h2>Delivery areas</h2>
+      <p class="small muted" style="margin-top:0">Customers choose an area at checkout and see its fee. <b>Paid to rider</b>: the customer pays the rider directly, so the fee is not added to what they pay Royal Glow. Customers outside these areas can choose <b>Somewhere else</b>; you then set the fee on the order before confirming it.</p>
+      <table><thead><tr><th>Area</th><th class="n">Fee GH₵</th><th>Fee paid to</th><th>Delivered by</th><th>Shown</th><th></th></tr></thead><tbody id="zoneList"></tbody></table>
+      <div class="row" style="margin-top:10px">
+        <label class="f">Area name<input id="zName" size="22"></label>
+        <label class="f">Fee GH₵<input type="number" id="zFee" min="0" step="any" style="width:90px"></label>
+        <label class="f">Fee paid to<select id="zRider"><option value="false">Royal Glow</option><option value="true">Rider</option></select></label>
+        <label class="f">Delivered by<input id="zCarrier" size="18" placeholder="e.g. Royal Glow rider"></label>
+        <button class="b p" id="zAdd">Add area</button><span class="msg" id="zMsg"></span>
+      </div>
     </div>
     <div class="card">
       <h2>Locations</h2>
@@ -186,23 +197,26 @@ function friendly(err){
 }
 async function q(promise){const r=await promise;if(r.error)throw r.error;return r.data;}
 
-let D={orders:[],items:[],locs:[],settings:{},cost:{}};
+let D={orders:[],items:[],locs:[],settings:{},zones:[]};
 async function loadAll(){
   status('Loading…');
-  const [orders,items,locs,settings]=await Promise.all([
+  const [orders,items,locs,settings,zones]=await Promise.all([
     q(sb.from('shop_orders').select('*, shop_order_lines(*)').order('created_at',{ascending:false})),
     q(sb.from('items').select('id,name,kind,unit,retail_price,shop_visible,shop_description,image_path').order('name')),
     q(sb.from('locations').select('*').order('created_at')),
-    q(sb.from('shop_settings').select('*').maybeSingle())
+    q(sb.from('shop_settings').select('*').maybeSingle()),
+    q(sb.from('delivery_zones').select('*').order('sort_order').order('name'))
   ]);
-  D.orders=orders;D.items=items;D.locs=locs;D.settings=settings||{};
+  D.orders=orders;D.items=items;D.locs=locs;D.settings=settings||{};D.zones=zones;
   const n=orders.filter(o=>o.status==='new').length;
   $('newCount').textContent=n;$('newCount').classList.toggle('hidden',!n);
   status('Connected');
 }
 const item=id=>D.items.find(i=>i.id===id);
 const loc=id=>D.locs.find(l=>l.id===id);
-const orderTotal=o=>(o.shop_order_lines||[]).reduce((s,l)=>s+Number(l.qty)*Number(l.unit_price),0)+Number(o.delivery_fee||0);
+const goodsTotal=o=>(o.shop_order_lines||[]).reduce((s,l)=>s+Number(l.qty)*Number(l.unit_price),0);
+// what the customer pays Royal Glow: goods + delivery fee unless the rider collects it
+const orderTotal=o=>goodsTotal(o)+(o.delivery_method==='delivery'&&!o.fee_to_rider?Number(o.delivery_fee||0):0);
 const shipLoc=()=>(D.locs.find(l=>l.fulfils_online&&l.active!==false)||D.locs.find(l=>l.kind==='factory')||{}).id;
 
 function showGate(which,email){
@@ -245,6 +259,11 @@ function render(v){
 const refresh=async v=>{await loadAll();render(v)};
 
 // ---------- ORDERS ----------
+function deliveryLine(o){
+  const z=D.zones.find(z=>z.id===o.zone_id);
+  const fee=!o.fee_confirmed?'fee to be confirmed':(Number(o.delivery_fee)?money(o.delivery_fee):'free')+(o.fee_to_rider?', paid to rider':'');
+  return 'Delivery to: '+(o.address||'')+' · '+(o.zone_name||'?')+(z&&z.carrier?' ('+z.carrier+')':'')+' · '+fee;
+}
 async function setStatus(o,st){await q(sb.from('shop_orders').update({status:st,updated_at:new Date().toISOString()}).eq('id',o.id));await refresh('orders');}
 function renderOrders(){
   const f=$('oStatus').value;
@@ -258,11 +277,19 @@ function renderOrders(){
     const fLoc=h('select',null,...D.locs.filter(l=>l.active!==false).map(l=>h('option',{value:l.id,selected:l.id===(o.pickup_location_id||shipLoc())},l.name)));
     const fPay=h('select',null,...Object.entries(SALEPAY).map(([k,v])=>h('option',{value:k,selected:k===o.payment_method},v)));
     const actions=[];
-    if(o.status==='new')actions.push(btn('Confirm',()=>setStatus(o,'confirmed'),true));
+    const open=['new','confirmed','paid'].includes(o.status);
+    if(open&&o.delivery_method==='delivery'){
+      const fee=h('input',{type:'number',min:'0',step:'any',value:o.fee_confirmed?Number(o.delivery_fee):'',placeholder:'GH₵',style:'width:90px',disabled:!can});
+      const rider=h('select',{disabled:!can},h('option',{value:'false',selected:!o.fee_to_rider},'paid to Royal Glow'),h('option',{value:'true',selected:!!o.fee_to_rider},'paid to rider'));
+      actions.push(h('div',{style:'margin-bottom:8px'},h('span',{class:'small'+(o.fee_confirmed?'':' up')},o.fee_confirmed?'Delivery fee ':'⚠ Set the delivery fee: '),fee,' ',rider,' ',
+        btn(o.fee_confirmed?'Update fee':'Set fee',async()=>{if(fee.value==='')throw new Error('Enter the fee (0 if free).');
+          await q(sb.from('shop_orders').update({delivery_fee:+fee.value||0,fee_to_rider:rider.value==='true',fee_confirmed:true,updated_at:new Date().toISOString()}).eq('id',o.id));await refresh('orders')})));
+    }
+    if(o.status==='new')actions.push(btn('Confirm',async()=>{if(o.delivery_method==='delivery'&&!o.fee_confirmed)throw new Error('Set the delivery fee before confirming, so the customer knows the total.');await setStatus(o,'confirmed')},true));
     if(['new','confirmed'].includes(o.status))actions.push(btn('Mark paid',()=>setStatus(o,'paid')));
     if(['new','confirmed','paid'].includes(o.status)){
       actions.push(h('span',{style:'white-space:nowrap;margin-right:6px'},' Fulfil from ',fLoc,' paid by ',fPay,' '),
-        btn('Fulfil',async()=>{await q(sb.rpc('fulfil_order',{p_order:o.id,p_location:fLoc.value,p_payment:fPay.value}));await refresh('orders')},o.status==='paid'),
+        btn('Fulfil',async()=>{if(o.delivery_method==='delivery'&&!o.fee_confirmed)throw new Error('Set the delivery fee first.');await q(sb.rpc('fulfil_order',{p_order:o.id,p_location:fLoc.value,p_payment:fPay.value}));await refresh('orders')},o.status==='paid'),
         btn('Cancel order',()=>setStatus(o,'cancelled')));
     }
     const lines=o.shop_order_lines||[];
@@ -271,7 +298,7 @@ function renderOrders(){
         h('div',null,h('b',{style:'font-size:16px'},o.order_no),' ',h('span',{class:'pill'+(o.status==='new'?' partner':'')},STATUS[o.status]),h('span',{class:'small muted'},'  '+when(o.created_at))),
         h('div',null,h('b',{style:'font-size:16px'},money(orderTotal(o))),h('span',{class:'small muted'},' · '+PAYM[o.payment_method]))),
       h('div',{class:'small',style:'margin:6px 0'},h('b',null,o.full_name),' · ',o.phone,o.email?' · '+o.email:'',
-        h('br'),o.delivery_method==='delivery'?'Delivery to: '+(o.address||'')+' (fee '+money(o.delivery_fee)+')':'Pickup at: '+((loc(o.pickup_location_id)||{}).name||'?'),
+        h('br'),o.delivery_method==='delivery'?deliveryLine(o):'Pickup at: '+((loc(o.pickup_location_id)||{}).name||'?'),
         o.notes?[h('br'),'Note: '+o.notes]:''),
       h('table',{class:'small'},h('tbody',null,lines.map(l=>{const it=item(l.item_id)||{};return h('tr',null,h('td',null,it.name||'?'),h('td',{class:'n'},num(l.qty)+' × '+money(l.unit_price)),h('td',{class:'n'},money(Number(l.qty)*Number(l.unit_price))))}))),
       actions.length?h('div',{style:'margin-top:10px'},actions,msg):(o.sale_id?h('div',{class:'small muted',style:'margin-top:8px'},'Recorded as a sale (receipt '+o.order_no+').'):'')));
@@ -313,15 +340,36 @@ function renderProducts(){
 
 // ---------- SETTINGS ----------
 function renderSettings(){
-  const s=D.settings;$('stFee').value=s.delivery_fee??0;$('stMomo').value=s.momo_number||'';$('stMomoName').value=s.momo_name||'';$('stWa').value=s.whatsapp||'';
+  renderZones();
+  const s=D.settings;$('stMomo').value=s.momo_number||'';$('stMomoName').value=s.momo_name||'';$('stWa').value=s.whatsapp||'';
   const can=canWrite();const tb=$('locList');tb.replaceChildren();
   D.locs.filter(l=>l.active!==false).forEach(l=>{
     const tog=(key)=>h('input',{type:'checkbox',checked:!!l[key],disabled:!can,on:{change:async e=>{try{await q(sb.from('locations').update({[key]:e.target.checked}).eq('id',l.id));l[key]=e.target.checked;status('Saved')}catch(err){e.target.checked=!e.target.checked;status('Error: '+friendly(err))}}}});
     tb.appendChild(h('tr',null,h('td',null,l.name),h('td',null,l.kind),h('td',null,tog('fulfils_online')),h('td',null,tog('pickup_point'))));
   });
 }
+function renderZones(){
+  const can=canWrite();const tb=$('zoneList');tb.replaceChildren();
+  D.zones.forEach(z=>{
+    const msg=h('span',{class:'msg'});
+    const name=h('input',{value:z.name,size:20,disabled:!can}),fee=h('input',{type:'number',min:'0',step:'any',value:Number(z.fee),style:'width:90px',disabled:!can});
+    const rider=h('select',{disabled:!can},h('option',{value:'false',selected:!z.fee_to_rider},'Royal Glow'),h('option',{value:'true',selected:!!z.fee_to_rider},'Rider'));
+    const carrier=h('input',{value:z.carrier||'',size:16,disabled:!can}),act=h('input',{type:'checkbox',checked:!!z.active,disabled:!can});
+    const save=async()=>{try{await q(sb.from('delivery_zones').update({name:name.value.trim()||z.name,fee:+fee.value||0,fee_to_rider:rider.value==='true',carrier:carrier.value.trim()||null,active:act.checked}).eq('id',z.id));
+      msg.textContent='Saved';setTimeout(()=>msg.textContent='',2000)}catch(e){msg.textContent=friendly(e)}};
+    [name,fee,rider,carrier,act].forEach(el=>el.addEventListener('change',save));
+    const del=can?h('button',{class:'x',title:'Delete area',on:{click:async e=>{const b=e.currentTarget;if(!b.dataset.arm){b.dataset.arm=1;b.textContent='delete?';b.style.fontSize='12px';return}
+      try{await q(sb.from('delivery_zones').delete().eq('id',z.id));await refresh('settings')}catch(err){msg.textContent=friendly(err)}}}},'×'):'';
+    tb.appendChild(h('tr',null,h('td',null,name),h('td',{class:'n'},fee),h('td',null,rider),h('td',null,carrier),h('td',null,act),h('td',null,del,msg)));
+  });
+  if(!D.zones.length)tb.appendChild(h('tr',null,h('td',{colspan:6,class:'muted small'},'No delivery areas yet. Customers can still choose "Somewhere else".')));
+  $('zAdd').disabled=!can;
+}
+$('zAdd').addEventListener('click',async()=>{const n=$('zName').value.trim();if(!n)return;
+  try{await q(sb.from('delivery_zones').insert({name:n,fee:+$('zFee').value||0,fee_to_rider:$('zRider').value==='true',carrier:$('zCarrier').value.trim()||null,sort_order:D.zones.length+1}));
+    ['zName','zFee','zCarrier'].forEach(id=>$(id).value='');$('zMsg').textContent='';await refresh('settings')}catch(e){$('zMsg').textContent=friendly(e)}});
 $('stSave').addEventListener('click',async()=>{
-  try{await q(sb.from('shop_settings').update({delivery_fee:+$('stFee').value||0,momo_number:$('stMomo').value.trim()||null,momo_name:$('stMomoName').value.trim()||null,whatsapp:$('stWa').value.trim()||null,updated_at:new Date().toISOString()}).eq('id',1));
+  try{await q(sb.from('shop_settings').update({momo_number:$('stMomo').value.trim()||null,momo_name:$('stMomoName').value.trim()||null,whatsapp:$('stWa').value.trim()||null,updated_at:new Date().toISOString()}).eq('id',1));
     await loadAll();$('stMsg').textContent='Saved.';setTimeout(()=>$('stMsg').textContent='',2500)}catch(e){$('stMsg').textContent=friendly(e)}
 });
 
@@ -339,7 +387,8 @@ $('loadSample').addEventListener('click',async()=>{
     if(factory)await q(sb.from('locations').update({fulfils_online:true}).eq('id',factory.id));
     for(const l of D.locs.filter(l=>l.kind==='shop'))await q(sb.from('locations').update({pickup_point:true}).eq('id',l.id));
     const shop=D.locs.find(l=>l.kind==='shop');
-    await q(sb.rpc('place_order',{p_items:[{item_id:bb.id,qty:2},{item_id:cor.id,qty:1}],p_name:'Akosua Boateng (sample)',p_phone:'020 000 0011',p_email:'',p_delivery_method:'delivery',p_address:'Ahodwo, Kumasi, near the roundabout',p_pickup_location:null,p_payment_method:'momo',p_notes:'Please call on arrival'}));
+    await q(sb.rpc('place_order',{p_items:[{item_id:bb.id,qty:2},{item_id:cor.id,qty:1}],p_name:'Akosua Boateng (sample)',p_phone:'020 000 0011',p_email:'',p_delivery_method:'delivery',p_address:'Ahodwo, Kumasi, near the roundabout',p_pickup_location:null,p_payment_method:'momo',p_notes:'Please call on arrival',p_zone:(D.zones[0]||{}).id||null}));
+    await q(sb.rpc('place_order',{p_items:[{item_id:cor.id,qty:2}],p_name:'Kojo Owusu (sample)',p_phone:'020 000 0033',p_email:'',p_delivery_method:'delivery',p_address:'Tamale, Kalpohin',p_pickup_location:null,p_payment_method:'momo',p_notes:null,p_zone:null}));
     if(shop)await q(sb.rpc('place_order',{p_items:[{item_id:bb.id,qty:1}],p_name:'Yaw Asante (sample)',p_phone:'020 000 0022',p_email:'',p_delivery_method:'pickup',p_address:null,p_pickup_location:shop.id,p_payment_method:'cash',p_notes:null}));
     await refresh('orders');
   }catch(e){status('Error: '+friendly(e))}

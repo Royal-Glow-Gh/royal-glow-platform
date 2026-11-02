@@ -16,6 +16,7 @@
   - supabase/migrations/005_multi_roles.sql: staff.roles (a list) replaces staff.role, so one person can hold several roles
   - apps/shop/: the public storefront (index.html, assets/, config.js with the same Supabase values)
   - supabase/migrations/006_shop.sql: shop fields on items/locations, shop_settings, shop_profiles (auto-created for customer sign-ups), shop_orders + lines, public functions shop_catalog/shop_info/place_order, staff functions set_shop_product/fulfil_order, product-images storage bucket
+  - supabase/migrations/007_delivery_zones.sql: delivery_zones (fee, who delivers, fee paid to Royal Glow or rider); orders store zone, fee_confirmed, fee_to_rider; place_order takes a zone (none = "somewhere else", fee confirmed by staff)
   - .github/workflows/publish-production.yml: on push to main, copies apps/production to the deploy-production branch
   - .github/workflows/publish-shop.yml: on push to main, copies apps/shop to the deploy-shop branch
 - Supabase project: royal-glow (North EU, Stockholm)
@@ -49,6 +50,7 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - Payment methods: cash, mobile money, card, bank transfer, credit.
 - Sale lines store the unit cost at the time of sale, so margins never change retroactively.
 - Online shop: prices and stock are checked in the database (place_order), never trusted from the browser. Orders not yet fulfilled hold their stock. Fulfilling an order records it as a sale (receipt = order number). Delivery fees are on the order, not in sales revenue.
+- Delivery: customers pick a delivery area and see its fee. Rider-paid fees are shown but not added to what the customer pays Royal Glow. "Somewhere else" orders get their fee set by staff on the order; an order can't be confirmed or fulfilled until its fee is set.
 - Online payment phase 1: MoMo to the Royal Glow number (order number as reference) or cash on delivery/pickup; staff mark orders paid. Phase 2: Paystack.
 - Customer sign-ups (account_type 'customer') get a shop profile and never appear in the staff approval list.
 
@@ -67,6 +69,7 @@ Remove access or change roles on the same page (tick/untick; at least one role m
    delete from public.batches;            -- also removes batch_inputs
    delete from public.items;
    delete from public.locations where kind <> 'factory';
+   delete from public.delivery_zones where name like '%(sample)%';   -- then add your real areas
    update public.shop_settings set delivery_fee = 0, momo_number = null, momo_name = null, whatsapp = null;
 
 ## Milestones
@@ -79,9 +82,10 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - [x] Sales, customers, credit, payments, returns, price list, reports (003)
 - [x] Staff management: self sign-up, admin approval and roles, forgot/change password (004)
 - [x] Multiple roles per person (005)
-- [ ] Custom SMTP for auth emails (before go-live)
+- [ ] Custom SMTP for auth emails (before go-live): sender "Royal Glow" <hello@royalglowgh.com>, a real monitored Hostinger mailbox
 - [x] Online storefront, customer accounts, online orders (006)
-- [ ] Paystack online payments (MoMo + card)
+- [x] Delivery areas with their own fees (007)
+- [ ] Paystack online payments (MoMo + card) (deferred)
 - [ ] Spa bookings
 - [ ] Blog
 - [ ] Decide how distributors fit in (e.g. pickup points)

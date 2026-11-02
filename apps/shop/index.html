@@ -152,7 +152,7 @@ const imgUrl=p=>p?CFG.SUPABASE_URL+'/storage/v1/object/public/product-images/'+e
 let recovering=/type=recovery/.test(location.hash);
 
 // ---------- state ----------
-let CAT=[],INFO={delivery_fee:0,pickup_points:[]},USER=null,PROFILE=null,loaded=false;
+let CAT=[],INFO={zones:[],pickup_points:[]},USER=null,PROFILE=null,loaded=false;
 const prod=id=>CAT.find(p=>p.id===id);
 const CART_KEY='rg-cart';
 let cart=[];try{cart=JSON.parse(localStorage.getItem(CART_KEY))||[]}catch(e){cart=[]}
@@ -248,26 +248,39 @@ function viewCart(){
 }
 function viewCheckout(){
   const lines=cartLines();if(!lines.length){location.hash='cart';return}
-  const pts=INFO.pickup_points||[];const fee=Number(INFO.delivery_fee)||0;
+  const pts=INFO.pickup_points||[];const zones=INFO.zones||[];
   const f={name:h('input',{autocomplete:'name',value:(PROFILE&&PROFILE.full_name)||''}),phone:h('input',{type:'tel',autocomplete:'tel',value:(PROFILE&&PROFILE.phone)||''}),
     email:h('input',{type:'email',autocomplete:'email',value:(USER&&USER.email)||''}),address:h('textarea',{value:(PROFILE&&PROFILE.address)||'',placeholder:'Area, street, landmark, city'}),
-    pickup:h('select',null,pts.map(p=>h('option',{value:p.id},p.name))),notes:h('textarea',{placeholder:'Anything we should know (optional)',style:'min-height:60px'})};
+    pickup:h('select',null,pts.map(p=>h('option',{value:p.id},p.name))),
+    zone:h('select',null,h('option',{value:'',disabled:true,selected:true},'Choose your area'),zones.map(z=>h('option',{value:z.id},z.name+' — '+(Number(z.fee)?money(z.fee):'free')+(z.fee_to_rider?' (pay the rider)':''))),h('option',{value:'other'},'Somewhere else — we\'ll call to confirm the fee')),notes:h('textarea',{placeholder:'Anything we should know (optional)',style:'min-height:60px'})};
   const radio=(name,val,checked,title,sub)=>h('label',null,h('input',{type:'radio',name,value:val,checked}),h('span',null,title,sub?h('small',null,sub):''));
-  const del=h('div',{class:'choice'},radio('dm','delivery',true,'Delivery',fee?money(fee)+' delivery fee':'Free delivery'),pts.length?radio('dm','pickup',false,'Pick up','Collect at a Royal Glow shop, free'):'');
+  const del=h('div',{class:'choice'},radio('dm','delivery',true,'Delivery','Fee depends on your area'),pts.length?radio('dm','pickup',false,'Pick up','Collect at a Royal Glow shop, free'):'');
   const pay=h('div',{class:'choice'},radio('pm','momo',true,'Mobile Money','Pay to our MoMo number after ordering'),radio('pm','cash',false,'Cash','Pay on delivery or at pickup'));
+  const zoneBox=h('label',{class:'f'},'Delivery area',f.zone);
   const addrBox=h('label',{class:'f'},'Delivery address',f.address),pickBox=h('label',{class:'f hidden'},'Pickup point',f.pickup);
   const sumBox=h('div');const msg=h('div',{class:'msg err'});
   const dm=()=>(del.querySelector('input:checked')||{}).value||'delivery';
-  const upd=()=>{const d=dm()==='delivery';addrBox.classList.toggle('hidden',!d);pickBox.classList.toggle('hidden',d);
-    const ff=d?fee:0;sumBox.replaceChildren(...lines.map(l=>h('div',{class:'sum'},h('span',null,l.qty+' × '+l.p.name),h('span',null,money(l.qty*l.p.price)))),
-      h('div',{class:'sum'},h('span',null,d?'Delivery':'Pickup'),h('span',null,ff?money(ff):'Free')),h('div',{class:'sum total'},h('span',null,'Total'),h('span',null,money(subtotal()+ff))));};
-  del.addEventListener('change',upd);upd();
+  const zoneSel=()=>zones.find(z=>z.id===f.zone.value);
+  const upd=()=>{const d=dm()==='delivery';[zoneBox,addrBox].forEach(b=>b.classList.toggle('hidden',!d));pickBox.classList.toggle('hidden',d);
+    const z=zoneSel();let label,ff=0;
+    if(!d)label='Free';
+    else if(!f.zone.value)label='Choose your area';
+    else if(f.zone.value==='other')label='To be confirmed';
+    else if(z.fee_to_rider)label=money(z.fee)+' (pay the rider)';
+    else{ff=Number(z.fee)||0;label=ff?money(ff):'Free'}
+    sumBox.replaceChildren(...lines.map(l=>h('div',{class:'sum'},h('span',null,l.qty+' × '+l.p.name),h('span',null,money(l.qty*l.p.price)))),
+      h('div',{class:'sum'},h('span',null,d?'Delivery':'Pickup'),h('span',null,label)),h('div',{class:'sum total'},h('span',null,'Total'),h('span',null,money(subtotal()+ff))),
+      d&&f.zone.value==='other'?h('p',{class:'muted',style:'font-size:13px;margin:6px 0 0'},'We\'ll call you with the delivery fee before you pay.'):'');};
+  const clr=()=>{msg.textContent=''};
+  del.addEventListener('change',()=>{clr();upd()});f.zone.addEventListener('change',()=>{clr();upd()});upd();
   const go=h('button',{class:'btn gold full',on:{click:async()=>{
     msg.textContent='';if(!f.name.value.trim()||!f.phone.value.trim()){msg.textContent='Please give your name and phone number.';return}
+    if(dm()==='delivery'&&!f.zone.value){msg.textContent='Please choose your delivery area.';return}
     if(dm()==='delivery'&&!f.address.value.trim()){msg.textContent='Please give a delivery address.';return}
     go.disabled=true;go.textContent='Placing order…';
     const {data,error}=await sb.rpc('place_order',{p_items:cart.map(l=>({item_id:l.id,qty:l.qty})),p_name:f.name.value,p_phone:f.phone.value,p_email:f.email.value,
-      p_delivery_method:dm(),p_address:f.address.value,p_pickup_location:dm()==='pickup'?f.pickup.value:null,p_payment_method:pay.querySelector('input:checked').value,p_notes:f.notes.value});
+      p_delivery_method:dm(),p_address:f.address.value,p_pickup_location:dm()==='pickup'?f.pickup.value:null,p_payment_method:pay.querySelector('input:checked').value,p_notes:f.notes.value,
+      p_zone:dm()==='delivery'&&f.zone.value!=='other'?f.zone.value:null});
     if(error){go.disabled=false;go.textContent='Place order';msg.textContent=(error.message||'Something went wrong.').replace(/^.*?ERROR:\s*/,'');
       const r=await sb.rpc('shop_catalog');if(!r.error)CAT=r.data;return}
     try{sessionStorage.setItem('rg-last-order',JSON.stringify({...data,payment:pay.querySelector('input:checked').value,phone:f.phone.value}))}catch(e){}
@@ -276,7 +289,7 @@ function viewCheckout(){
   $('view').replaceChildren(h('a',{href:'#cart',class:'back'},'← Back to cart'),h('h2',{class:'title'},'Checkout'),
     h('div',{class:'two'},
       h('div',{class:'panel'},h('label',{class:'f'},'Full name',f.name),h('label',{class:'f'},'Phone number',f.phone),h('label',{class:'f'},'Email (optional, for updates)',f.email),
-        h('div',{style:'font-size:14px;color:var(--ink-2);margin-bottom:6px'},'Delivery or pickup'),del,addrBox,pickBox,
+        h('div',{style:'font-size:14px;color:var(--ink-2);margin-bottom:6px'},'Delivery or pickup'),del,zoneBox,addrBox,pickBox,
         h('div',{style:'font-size:14px;color:var(--ink-2);margin-bottom:6px'},'Payment'),pay,h('label',{class:'f'},'Notes',f.notes),
         USER?'':h('p',{class:'muted',style:'font-size:14px;margin:0'},'Have an account? ',h('a',{href:'#account'},'Sign in'),' to keep track of your orders.')),
       h('div',{class:'panel'},h('div',{style:'font-weight:600;margin-bottom:8px'},'Order summary'),sumBox,h('div',{style:'height:14px'}),go,msg)));
@@ -289,9 +302,11 @@ function viewDone(no){
     h('img',{src:'assets/crown.png',alt:'',style:'width:84px;margin:0 auto 10px'}),
     h('h2',{class:'title',style:'margin-bottom:6px'},'Thank you!'),
     h('p',{style:'margin:0 0 18px'},'Your order number is ',h('b',null,no),'.'),
-    momo&&INFO.momo_number?h('div',{class:'note',style:'text-align:left;margin-bottom:16px'},
+    o.fee_confirmed===false?h('div',{class:'note',style:'text-align:left;margin-bottom:16px'},h('b',null,'Delivery fee: '),'we\'ll call you to confirm it'+(momo?'. Please wait for our call before paying, so you can send the full amount at once.':'.')):'',
+    momo&&INFO.momo_number&&o.fee_confirmed!==false?h('div',{class:'note',style:'text-align:left;margin-bottom:16px'},
       h('b',null,'To pay by Mobile Money:'),h('br'),'Send ',h('b',null,o.total!=null?money(o.total):'the order total'),' to ',h('b',null,INFO.momo_number),INFO.momo_name?' ('+INFO.momo_name+')':'','.',h('br'),
       'Use ',h('b',null,no),' as the reference.'):'',
+    o.fee_to_rider&&Number(o.delivery_fee)?h('p',null,'Please pay the delivery fee of ',h('b',null,money(o.delivery_fee)),' to the rider when your order arrives.'):'',
     h('p',{class:'muted'},'We\'ll contact you'+(o.phone?' on '+o.phone:'')+' to confirm your order'+(INFO.whatsapp?'. Questions? WhatsApp '+INFO.whatsapp:'')+'.'),
     h('a',{href:'#',class:'btn',style:'display:inline-block;text-decoration:none;margin-top:8px'},'Continue shopping')));
 }
@@ -355,12 +370,12 @@ async function viewAccount(){
           const {error}=PROFILE?await sb.from('shop_profiles').update(row).eq('user_id',USER.id):await sb.from('shop_profiles').insert(row);
           if(error)return setMsg(error.message,true);await setUser(USER);setMsg('Saved.')}}},'Save details'),
         h('button',{class:'btn ghost full',style:'margin-top:10px',on:{click:async()=>{await sb.auth.signOut();await setUser(null);viewAccount()}}},'Sign out'),msg)));
-  const {data,error}=await sb.from('shop_orders').select('order_no,created_at,status,delivery_fee,payment_method,shop_order_lines(qty,unit_price,item_name)').eq('customer_user_id',USER.id).order('created_at',{ascending:false});
+  const {data,error}=await sb.from('shop_orders').select('order_no,created_at,status,delivery_method,delivery_fee,fee_confirmed,fee_to_rider,payment_method,shop_order_lines(qty,unit_price,item_name)').eq('customer_user_id',USER.id).order('created_at',{ascending:false});
   if(error){ordersBox.replaceChildren(h('p',{class:'muted'},'Could not load your orders.'));return}
   if(!data.length){ordersBox.replaceChildren(h('p',{class:'muted'},'No orders yet. ',h('a',{href:'#'},'Start shopping')));return}
-  ordersBox.replaceChildren(...data.map(o=>{const lines=o.shop_order_lines||[];const tot=lines.reduce((s,l)=>s+Number(l.qty)*Number(l.unit_price),0)+Number(o.delivery_fee||0);
+  ordersBox.replaceChildren(...data.map(o=>{const lines=o.shop_order_lines||[];const tbc=o.delivery_method==='delivery'&&!o.fee_confirmed;const tot=lines.reduce((s,l)=>s+Number(l.qty)*Number(l.unit_price),0)+(o.delivery_method==='delivery'&&o.fee_confirmed&&!o.fee_to_rider?Number(o.delivery_fee||0):0);
     return h('div',{class:'order'},h('div',{style:'display:flex;justify-content:space-between;gap:8px'},h('b',null,o.order_no),h('span',{class:'badge'},STATUS[o.status]||o.status)),
-      h('div',{class:'muted',style:'font-size:14px'},new Date(o.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+' · '+money(tot)),
+      h('div',{class:'muted',style:'font-size:14px'},new Date(o.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+' · '+money(tot)+(tbc?' + delivery fee (to be confirmed)':'')),
       h('div',{style:'font-size:14px;margin-top:4px'},lines.map(l=>l.qty+' × '+(l.item_name||'Item')).join(', ')))}));
 }
 
