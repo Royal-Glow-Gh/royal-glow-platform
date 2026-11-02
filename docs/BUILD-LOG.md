@@ -8,6 +8,7 @@
   - apps/production/staff.html: staff & account (sign-up, forgot password, change password; admins approve staff and set roles)
   - apps/production/shop-admin.html: online shop management (orders, products shown on the website with photos, delivery/MoMo settings, ship-from and pickup locations)
   - apps/production/spa.html: spa (day calendar per therapist, phone bookings, confirm/complete/no-show/cancel, treatments, therapists & time off, opening hours & booking rules, spa reports)
+  - apps/production/blog-admin.html: blog (article list, editor with live preview, cover and inline photos, publish/unpublish, copy announcement, subscriber list)
   - apps/production/config.js: Supabase URL + publishable key (never the secret key). config.example.js is the template.
   - apps/production/assets/: logo and favicons
   - supabase/migrations/001_production.sql: staff, items, batches, batch_inputs; views batch_costs, item_current_cost
@@ -15,14 +16,18 @@
   - supabase/migrations/003_sales.sql: retail/wholesale prices on items, customers, sales, sale_lines, customer_payments, sale_returns; stock_ledger includes sales and restocked returns; views sale_totals, customer_balances
   - supabase/migrations/004_staff.sql: admin-only functions list_unassigned_users, staff_directory; trigger keeping at least one admin
   - supabase/migrations/005_multi_roles.sql: staff.roles (a list) replaces staff.role, so one person can hold several roles
-  - apps/shop/: the public website: shop + spa booking + customer accounts (index.html, assets/, config.js with the same Supabase values)
+  - apps/shop/: the shop website: shop + spa booking + customer accounts (index.html), assets/, config.js with the same Supabase values
+  - apps/site/: the main website royalglowgh.com, generated as static HTML by build.mjs (no packages; Node 20). Company text in site.json; articles, products and spa treatments come from the database. Output (dist/) is not committed.
+    Pages: / (home), /about/, /contact/, /blog/, /blog/<web address>/, /blog/unsubscribe/, 404, sitemap.xml, robots.txt, feed.xml (RSS). Each article has its own title, description, preview image and Google article markup in the page.
   - supabase/migrations/006_shop.sql: shop fields on items/locations, shop_settings, shop_profiles (auto-created for customer sign-ups), shop_orders + lines, public functions shop_catalog/shop_info/place_order, staff functions set_shop_product/fulfil_order, product-images storage bucket
   - supabase/migrations/007_delivery_zones.sql: delivery_zones (fee, who delivers, fee paid to Royal Glow or rider); orders store zone, fee_confirmed, fee_to_rider; place_order takes a zone (none = "somewhere else", fee confirmed by staff)
   - supabase/migrations/008_spa.sql: spa_services, spa_therapists (+ which treatments each does), spa_hours, spa_time_off, spa_settings, spa_bookings (database blocks double-booking); public functions spa_info/spa_slots/book_spa, cancel_my_spa_booking; new staff role 'spa'
+  - supabase/migrations/009_blog.sql: blog_posts (draft/published, simple Markdown body), blog_subscribers; subscribe_blog / unsubscribe_blog (public), list_blog_subscribers (admin/blog staff); blog-images storage bucket; new staff role 'content' (shown as "Blog")
   - .github/workflows/publish-production.yml: on push to main, copies apps/production to the deploy-production branch
   - .github/workflows/publish-shop.yml: on push to main, copies apps/shop to the deploy-shop branch
+  - .github/workflows/publish-site.yml: builds apps/site and publishes to the deploy-site branch: on push, every 30 minutes, or manually (Actions -> Publish main website -> Run workflow). Publishes only when the site actually changed; if the database can't be reached, nothing is published.
 - Supabase project: royal-glow (North EU, Stockholm)
-- Hosting: Hostinger deploys branch deploy-production to production.royalglowgh.com (/inventory.html, /sales.html, /shop-admin.html, /spa.html, /staff.html) and branch deploy-shop to shop.royalglowgh.com
+- Hosting: Hostinger deploys branch deploy-production to production.royalglowgh.com (/inventory.html, /sales.html, /shop-admin.html, /spa.html, /blog-admin.html, /staff.html) branch deploy-shop to shop.royalglowgh.com, and branch deploy-site to royalglowgh.com
 
 ## Supabase Auth settings (Authentication -> ...)
 - Sign In / Providers: "Allow new users to sign up" ON; email confirmation ON.
@@ -39,6 +44,7 @@ Make edits in the Codespace, not on GitHub.com (avoids merge conflicts). If you 
 - inventory: purchases, transfers, adjustments, locations, suppliers, reorder levels
 - sales: sales, customers, payments, returns, selling prices, online shop orders
 - spa: spa bookings, treatments, therapists, opening hours, spa reports
+- content ("Blog"): write, publish and delete articles; see subscribers
 
 ## Adding a staff member
 1. They open the sign-in page, click "New staff? Create an account", and confirm their email.
@@ -56,11 +62,15 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - Delivery: customers pick a delivery area and see its fee. Rider-paid fees are shown but not added to what the customer pays Royal Glow. "Somewhere else" orders get their fee set by staff on the order; an order can't be confirmed or fulfilled until its fee is set.
 - Online payment phase 1: MoMo to the Royal Glow number (order number as reference) or cash on delivery/pickup; staff mark orders paid. Phase 2: Paystack.
 - Spa: customers book online (treatment, day, therapist or "any", free time); pay at the spa. Staff can book by phone, ignoring the online notice period. A therapist with no treatments ticked does all treatments. Times are Ghana time (GMT, no daylight saving). Spa revenue is recorded on completed bookings (paid amount + method) and reported on the Spa page, separate from product sales.
+- Main website text (about, intro, contact details, social links) is edited in apps/site/site.json; blank values are hidden.
+- Blog: articles live at royalglowgh.com/blog/<web address>/. They are drafts until published; only published ones are visible to the public. Published changes reach the website at the next rebuild (within ~30 minutes, or run the workflow by hand). Subscribers = blog sign-ups + customers who ticked "Send me new skincare articles". Phase 1: copy the subscriber emails / a ready announcement and send from your email tool or WhatsApp. Phase 2 (later): automatic emails through an email service.
 - Customer sign-ups (account_type 'customer') get a shop profile and never appear in the staff approval list.
 
 ## Data status
 - Decision: the database holds SAMPLE data while the apps are being built. Clear all sample data once the build is finished, before entering real data.
 - Clearing sample data (extend this list as new tables are added):
+   delete from public.blog_posts where author_name like '%(sample)%';
+   delete from public.blog_subscribers;   -- only if they are test sign-ups
    delete from public.spa_bookings;
    delete from public.spa_time_off;
    delete from public.spa_therapists where name like '%(sample)%';   -- then add your therapists
@@ -97,6 +107,11 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - [x] Spa bookings: online booking, staff calendar, treatments, therapists, hours, reports (008)
 - [ ] Booking/order reminders by SMS or WhatsApp (later)
 - [ ] Spa deposits via Paystack (with Paystack)
-- [ ] Blog
+- [x] Blog: editor, publishing, public blog page, subscribe/unsubscribe, subscriber list (009)
+- [ ] Automatic new-article emails via an email service (later)
+- [x] Main website royalglowgh.com: home, about, contact, SEO-ready blog, sitemap, RSS (static, rebuilt automatically)
+- [ ] Fill in real contact details, address and social links in apps/site/site.json
+- [ ] Instant website rebuild when an article is published (later; now every 30 min or manual)
+- [ ] Submit sitemap to Google Search Console
 - [ ] Decide how distributors fit in (e.g. pickup points)
 - [ ] Go-live: clear all sample data, enter real data

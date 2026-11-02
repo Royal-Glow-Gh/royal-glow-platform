@@ -1,0 +1,34 @@
+{
+  "_help": "Edit the text below to change the main website. Leave a value as \"\" to hide it. Save, commit and Sync; the site rebuilds within a few minutes.",
+
+  "site_url": "https://royalglowgh.com",
+  "shop_url": "https://shop.royalglowgh.com",
+  "company": "Royal Glow Company Limited",
+  "brand": "Royal Glow",
+  "tagline": "Skincare with a royal glow",
+  "intro": "Royal Glow makes, distributes and sells skincare, personal care and spa products, and runs a spa where you can enjoy them. Shop online, visit one of our shops, or book a treatment.",
+
+  "about_title": "About Royal Glow",
+  "about": [
+    "Royal Glow Company Limited is a Ghanaian company in the manufacturing, distribution and sales of skincare, personal care and spa products, as well as their accessories and complementary products.",
+    "We make many of our products ourselves, in small batches, including some of the oils that go into them, so we know exactly what is in every jar and bottle.",
+    "You can find Royal Glow products in our own shops, online, and through partner shops, pharmacies, stockists and distributors."
+  ],
+
+  "partners_title": "Stockists, distributors and partner shops",
+  "partners": "We supply partner shops, pharmacies, stockists and distributors at wholesale prices. Get in touch to become a Royal Glow stockist.",
+
+  "contact": {
+    "email": "hello@royalglowgh.com",
+    "phone": "",
+    "whatsapp": "",
+    "address": "",
+    "hours": ""
+  },
+
+  "social": {
+    "facebook": "",
+    "instagram": "",
+    "tiktok": ""
+  }
+}

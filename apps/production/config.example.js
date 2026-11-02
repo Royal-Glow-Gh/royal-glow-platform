@@ -4,5 +4,6 @@
 window.RG_CONFIG = {
   SUPABASE_URL: 'https://oluzgkanxwddonxampli.supabase.co',
   SUPABASE_KEY: 'PASTE_PUBLISHABLE_KEY_HERE',
-  SHOP_URL: 'https://shop.royalglowgh.com'
+  SHOP_URL: 'https://shop.royalglowgh.com',
+  SITE_URL: 'https://royalglowgh.com'
 };

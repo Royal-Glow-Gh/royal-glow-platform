@@ -1,0 +1,51 @@
+name: Publish main website
+
+# Builds royalglowgh.com from apps/site + the database, and publishes it to the
+# deploy-site branch (which Hostinger serves). Runs when the site's files change,
+# every 30 minutes (to pick up newly published articles, products and treatments),
+# and on demand: Actions -> Publish main website -> Run workflow.
+on:
+  push:
+    branches: [main]
+    paths: ['apps/site/**', 'apps/production/config.js', '.github/workflows/publish-site.yml']
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-site
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build the site
+        run: node apps/site/build.mjs
+      - name: Publish to deploy-site (only if something changed)
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin deploy-site || true
+          export GIT_INDEX_FILE="$RUNNER_TEMP/site-index"
+          rm -f "$GIT_INDEX_FILE"
+          git --work-tree=apps/site/dist add -A -f .
+          TREE=$(git write-tree)
+          PARENT=$(git rev-parse -q --verify origin/deploy-site || true)
+          if [ -n "$PARENT" ] && [ "$(git rev-parse "$PARENT^{tree}")" = "$TREE" ]; then
+            echo "No changes to the website."
+            exit 0
+          fi
+          COMMIT=$(git commit-tree "$TREE" ${PARENT:+-p "$PARENT"} -m "Website build $(date -u +%Y-%m-%dT%H:%MZ)")
+          git push origin "$COMMIT:refs/heads/deploy-site"
+          echo "Published $COMMIT"
