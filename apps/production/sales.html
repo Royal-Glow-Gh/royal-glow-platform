@@ -256,7 +256,7 @@ const CFG=window.RG_CONFIG||{};
 const cfgOk=!!CFG.SUPABASE_URL&&!/PASTE_/.test(CFG.SUPABASE_URL+CFG.SUPABASE_KEY);
 const sb=cfgOk&&window.supabase?window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_KEY):null;
 let ME=null;
-const canWrite=()=>ME&&['admin','sales'].includes(ME.role);
+const canWrite=()=>ME&&ME.roles.some(r=>['admin','sales'].includes(r));
 const status=t=>{$('status').textContent=t};
 function friendly(err){
   if(!err)return 'Unknown error';
@@ -313,10 +313,10 @@ async function boot(){
   if(!sb)return showGate('setup');
   const {data:{session}}=await sb.auth.getSession();
   if(!session)return showGate('login');
-  const {data:me,error}=await sb.from('staff').select('full_name,role').eq('user_id',session.user.id).maybeSingle();
+  const {data:me,error}=await sb.from('staff').select('full_name,roles').eq('user_id',session.user.id).maybeSingle();
   if(error||!me)return showGate('nostaff',session.user.email);
   ME={...me,email:session.user.email};
-  $('whoami').textContent=ME.full_name+' ('+ME.role+')';
+  $('whoami').textContent=ME.full_name+' ('+ME.roles.join(', ')+')';
   try{await loadAll()}catch(e){status('Error: '+friendly(e))}
   $('gate').classList.add('hidden');$('app').classList.remove('hidden');
   document.querySelectorAll('#nSave,#nAdd,#cAdd,#ySave,#rSave,#loadSample').forEach(b=>b.disabled=!canWrite());

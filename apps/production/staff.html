@@ -142,7 +142,7 @@ details summary{cursor:pointer;color:var(--text-2)}
     <table style="max-width:560px"><tbody>
       <tr><th style="width:140px">Name</th><td id="meName"></td></tr>
       <tr><th>Email</th><td id="meEmail"></td></tr>
-      <tr><th>Role</th><td id="meRole"></td></tr>
+      <tr><th>Roles</th><td id="meRole"></td></tr>
     </tbody></table>
     <div class="row" style="margin-top:14px">
       <label class="f">New password<input type="password" id="mePass" autocomplete="new-password" minlength="8" size="20"></label>
@@ -153,13 +153,13 @@ details summary{cursor:pointer;color:var(--text-2)}
   <div id="adminArea" class="hidden">
     <div class="card">
       <h2>Waiting for approval</h2>
-      <p class="small muted" style="margin-top:0">People who created an account on the sign-in page. Approve staff with a role. Leave anyone you don't recognise unapproved: they can't see anything.</p>
-      <table><thead><tr><th>Email</th><th>Signed up</th><th>Email confirmed</th><th>Name</th><th>Role</th><th></th></tr></thead><tbody id="pendList"></tbody></table>
+      <p class="small muted" style="margin-top:0">People who created an account on the sign-in page. Approve staff and tick the roles they need. Leave anyone you don't recognise unapproved: they can't see anything.</p>
+      <table><thead><tr><th>Email</th><th>Signed up</th><th>Email confirmed</th><th>Name</th><th>Roles</th><th></th></tr></thead><tbody id="pendList"></tbody></table>
     </div>
     <div class="card">
       <h2>Staff with access</h2>
-      <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Last sign-in</th><th></th></tr></thead><tbody id="staffList"></tbody></table>
-      <details style="margin-top:14px"><summary>What each role can do</summary>
+      <table><thead><tr><th>Name</th><th>Email</th><th>Roles</th><th>Last sign-in</th><th></th></tr></thead><tbody id="staffList"></tbody></table>
+      <details style="margin-top:14px"><summary>What each role can do (tick several to combine them)</summary>
         <table class="small" style="margin-top:8px"><tbody>
           <tr><th>Admin</th><td>Everything, including approving staff and changing roles.</td></tr>
           <tr><th>Production</th><td>Record production batches and items. View inventory and sales.</td></tr>
@@ -178,7 +178,9 @@ const ROLES={admin:'Admin',production:'Production',inventory:'Inventory',sales:'
 const $=id=>document.getElementById(id);
 function h(tag,attrs,...kids){const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==='on')for(const ev in attrs.on)e.addEventListener(ev,attrs.on[ev]);else if(k==='class')e.className=attrs[k];else if(k in e&&k!=='list')e[k]=attrs[k];else e.setAttribute(k,attrs[k]);}for(const c of kids.flat()){if(c==null||c===false)continue;e.appendChild(typeof c==='object'?c:document.createTextNode(String(c)));}return e;}
 const when=t=>t?new Date(t).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'never';
-const roleSelect=(val,dis)=>h('select',{disabled:!!dis},...Object.entries(ROLES).map(([k,v])=>h('option',{value:k,selected:k===val},v)));
+// a set of role tick-boxes; .get() returns the ticked roles
+function roleChecks(vals,onChange){const boxes=Object.entries(ROLES).map(([k,v])=>{const c=h('input',{type:'checkbox',value:k,checked:vals.includes(k)});if(onChange)c.addEventListener('change',onChange);return [k,c,h('label',{style:'margin-right:10px;white-space:nowrap;font-size:13px'},c,' '+v)]});
+  const el=h('span',null,boxes.map(b=>b[2]));el.get=()=>boxes.filter(b=>b[1].checked).map(b=>b[0]);el.set=vs=>boxes.forEach(b=>b[1].checked=vs.includes(b[0]));return el;}
 
 const CFG=window.RG_CONFIG||{};
 const cfgOk=!!CFG.SUPABASE_URL&&!/PASTE_/.test(CFG.SUPABASE_URL+CFG.SUPABASE_KEY);
@@ -209,14 +211,15 @@ async function boot(){
   const {data:{session}}=await sb.auth.getSession();
   if(recovering)return showGate('gNewPass');
   if(!session)return showGate(gateFromHash());
-  const {data:me,error}=await sb.from('staff').select('full_name,role').eq('user_id',session.user.id).maybeSingle();
+  const {data:me,error}=await sb.from('staff').select('full_name,roles').eq('user_id',session.user.id).maybeSingle();
   if(error||!me)return showGate('gPending',session.user.email);
   ME={...me,email:session.user.email};
-  $('whoami').textContent=ME.full_name+' ('+ME.role+')';
-  $('meName').textContent=ME.full_name;$('meEmail').textContent=ME.email;$('meRole').textContent=ROLES[ME.role]||ME.role;
+  $('whoami').textContent=ME.full_name+' ('+ME.roles.join(', ')+')';
+  $('meName').textContent=ME.full_name;$('meEmail').textContent=ME.email;$('meRole').textContent=ME.roles.map(r=>ROLES[r]||r).join(', ');
   $('gate').classList.add('hidden');$('app').classList.remove('hidden');
-  $('adminArea').classList.toggle('hidden',ME.role!=='admin');
-  if(ME.role==='admin')await renderAdmin();
+  const isAdmin=ME.roles.includes('admin');
+  $('adminArea').classList.toggle('hidden',!isAdmin);
+  if(isAdmin)await renderAdmin();
 }
 window.addEventListener('hashchange',()=>{const vis=FORMS.find(id=>!$(id).classList.contains('hidden'));if(['gLogin','gSignup','gReset'].includes(vis))showGate(gateFromHash())});
 if(sb)sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){recovering=true;setTimeout(()=>showGate('gNewPass'),0)}});
@@ -271,14 +274,15 @@ async function renderAdmin(){
   const pb=$('pendList');pb.replaceChildren();
   pend.forEach(u=>{
     const name=h('input',{value:u.suggested_name||'',placeholder:'Full name',size:18});
-    const role=roleSelect('sales');const msg=h('span',{class:'msg'});
+    const role=roleChecks([]);const msg=h('span',{class:'msg'});
     pb.appendChild(h('tr',null,h('td',null,u.email),h('td',null,when(u.signed_up_at)),
       h('td',{class:u.email_confirmed?'':'up'},u.email_confirmed?'✓ Yes':'Not yet'),
       h('td',null,name),h('td',null,role),
       h('td',null,h('button',{class:'b p',style:'padding:4px 12px',on:{click:async e=>{
         if(!name.value.trim()){msg.textContent='Enter their name.';return}
+        if(!role.get().length){msg.textContent='Tick at least one role.';return}
         e.currentTarget.disabled=true;
-        try{await q(sb.from('staff').insert({user_id:u.user_id,full_name:name.value.trim(),role:role.value}));await renderAdmin()}
+        try{await q(sb.from('staff').insert({user_id:u.user_id,full_name:name.value.trim(),roles:role.get()}));await renderAdmin()}
         catch(err){msg.textContent=friendly(err);e.currentTarget.disabled=false}}}},'Approve'),msg)));
   });
   if(!pend.length)pb.appendChild(h('tr',null,h('td',{colspan:6,class:'muted small'},'Nobody is waiting. New staff create an account from the sign-in page ("New staff? Create an account").')));
@@ -287,11 +291,14 @@ async function renderAdmin(){
   staff.forEach(s=>{
     const isMe=s.email===ME.email;
     const name=h('input',{value:s.full_name,size:18});
-    const role=roleSelect(s.role);const msg=h('span',{class:'msg'});
-    const saveRow=async()=>{try{await q(sb.from('staff').update({full_name:name.value.trim()||s.full_name,role:role.value}).eq('user_id',s.user_id));
-      msg.textContent='Saved';setTimeout(()=>msg.textContent='',2000);if(isMe){ME.role=role.value;ME.full_name=name.value.trim();await boot()}}
-      catch(err){msg.textContent=friendly(err);role.value=s.role}};
-    name.addEventListener('change',saveRow);role.addEventListener('change',saveRow);
+    const msg=h('span',{class:'msg'});
+    const saveRow=async()=>{const rs=role.get();
+      if(!rs.length){msg.textContent='Keep at least one role (or use Remove access).';role.set(s.roles);return}
+      try{await q(sb.from('staff').update({full_name:name.value.trim()||s.full_name,roles:rs}).eq('user_id',s.user_id));s.roles=rs;
+      msg.textContent='Saved';setTimeout(()=>msg.textContent='',2000);if(isMe)await boot()}
+      catch(err){msg.textContent=friendly(err);role.set(s.roles)}};
+    const role=roleChecks(s.roles,saveRow);
+    name.addEventListener('change',saveRow);
     const remove=h('button',{class:'b',style:'padding:3px 10px;font-size:13px',on:{click:async e=>{const b=e.currentTarget;
       if(!b.dataset.arm){b.dataset.arm=1;b.textContent='Confirm remove';setTimeout(()=>{b.removeAttribute('data-arm');b.textContent='Remove access'},3000);return}
       try{await q(sb.from('staff').delete().eq('user_id',s.user_id));await renderAdmin()}catch(err){msg.textContent=friendly(err)}}}},'Remove access');

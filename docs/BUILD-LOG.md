@@ -12,6 +12,7 @@
   - supabase/migrations/002_inventory.sql: locations (Factory auto-created), suppliers, purchases, transfers, stock_adjustments; views stock_ledger, stock_on_hand; item kind 'goods'; reorder levels
   - supabase/migrations/003_sales.sql: retail/wholesale prices on items, customers, sales, sale_lines, customer_payments, sale_returns; stock_ledger includes sales and restocked returns; views sale_totals, customer_balances
   - supabase/migrations/004_staff.sql: admin-only functions list_unassigned_users, staff_directory; trigger keeping at least one admin
+  - supabase/migrations/005_multi_roles.sql: staff.roles (a list) replaces staff.role, so one person can hold several roles
   - .github/workflows/publish-production.yml: on push to main, copies apps/production to the deploy-production branch
 - Supabase project: royal-glow (North EU, Stockholm)
 - Hosting: Hostinger deploys branch deploy-production to production.royalglowgh.com (/inventory.html, /sales.html, /staff.html)
@@ -25,7 +26,7 @@
 Edit in Codespace -> commit -> Sync -> GitHub Action updates deploy-production -> Hostinger redeploys.
 Make edits in the Codespace, not on GitHub.com (avoids merge conflicts). If you do edit on the website, Sync the Codespace first.
 
-## Roles
+## Roles (a person can hold several, e.g. production + sales)
 - admin: everything, including approving staff and changing roles
 - production: batches and items; can view inventory and sales
 - inventory: purchases, transfers, adjustments, locations, suppliers, reorder levels
@@ -33,9 +34,9 @@ Make edits in the Codespace, not on GitHub.com (avoids merge conflicts). If you 
 
 ## Adding a staff member
 1. They open the sign-in page, click "New staff? Create an account", and confirm their email.
-2. An admin opens Account (staff.html) -> "Waiting for approval", checks the name, picks a role, clicks Approve.
+2. An admin opens Account (staff.html) -> "Waiting for approval", checks the name, ticks the roles they need, clicks Approve.
 3. They sign in again and have access.
-Remove access or change roles on the same page. The system refuses to remove or demote the last admin.
+Remove access or change roles on the same page (tick/untick; at least one role must stay ticked). The system refuses to remove or demote the last admin.
 
 ## Business rules captured
 - Walk-in sales need no customer record. Credit sales need a named customer.
@@ -68,6 +69,7 @@ Remove access or change roles on the same page. The system refuses to remove or 
 - [x] Inventory and purchases (002)
 - [x] Sales, customers, credit, payments, returns, price list, reports (003)
 - [x] Staff management: self sign-up, admin approval and roles, forgot/change password (004)
+- [x] Multiple roles per person (005)
 - [ ] Custom SMTP for auth emails (before go-live)
 - [ ] Storefront and customer accounts
 - [ ] Spa bookings
