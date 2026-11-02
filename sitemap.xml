@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://royalglowgh.com/</loc></url>
+  <url><loc>https://royalglowgh.com/</loc><lastmod>2026-11-02</lastmod></url>
   <url><loc>https://royalglowgh.com/about/</loc></url>
   <url><loc>https://royalglowgh.com/contact/</loc></url>
-  <url><loc>https://royalglowgh.com/blog/</loc></url>
+  <url><loc>https://royalglowgh.com/blog/</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://royalglowgh.com/blog/your-first-spa-facial/</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://royalglowgh.com/blog/shea-butter-for-dry-skin/</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://royalglowgh.com/blog/how-to-use-carrot-oil/</loc><lastmod>2026-11-02</lastmod></url>
 </urlset>
