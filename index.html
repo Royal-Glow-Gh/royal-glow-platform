@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Royal Glow — Shop</title>
+<title>Royal Glow — Shop and Spa</title>
 <meta name="description" content="Royal Glow skincare, personal care and spa products. Order online for delivery or pickup.">
 <link rel="icon" href="assets/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
@@ -113,6 +113,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
     <a href="#" aria-label="Royal Glow shop home"><img class="logo" src="assets/logo.png" alt="Royal Glow"></a>
     <nav>
       <a href="#">Shop</a>
+      <a href="#spa">Spa</a>
       <a href="#account" id="accLink">Account</a>
       <a href="#cart" class="cart">Cart<span class="count" id="cartCount">0</span></a>
     </nav>
@@ -122,7 +123,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 <section class="hero" id="hero">
   <div class="wrap">
     <h1>Skincare with a royal glow</h1>
-    <p>Body butters, oils and spa care made by Royal Glow. Order online for delivery, or pick up at one of our shops.</p>
+    <p>Body butters, oils and spa care made by Royal Glow. Order online for delivery or pickup, or <a href="#spa" style="color:#f7e7bf">book a spa treatment</a>.</p>
   </div>
 </section>
 
@@ -195,6 +196,8 @@ function route(){
   if(page==='checkout')return viewCheckout();
   if(page==='done')return viewDone(arg);
   if(page==='account')return viewAccount();
+  if(page==='spa')return arg?viewSpaBook(arg):viewSpa();
+  if(page==='spadone')return viewSpaDone(arg);
   viewShop();
 }
 window.addEventListener('hashchange',route);
@@ -311,6 +314,81 @@ function viewDone(no){
     h('a',{href:'#',class:'btn',style:'display:inline-block;text-decoration:none;margin-top:8px'},'Continue shopping')));
 }
 
+// ---------- spa ----------
+const TZ='Africa/Accra';   // Ghana: GMT all year
+const hm=t=>new Date(t).toLocaleTimeString('en-GB',{timeZone:TZ,hour:'2-digit',minute:'2-digit'});
+const dayName=d=>new Date(d+'T12:00:00Z').toLocaleDateString('en-GB',{timeZone:TZ,weekday:'short',day:'numeric',month:'short'});
+const longWhen=t=>new Date(t).toLocaleDateString('en-GB',{timeZone:TZ,weekday:'long',day:'numeric',month:'long'})+' at '+hm(t);
+const addDays=(d,n)=>new Date(Date.parse(d+'T00:00:00Z')+n*864e5).toISOString().slice(0,10);
+let SPA=null;
+async function loadSpa(){if(SPA)return SPA;const {data,error}=await sb.rpc('spa_info');if(error)throw error;SPA=data;return SPA;}
+const mins=n=>n>=60?(Math.floor(n/60)+' hr'+(n%60?' '+(n%60)+' min':'')):n+' min';
+async function viewSpa(){
+  const v=$('view');v.replaceChildren(h('p',{class:'muted'},'Loading treatments…'));
+  try{await loadSpa()}catch(e){v.replaceChildren(h('div',{class:'panel'},'We could not load the spa menu. Please refresh.'));return}
+  if(!SPA.services.length){v.replaceChildren(h('div',{class:'panel'},'Online booking is coming soon.'));return}
+  const cats=[...new Set(SPA.services.map(s=>s.category))];
+  const open=(SPA.hours||[]).filter(x=>!x.closed);const D=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  v.replaceChildren(h('h2',{class:'title'},'Spa treatments'),
+    h('p',{class:'muted',style:'margin-top:-10px'},'Choose a treatment, then a day and time that suits you. You pay at the spa.'+(open.length?' Open '+open.map(x=>D[x.weekday]+' '+x.opens+'–'+x.closes).join(', ')+'.':'')),
+    ...cats.map(c=>h('div',{style:'margin-bottom:26px'},h('h3',{style:'font:600 24px var(--serif);margin:18px 0 10px'},c),
+      h('div',{class:'grid'},SPA.services.filter(s=>s.category===c).map(s=>h('div',{class:'pcard'},h('div',{class:'pbody'},
+        h('div',{class:'pname'},s.name),h('div',{class:'stock'},mins(s.duration_min)),h('div',{class:'pprice'},money(s.price)),
+        s.description?h('div',{style:'font-size:14px;color:var(--ink-2)'},s.description):'',
+        h('button',{class:'btn',on:{click:()=>location.hash='spa/'+s.id}},'Book'))))))));
+}
+async function viewSpaBook(id){
+  const v=$('view');try{await loadSpa()}catch(e){return viewSpa()}
+  const s=SPA.services.find(x=>x.id===id);if(!s)return viewSpa();
+  const able=SPA.therapists.filter(t=>!t.services.length||t.services.includes(s.id));
+  const thSel=h('select',null,h('option',{value:''},'Any therapist'),able.map(t=>h('option',{value:t.id},t.name)));
+  const closed=new Set((SPA.hours||[]).filter(x=>x.closed).map(x=>x.weekday));
+  const days=[];for(let i=0;i<=Math.min(SPA.max_days_ahead,27);i++){const d=addDays(SPA.today,i);days.push(d)}
+  let day=null,slot=null;
+  const dayBox=h('div',{style:'display:flex;gap:8px;overflow-x:auto;padding-bottom:6px'}),slotBox=h('div',{style:'margin-top:14px'}),form=h('div',{class:'hidden',style:'margin-top:18px'});
+  const msg=h('div',{class:'msg err'});
+  async function loadSlots(){
+    slot=null;form.classList.add('hidden');slotBox.replaceChildren(h('p',{class:'muted'},'Finding free times…'));
+    const {data,error}=await sb.rpc('spa_slots',{p_service:s.id,p_date:day,p_therapist:thSel.value||null,p_staff:false});
+    if(error){slotBox.replaceChildren(h('p',{class:'muted'},'Could not load times. Please try again.'));return}
+    const times=[...new Set(data.map(x=>x.starts_at))].sort();
+    if(!times.length){slotBox.replaceChildren(h('p',{class:'muted'},'No free times on this day. Please try another day'+(thSel.value?' or any therapist':'')+'.'));return}
+    slotBox.replaceChildren(h('div',{style:'font-size:14px;color:var(--ink-2);margin-bottom:8px'},'Free times on '+dayName(day)),
+      h('div',{style:'display:flex;flex-wrap:wrap;gap:8px'},times.map(t=>h('button',{class:'btn ghost',style:'padding:8px 14px',on:{click:e=>{slot=t;slotBox.querySelectorAll('button').forEach(b=>{b.className='btn ghost'});e.currentTarget.className='btn gold';
+        summary.textContent=s.name+' · '+longWhen(t)+(thSel.value?' with '+thSel.selectedOptions[0].textContent:'')+' · '+money(s.price);form.classList.remove('hidden');form.scrollIntoView({behavior:'smooth',block:'nearest'})}}},hm(t)))));
+  }
+  days.forEach(d=>{const wd=new Date(d+'T12:00:00Z').getUTCDay();const b=h('button',{class:'btn ghost',style:'flex:none;padding:8px 14px',disabled:closed.has(wd),
+    on:{click:()=>{day=d;dayBox.querySelectorAll('button').forEach(x=>{if(!x.disabled)x.className='btn ghost'});b.className='btn';b.style.cssText='flex:none;padding:8px 14px';loadSlots()}}},d===SPA.today?'Today':dayName(d));dayBox.appendChild(b)});
+  thSel.addEventListener('change',()=>{if(day)loadSlots()});
+  const f={name:h('input',{autocomplete:'name',value:(PROFILE&&PROFILE.full_name)||''}),phone:h('input',{type:'tel',autocomplete:'tel',value:(PROFILE&&PROFILE.phone)||''}),
+    email:h('input',{type:'email',autocomplete:'email',value:(USER&&USER.email)||''}),notes:h('textarea',{placeholder:'Anything we should know, e.g. allergies or sensitive skin (optional)',style:'min-height:60px'})};
+  const summary=h('div',{class:'note',style:'margin-bottom:14px'});
+  const go=h('button',{class:'btn gold full',on:{click:async()=>{msg.textContent='';
+    if(!f.name.value.trim()||!f.phone.value.trim()){msg.textContent='Please give your name and phone number.';return}
+    go.disabled=true;go.textContent='Booking…';
+    const {data,error}=await sb.rpc('book_spa',{p_service:s.id,p_starts_at:slot,p_therapist:thSel.value||null,p_name:f.name.value,p_phone:f.phone.value,p_email:f.email.value,p_notes:f.notes.value,p_staff:false});
+    go.disabled=false;go.textContent='Confirm booking';
+    if(error){msg.textContent=(error.message||'Something went wrong.').replace(/^.*?ERROR:\s*/,'');loadSlots();return}
+    try{sessionStorage.setItem('rg-last-spa',JSON.stringify(data))}catch(e){}
+    location.hash='spadone/'+data.booking_no;}}},'Confirm booking');
+  form.replaceChildren(h('div',{class:'panel'},summary,h('label',{class:'f'},'Full name',f.name),h('label',{class:'f'},'Phone number',f.phone),h('label',{class:'f'},'Email (optional)',f.email),h('label',{class:'f'},'Notes',f.notes),
+    USER?'':h('p',{class:'muted',style:'font-size:14px;margin:0 0 12px'},h('a',{href:'#account'},'Sign in'),' to see and manage your bookings later.'),go,msg));
+  v.replaceChildren(h('a',{href:'#spa',class:'back'},'← All treatments'),h('h2',{class:'title',style:'margin-bottom:4px'},s.name),
+    h('p',{class:'muted',style:'margin-top:0'},mins(s.duration_min)+' · '+money(s.price)+(s.description?' · '+s.description:'')),
+    h('div',{class:'panel'},h('label',{class:'f',style:'max-width:320px'},'Therapist',thSel),h('div',{style:'font-size:14px;color:var(--ink-2);margin-bottom:8px'},'Choose a day'),dayBox,slotBox),form);
+}
+function viewSpaDone(no){
+  let b=null;try{b=JSON.parse(sessionStorage.getItem('rg-last-spa'))}catch(e){}
+  if(!b||b.booking_no!==no)b={booking_no:no};
+  $('view').replaceChildren(h('div',{class:'panel',style:'max-width:640px;margin:0 auto;text-align:center'},
+    h('img',{src:'assets/crown.png',alt:'',style:'width:84px;margin:0 auto 10px'}),h('h2',{class:'title',style:'margin-bottom:6px'},'You\'re booked!'),
+    h('p',{style:'margin:0 0 14px'},'Booking number ',h('b',null,no)),
+    b.service?h('div',{class:'note',style:'text-align:left;margin-bottom:14px'},h('b',null,b.service),h('br'),longWhen(b.starts_at)+(b.therapist?' with '+b.therapist:''),h('br'),money(b.price)+', paid at the spa'):'',
+    SPA&&SPA.note?h('p',null,SPA.note):'',SPA&&(SPA.address||SPA.phone)?h('p',{class:'muted'},[SPA.address,SPA.phone?'Phone '+SPA.phone:''].filter(Boolean).join(' · ')):'',
+    h('p',{class:'muted',style:'font-size:14px'},USER?'You can see or cancel this booking under Account.':'Need to change it? Call us and quote your booking number.'),
+    h('a',{href:'#spa',class:'btn',style:'display:inline-block;text-decoration:none;margin-top:8px'},'Back to the spa')));
+}
+
 // ---------- account ----------
 const STATUS={new:'Received',confirmed:'Confirmed',paid:'Paid',fulfilled:'Completed',cancelled:'Cancelled'};
 async function viewAccount(){
@@ -359,9 +437,11 @@ async function viewAccount(){
   const pn=h('input',{value:P.full_name||''}),pp=h('input',{type:'tel',value:P.phone||''}),pa=h('textarea',{value:P.address||''});
   const pd=h('input',{type:'checkbox',checked:!!P.wants_deals}),pr=h('input',{type:'checkbox',checked:!!P.wants_articles});
   const ordersBox=h('div',null,h('p',{class:'muted'},'Loading your orders…'));
+  const spaBox=h('div',null,h('p',{class:'muted'},'Loading your spa bookings…'));
   v.replaceChildren(h('h2',{class:'title'},'Hello'+(P.full_name?', '+P.full_name.split(' ')[0]:'')),
     h('div',{class:'two'},
-      h('div',{class:'panel'},h('div',{style:'font-weight:600;margin-bottom:12px'},'My orders'),ordersBox),
+      h('div',null,h('div',{class:'panel',style:'margin-bottom:24px'},h('div',{style:'font-weight:600;margin-bottom:12px'},'My spa bookings'),spaBox),
+        h('div',{class:'panel'},h('div',{style:'font-weight:600;margin-bottom:12px'},'My orders'),ordersBox)),
       h('div',{class:'panel'},h('div',{style:'font-weight:600;margin-bottom:12px'},'My details'),
         h('label',{class:'f'},'Full name',pn),h('label',{class:'f'},'Phone number',pp),h('label',{class:'f'},'Delivery address',pa),
         h('label',{style:'display:flex;gap:8px;font-size:15px;margin-bottom:8px'},pd,'Send me deals and new products'),
@@ -370,6 +450,7 @@ async function viewAccount(){
           const {error}=PROFILE?await sb.from('shop_profiles').update(row).eq('user_id',USER.id):await sb.from('shop_profiles').insert(row);
           if(error)return setMsg(error.message,true);await setUser(USER);setMsg('Saved.')}}},'Save details'),
         h('button',{class:'btn ghost full',style:'margin-top:10px',on:{click:async()=>{await sb.auth.signOut();await setUser(null);viewAccount()}}},'Sign out'),msg)));
+  loadMyBookings(spaBox);
   const {data,error}=await sb.from('shop_orders').select('order_no,created_at,status,delivery_method,delivery_fee,fee_confirmed,fee_to_rider,payment_method,shop_order_lines(qty,unit_price,item_name)').eq('customer_user_id',USER.id).order('created_at',{ascending:false});
   if(error){ordersBox.replaceChildren(h('p',{class:'muted'},'Could not load your orders.'));return}
   if(!data.length){ordersBox.replaceChildren(h('p',{class:'muted'},'No orders yet. ',h('a',{href:'#'},'Start shopping')));return}
@@ -379,6 +460,19 @@ async function viewAccount(){
       h('div',{style:'font-size:14px;margin-top:4px'},lines.map(l=>l.qty+' × '+(l.item_name||'Item')).join(', ')))}));
 }
 
+const SPASTATUS={booked:'Booked',confirmed:'Confirmed',completed:'Completed',cancelled:'Cancelled',no_show:'Missed'};
+async function loadMyBookings(box){
+  const {data,error}=await sb.from('spa_bookings').select('booking_no,service_name,starts_at,status,price').eq('customer_user_id',USER.id).order('starts_at',{ascending:false});
+  if(error){box.replaceChildren(h('p',{class:'muted'},'Could not load your bookings.'));return}
+  if(!data.length){box.replaceChildren(h('p',{class:'muted'},'No spa bookings yet. ',h('a',{href:'#spa'},'Book a treatment')));return}
+  const now=Date.now();
+  box.replaceChildren(...data.map(b=>{const m=h('div',{class:'msg err'});const canCancel=['booked','confirmed'].includes(b.status)&&Date.parse(b.starts_at)>now;
+    return h('div',{class:'order'},h('div',{style:'display:flex;justify-content:space-between;gap:8px'},h('b',null,b.service_name.replace(' (sample)','')),h('span',{class:'badge'},SPASTATUS[b.status]||b.status)),
+      h('div',{class:'muted',style:'font-size:14px'},longWhen(b.starts_at)+' · '+b.booking_no),
+      canCancel?h('button',{class:'btn ghost',style:'margin-top:8px;padding:6px 14px;font-size:14px',on:{click:async e=>{const btn=e.currentTarget;
+        if(!btn.dataset.arm){btn.dataset.arm=1;btn.textContent='Tap again to cancel';return}
+        const {error}=await sb.rpc('cancel_my_spa_booking',{p_booking_no:b.booking_no});if(error){m.textContent=error.message;return}loadMyBookings(box)}}},'Cancel booking'):'',m)}));
+}
 saveCart();load();
 })();
 </script>
