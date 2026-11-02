@@ -1,0 +1,22 @@
+name: Publish online shop
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/shop/**', '.github/workflows/publish-shop.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Copy apps/shop to the deploy-shop branch
+        run: |
+          git subtree split --prefix apps/shop -b deploy-shop
+          git push -f origin deploy-shop

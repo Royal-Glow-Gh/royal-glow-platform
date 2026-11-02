@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Royal Glow — Online shop</title>
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#111111">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f7f5f2; --surface:#fcfcfb; --surface-2:#f1eee9; --border:#e2ddd5;
+  --text:#1b1a18; --text-2:#55524c; --muted:#8a867e;
+  --accent:#9a6b00; --accent-ink:#fff; --gold:#d9a21b;
+  --series-1:#2a78d6; --grid:#e8e4dd;
+  --good:#1f7a3a; --bad:#b3261e;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --bg:#121211; --surface:#1a1a19; --surface-2:#232321; --border:#34332f;
+    --text:#f0efec; --text-2:#c3c2b7; --muted:#8f8c84;
+    --accent:#f0b429; --accent-ink:#1a1a19; --gold:#f0b429;
+    --series-1:#3987e5; --grid:#2c2b28;
+    --good:#5cc27a; --bad:#ef7a72;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+header{padding:20px 24px 0;max-width:1100px;margin:0 auto}
+h1{font-size:22px;margin:0;letter-spacing:.2px}
+h1 span{color:var(--accent)}
+.sub{color:var(--text-2);margin:4px 0 14px;font-size:14px}
+nav{display:flex;gap:4px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+nav button{background:none;border:0;padding:10px 14px;font:inherit;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+nav button.on{color:var(--text);border-bottom-color:var(--accent);font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:20px 24px 60px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.card h2{font-size:16px;margin:0 0 12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+label.f{display:flex;flex-direction:column;font-size:12px;color:var(--text-2);gap:4px}
+input,select,textarea{font:inherit;padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);min-width:0}
+textarea{width:100%;min-height:120px;font:12px/1.4 ui-monospace,Menlo,monospace}
+button.b{font:inherit;padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer}
+button.b:hover{border-color:var(--muted)}
+button.p{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px}
+button.x:hover{color:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:12px;color:var(--text-2);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--surface-2);color:var(--text-2);border:1px solid var(--border)}
+.pill.product{color:var(--accent);border-color:var(--accent)}
+.muted{color:var(--muted)} .small{font-size:12px}
+.tot{font-size:14px;margin-top:10px;color:var(--text-2)} .tot b{color:var(--text)}
+.tiles{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.tile{flex:1 1 160px;background:var(--surface-2);border-radius:8px;padding:10px 14px}
+.tile .k{font-size:12px;color:var(--text-2)} .tile .v{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.up{color:var(--bad)} .down{color:var(--good)}
+.chart{position:relative}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.12);display:none;white-space:nowrap}
+.tip b{font-size:14px;display:block}
+.banner{background:var(--surface-2);border-left:3px solid var(--gold);padding:8px 12px;border-radius:4px;font-size:13px;color:var(--text-2);margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.hidden{display:none}
+.applink{color:var(--accent);font-weight:600;text-decoration:none}
+.apps a{color:var(--text-2);font-weight:600;text-decoration:none;margin-right:12px}
+.apps a:hover{color:var(--text)}
+.apps a[aria-current]{color:var(--accent)}
+.pill.partner,.pill.wholesale{color:var(--accent);border-color:var(--accent)}
+.pill.goods{color:var(--gold);border-color:var(--gold)}
+.brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{height:44px;width:auto}
+.applabel{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);border-left:1px solid var(--border);padding-left:14px}
+#gate .applabel{border:0;padding:0}
+details summary{cursor:pointer;color:var(--text-2)}
+.msg{font-size:13px;margin-left:8px}
+.lnk{color:var(--accent)}
+</style>
+</head>
+<body>
+<!-- Supabase connection values live in config.js (same folder). -->
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<section id="gate" class="hidden" style="max-width:420px;margin:60px auto;padding:0 20px">
+  <div class="card">
+    <img src="assets/logo.png" alt="Royal Glow" class="logo" style="width:220px;height:auto;display:block;margin:4px 0 6px"><div class="applabel" style="margin-bottom:10px">Online shop</div>
+    <div id="gSetup" class="hidden small"><p>This page is not connected to Supabase yet.</p><p>Create <code>apps/production/config.js</code> (copy <code>config.example.js</code>) and paste in your Project URL and publishable key.</p></div>
+    <form id="gLogin" class="hidden">
+      <p class="small muted">Staff sign-in</p>
+      <label class="f" style="margin-bottom:10px">Email<input type="email" id="gEmail" autocomplete="username" required></label>
+      <label class="f" style="margin-bottom:14px">Password<input type="password" id="gPass" autocomplete="current-password" required></label>
+      <button class="b p" type="submit" id="gBtn">Sign in</button><span class="msg" id="gMsg"></span>
+      <p class="small" style="margin:14px 0 0"><a href="staff.html#reset" class="lnk">Forgot password?</a> · <a href="staff.html#signup" class="lnk">New staff? Create an account</a></p>
+    </form>
+    <div id="gNoStaff" class="hidden small"><p>Signed in as <b id="gWho"></b>. This account is waiting for an admin to approve it.</p><button class="b" id="gOut">Sign out</button></div>
+  </div>
+</section>
+
+<div id="app" class="hidden">
+<header>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+    <h1 class="brand"><img src="assets/logo.png" alt="Royal Glow" class="logo"><span class="applabel">Online shop</span></h1>
+    <div class="small muted"><span class="apps"><a href="index.html">Production</a><a href="inventory.html">Inventory</a><a href="sales.html">Sales</a><a href="shop-admin.html" aria-current="page">Online shop</a><a href="staff.html">Account</a></span> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
+  </div>
+  <p class="sub">Orders from the website, the products it shows, and its settings. <a id="shopLink" class="lnk" href="#" target="_blank" rel="noopener">Open the shop ↗</a></p>
+  <nav id="tabs">
+    <button data-v="orders" class="on">Orders <span id="newCount" class="pill hidden" style="margin-left:4px"></span></button>
+    <button data-v="products">Products</button>
+    <button data-v="settings">Settings</button>
+  </nav>
+</header>
+<main>
+  <div class="banner hidden" id="sampleBanner">The shop has no published products yet. Load shop sample data: publishes the two sample products, sets a delivery fee and pickup points, and places two sample orders. <button class="b" id="loadSample">Load shop sample data</button></div>
+  <div class="banner hidden" id="roBanner">Your role can view online orders but not manage them.</div>
+
+  <!-- ORDERS -->
+  <section id="v-orders">
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <label class="f">Show<select id="oStatus">
+          <option value="open">Open (new, confirmed, paid)</option><option value="new">New</option><option value="confirmed">Confirmed</option>
+          <option value="paid">Paid</option><option value="fulfilled">Fulfilled</option><option value="cancelled">Cancelled</option><option value="">All</option></select></label>
+      </div>
+      <div id="oList"></div>
+    </div>
+  </section>
+
+  <!-- PRODUCTS -->
+  <section id="v-products" class="hidden">
+    <div class="card">
+      <h2>Products on the website</h2>
+      <p class="small muted" style="margin-top:0">Only products and resale goods with a <b>retail price</b> (set it in Sales → Price list) can be shown. Photos: square JPG or PNG, under 2 MB.</p>
+      <div id="pList"></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="v-settings" class="hidden">
+    <div class="card">
+      <h2>Payment and delivery</h2>
+      <div class="row">
+        <label class="f">Delivery fee GH₵<input type="number" id="stFee" min="0" step="any" style="width:110px"></label>
+        <label class="f">MoMo number<input id="stMomo" size="14"></label>
+        <label class="f">MoMo account name<input id="stMomoName" size="20"></label>
+        <label class="f">WhatsApp number<input id="stWa" size="14"></label>
+        <button class="b p" id="stSave">Save</button><span class="msg" id="stMsg"></span>
+      </div>
+      <p class="small muted" style="margin:8px 0 0">Customers paying by MoMo see the number and name, and use their order number as the reference.</p>
+    </div>
+    <div class="card">
+      <h2>Locations</h2>
+      <p class="small muted" style="margin-top:0"><b>Ships online orders</b>: the website's stock comes from these locations (Factory if none ticked). <b>Pickup point</b>: customers can choose to collect here.</p>
+      <table><thead><tr><th>Location</th><th>Type</th><th>Ships online orders</th><th>Pickup point</th></tr></thead><tbody id="locList"></tbody></table>
+    </div>
+  </section>
+</main>
+</div>
+
+<script>
+(function(){
+const STATUS={new:'New',confirmed:'Confirmed',paid:'Paid',fulfilled:'Fulfilled',cancelled:'Cancelled'};
+const PAYM={momo:'Mobile money',cash:'Cash on delivery / pickup'};
+const SALEPAY={momo:'Mobile money',cash:'Cash',card:'Card',bank:'Bank transfer'};
+const money=v=>'GH₵ '+(Number(v)||0).toLocaleString('en-GH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const num=v=>(Number(v)||0).toLocaleString('en-GH',{maximumFractionDigits:3});
+const when=t=>new Date(t).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+const $=id=>document.getElementById(id);
+function h(tag,attrs,...kids){const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==='on')for(const ev in attrs.on)e.addEventListener(ev,attrs.on[ev]);else if(k==='class')e.className=attrs[k];else if(k in e&&k!=='list')e[k]=attrs[k];else e.setAttribute(k,attrs[k]);}for(const c of kids.flat()){if(c==null||c===false)continue;e.appendChild(typeof c==='object'?c:document.createTextNode(String(c)));}return e;}
+
+const CFG=window.RG_CONFIG||{};
+const cfgOk=!!CFG.SUPABASE_URL&&!/PASTE_/.test(CFG.SUPABASE_URL+CFG.SUPABASE_KEY);
+const sb=cfgOk&&window.supabase?window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_KEY):null;
+const imgUrl=p=>p?CFG.SUPABASE_URL+'/storage/v1/object/public/product-images/'+encodeURIComponent(p):'';
+$('shopLink').href=CFG.SHOP_URL||'https://shop.royalglowgh.com';
+let ME=null;
+const canWrite=()=>ME&&ME.roles.some(r=>['admin','sales'].includes(r));
+const status=t=>{$('status').textContent=t};
+function friendly(err){
+  if(!err)return 'Unknown error';
+  if(err.code==='42501'||/row-level security|not allowed/i.test(err.message||''))return 'Your role is not allowed to do this.';
+  return err.message||String(err);
+}
+async function q(promise){const r=await promise;if(r.error)throw r.error;return r.data;}
+
+let D={orders:[],items:[],locs:[],settings:{},cost:{}};
+async function loadAll(){
+  status('Loading…');
+  const [orders,items,locs,settings]=await Promise.all([
+    q(sb.from('shop_orders').select('*, shop_order_lines(*)').order('created_at',{ascending:false})),
+    q(sb.from('items').select('id,name,kind,unit,retail_price,shop_visible,shop_description,image_path').order('name')),
+    q(sb.from('locations').select('*').order('created_at')),
+    q(sb.from('shop_settings').select('*').maybeSingle())
+  ]);
+  D.orders=orders;D.items=items;D.locs=locs;D.settings=settings||{};
+  const n=orders.filter(o=>o.status==='new').length;
+  $('newCount').textContent=n;$('newCount').classList.toggle('hidden',!n);
+  status('Connected');
+}
+const item=id=>D.items.find(i=>i.id===id);
+const loc=id=>D.locs.find(l=>l.id===id);
+const orderTotal=o=>(o.shop_order_lines||[]).reduce((s,l)=>s+Number(l.qty)*Number(l.unit_price),0)+Number(o.delivery_fee||0);
+const shipLoc=()=>(D.locs.find(l=>l.fulfils_online&&l.active!==false)||D.locs.find(l=>l.kind==='factory')||{}).id;
+
+function showGate(which,email){
+  $('app').classList.add('hidden');$('gate').classList.remove('hidden');
+  ['gSetup','gLogin','gNoStaff'].forEach(id=>$(id).classList.add('hidden'));
+  $({setup:'gSetup',login:'gLogin',nostaff:'gNoStaff'}[which]).classList.remove('hidden');
+  if(email)$('gWho').textContent=email;
+}
+async function boot(){
+  if(!sb)return showGate('setup');
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)return showGate('login');
+  const {data:me,error}=await sb.from('staff').select('full_name,roles').eq('user_id',session.user.id).maybeSingle();
+  if(error||!me)return showGate('nostaff',session.user.email);
+  ME={...me,email:session.user.email};
+  $('whoami').textContent=ME.full_name+' ('+ME.roles.join(', ')+')';
+  try{await loadAll()}catch(e){status('Error: '+friendly(e))}
+  $('gate').classList.add('hidden');$('app').classList.remove('hidden');
+  document.querySelectorAll('#stSave,#loadSample').forEach(b=>b.disabled=!canWrite());
+  $('roBanner').classList.toggle('hidden',canWrite());
+  show(location.hash.slice(1)||'orders');
+}
+$('gLogin').addEventListener('submit',async e=>{
+  e.preventDefault();$('gBtn').disabled=true;$('gMsg').textContent='Signing in…';
+  const {error}=await sb.auth.signInWithPassword({email:$('gEmail').value.trim(),password:$('gPass').value});
+  $('gBtn').disabled=false;if(error){$('gMsg').textContent=error.message;return}
+  $('gMsg').textContent='';$('gPass').value='';boot();
+});
+async function signOut(e){if(e)e.preventDefault();await sb.auth.signOut();ME=null;boot();}
+$('gOut').addEventListener('click',signOut);$('signOut').addEventListener('click',signOut);
+
+const views=['orders','products','settings'];
+function show(v){if(!views.includes(v))v='orders';views.forEach(x=>$('v-'+x).classList.toggle('hidden',x!==v));document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render(v);}
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.v){location.hash=b.dataset.v;show(b.dataset.v)}});
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+function render(v){
+  $('sampleBanner').classList.toggle('hidden',!(canWrite()&&!D.items.some(i=>i.shop_visible)&&!D.orders.length));
+  ({orders:renderOrders,products:renderProducts,settings:renderSettings})[v]();
+}
+const refresh=async v=>{await loadAll();render(v)};
+
+// ---------- ORDERS ----------
+async function setStatus(o,st){await q(sb.from('shop_orders').update({status:st,updated_at:new Date().toISOString()}).eq('id',o.id));await refresh('orders');}
+function renderOrders(){
+  const f=$('oStatus').value;
+  const list=D.orders.filter(o=>f==='open'?['new','confirmed','paid'].includes(o.status):(!f||o.status===f));
+  const box=$('oList');box.replaceChildren();
+  if(!list.length){box.appendChild(h('p',{class:'muted small'},'No orders here.'));return}
+  list.forEach(o=>{
+    const msg=h('span',{class:'msg'});const can=canWrite();
+    const btn=(label,fn,primary)=>h('button',{class:'b'+(primary?' p':''),style:'padding:4px 12px;margin-right:6px',disabled:!can,on:{click:async e=>{e.currentTarget.disabled=true;try{await fn()}catch(err){msg.textContent=friendly(err);e.currentTarget.disabled=false}}}},label);
+    // fulfil controls
+    const fLoc=h('select',null,...D.locs.filter(l=>l.active!==false).map(l=>h('option',{value:l.id,selected:l.id===(o.pickup_location_id||shipLoc())},l.name)));
+    const fPay=h('select',null,...Object.entries(SALEPAY).map(([k,v])=>h('option',{value:k,selected:k===o.payment_method},v)));
+    const actions=[];
+    if(o.status==='new')actions.push(btn('Confirm',()=>setStatus(o,'confirmed'),true));
+    if(['new','confirmed'].includes(o.status))actions.push(btn('Mark paid',()=>setStatus(o,'paid')));
+    if(['new','confirmed','paid'].includes(o.status)){
+      actions.push(h('span',{style:'white-space:nowrap;margin-right:6px'},' Fulfil from ',fLoc,' paid by ',fPay,' '),
+        btn('Fulfil',async()=>{await q(sb.rpc('fulfil_order',{p_order:o.id,p_location:fLoc.value,p_payment:fPay.value}));await refresh('orders')},o.status==='paid'),
+        btn('Cancel order',()=>setStatus(o,'cancelled')));
+    }
+    const lines=o.shop_order_lines||[];
+    box.appendChild(h('div',{class:'card',style:'margin-bottom:12px;background:var(--surface-2)'},
+      h('div',{style:'display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap'},
+        h('div',null,h('b',{style:'font-size:16px'},o.order_no),' ',h('span',{class:'pill'+(o.status==='new'?' partner':'')},STATUS[o.status]),h('span',{class:'small muted'},'  '+when(o.created_at))),
+        h('div',null,h('b',{style:'font-size:16px'},money(orderTotal(o))),h('span',{class:'small muted'},' · '+PAYM[o.payment_method]))),
+      h('div',{class:'small',style:'margin:6px 0'},h('b',null,o.full_name),' · ',o.phone,o.email?' · '+o.email:'',
+        h('br'),o.delivery_method==='delivery'?'Delivery to: '+(o.address||'')+' (fee '+money(o.delivery_fee)+')':'Pickup at: '+((loc(o.pickup_location_id)||{}).name||'?'),
+        o.notes?[h('br'),'Note: '+o.notes]:''),
+      h('table',{class:'small'},h('tbody',null,lines.map(l=>{const it=item(l.item_id)||{};return h('tr',null,h('td',null,it.name||'?'),h('td',{class:'n'},num(l.qty)+' × '+money(l.unit_price)),h('td',{class:'n'},money(Number(l.qty)*Number(l.unit_price))))}))),
+      actions.length?h('div',{style:'margin-top:10px'},actions,msg):(o.sale_id?h('div',{class:'small muted',style:'margin-top:8px'},'Recorded as a sale (receipt '+o.order_no+').'):'')));
+  });
+}
+$('oStatus').addEventListener('change',renderOrders);
+
+// ---------- PRODUCTS ----------
+function renderProducts(){
+  const box=$('pList');box.replaceChildren();const can=canWrite();
+  const list=D.items.filter(i=>i.kind==='product'||i.kind==='goods');
+  if(!list.length){box.appendChild(h('p',{class:'muted small'},'No products or resale goods yet.'));return}
+  list.forEach(it=>{
+    const msg=h('span',{class:'msg'});
+    const vis=h('input',{type:'checkbox',checked:!!it.shop_visible,disabled:!can||!(Number(it.retail_price)>0)});
+    const desc=h('textarea',{value:it.shop_description||'',placeholder:'Short description shown on the website',disabled:!can,style:'min-height:60px;font:inherit;font-size:14px'});
+    const img=h('div',{style:'width:96px;height:96px;border-radius:8px;background:var(--surface-2);background-size:cover;background-position:center;flex:none;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px'},it.image_path?'':'No photo');
+    if(it.image_path)img.style.backgroundImage='url("'+imgUrl(it.image_path)+'")';
+    const file=h('input',{type:'file',accept:'image/jpeg,image/png,image/webp',disabled:!can,style:'font-size:12px;max-width:200px'});
+    const save=async(path)=>{try{await q(sb.rpc('set_shop_product',{p_item:it.id,p_visible:vis.checked,p_description:desc.value,p_image_path:path!==undefined?path:it.image_path}));
+      it.shop_visible=vis.checked;it.shop_description=desc.value;if(path!==undefined)it.image_path=path;msg.textContent='Saved';setTimeout(()=>msg.textContent='',2000);render('products')}catch(e){msg.textContent=friendly(e)}};
+    vis.addEventListener('change',()=>save());desc.addEventListener('change',()=>save());
+    file.addEventListener('change',async()=>{const f=file.files[0];if(!f)return;
+      if(f.size>2*1024*1024){msg.textContent='Photo is over 2 MB. Please use a smaller one.';return}
+      msg.textContent='Uploading…';
+      const ext=(f.name.split('.').pop()||'jpg').toLowerCase();const path=it.id+'-'+Date.now()+'.'+ext;
+      const {error}=await sb.storage.from('product-images').upload(path,f,{upsert:true,contentType:f.type});
+      if(error){msg.textContent=friendly(error);return}
+      if(it.image_path)sb.storage.from('product-images').remove([it.image_path]);
+      await save(path);});
+    box.appendChild(h('div',{style:'display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start'},
+      img,
+      h('div',{style:'flex:1;display:flex;flex-direction:column;gap:6px'},
+        h('div',null,h('b',null,it.name),h('span',{class:'small muted'},' · '+(Number(it.retail_price)>0?money(it.retail_price)+' per '+it.unit:'no retail price yet'))),
+        h('label',{class:'small',style:'display:flex;gap:6px;align-items:center'},vis,'Show on website'),
+        desc,h('div',{class:'small'},'Photo: ',file,msg))));
+  });
+}
+
+// ---------- SETTINGS ----------
+function renderSettings(){
+  const s=D.settings;$('stFee').value=s.delivery_fee??0;$('stMomo').value=s.momo_number||'';$('stMomoName').value=s.momo_name||'';$('stWa').value=s.whatsapp||'';
+  const can=canWrite();const tb=$('locList');tb.replaceChildren();
+  D.locs.filter(l=>l.active!==false).forEach(l=>{
+    const tog=(key)=>h('input',{type:'checkbox',checked:!!l[key],disabled:!can,on:{change:async e=>{try{await q(sb.from('locations').update({[key]:e.target.checked}).eq('id',l.id));l[key]=e.target.checked;status('Saved')}catch(err){e.target.checked=!e.target.checked;status('Error: '+friendly(err))}}}});
+    tb.appendChild(h('tr',null,h('td',null,l.name),h('td',null,l.kind),h('td',null,tog('fulfils_online')),h('td',null,tog('pickup_point'))));
+  });
+}
+$('stSave').addEventListener('click',async()=>{
+  try{await q(sb.from('shop_settings').update({delivery_fee:+$('stFee').value||0,momo_number:$('stMomo').value.trim()||null,momo_name:$('stMomoName').value.trim()||null,whatsapp:$('stWa').value.trim()||null,updated_at:new Date().toISOString()}).eq('id',1));
+    await loadAll();$('stMsg').textContent='Saved.';setTimeout(()=>$('stMsg').textContent='',2500)}catch(e){$('stMsg').textContent=friendly(e)}
+});
+
+// ---------- SAMPLE ----------
+$('loadSample').addEventListener('click',async()=>{
+  const btn=$('loadSample');btn.disabled=true;btn.textContent='Loading sample…';
+  try{
+    const byName=n=>D.items.find(i=>i.name===n);
+    const bb=byName('Glow Body Butter 200 ml'),cor=byName('Carrot Oil 100 ml (retail)');
+    if(!bb||!cor||!(Number(bb.retail_price)>0))throw new Error('Load the production, inventory and sales sample data first.');
+    await q(sb.rpc('set_shop_product',{p_item:bb.id,p_visible:true,p_description:'Rich whipped body butter with unrefined shea, cocoa butter and our own carrot oil. Deep moisture for a natural glow. 200 ml jar.',p_image_path:null}));
+    await q(sb.rpc('set_shop_product',{p_item:cor.id,p_visible:true,p_description:'Pure carrot oil, cold-infused in-house. Light, fast-absorbing and rich in natural beta-carotene. 100 ml dropper bottle.',p_image_path:null}));
+    await q(sb.from('shop_settings').update({delivery_fee:25,momo_number:'024 000 0000',momo_name:'Royal Glow Co. Ltd (sample)',whatsapp:'024 000 0000'}).eq('id',1));
+    const factory=D.locs.find(l=>l.kind==='factory');
+    if(factory)await q(sb.from('locations').update({fulfils_online:true}).eq('id',factory.id));
+    for(const l of D.locs.filter(l=>l.kind==='shop'))await q(sb.from('locations').update({pickup_point:true}).eq('id',l.id));
+    const shop=D.locs.find(l=>l.kind==='shop');
+    await q(sb.rpc('place_order',{p_items:[{item_id:bb.id,qty:2},{item_id:cor.id,qty:1}],p_name:'Akosua Boateng (sample)',p_phone:'020 000 0011',p_email:'',p_delivery_method:'delivery',p_address:'Ahodwo, Kumasi, near the roundabout',p_pickup_location:null,p_payment_method:'momo',p_notes:'Please call on arrival'}));
+    if(shop)await q(sb.rpc('place_order',{p_items:[{item_id:bb.id,qty:1}],p_name:'Yaw Asante (sample)',p_phone:'020 000 0022',p_email:'',p_delivery_method:'pickup',p_address:null,p_pickup_location:shop.id,p_payment_method:'cash',p_notes:null}));
+    await refresh('orders');
+  }catch(e){status('Error: '+friendly(e))}
+  btn.disabled=!canWrite();btn.textContent='Load shop sample data';
+});
+
+boot();
+})();
+</script>
+</body>
+</html>

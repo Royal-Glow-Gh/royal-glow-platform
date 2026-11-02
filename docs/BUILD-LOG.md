@@ -6,6 +6,7 @@
   - apps/production/inventory.html: inventory (stock on hand, purchases, transfers, adjustments, movements, setup)
   - apps/production/sales.html: sales (new sale, history, customers & credit, returns, price list, reports)
   - apps/production/staff.html: staff & account (sign-up, forgot password, change password; admins approve staff and set roles)
+  - apps/production/shop-admin.html: online shop management (orders, products shown on the website with photos, delivery/MoMo settings, ship-from and pickup locations)
   - apps/production/config.js: Supabase URL + publishable key (never the secret key). config.example.js is the template.
   - apps/production/assets/: logo and favicons
   - supabase/migrations/001_production.sql: staff, items, batches, batch_inputs; views batch_costs, item_current_cost
@@ -13,13 +14,16 @@
   - supabase/migrations/003_sales.sql: retail/wholesale prices on items, customers, sales, sale_lines, customer_payments, sale_returns; stock_ledger includes sales and restocked returns; views sale_totals, customer_balances
   - supabase/migrations/004_staff.sql: admin-only functions list_unassigned_users, staff_directory; trigger keeping at least one admin
   - supabase/migrations/005_multi_roles.sql: staff.roles (a list) replaces staff.role, so one person can hold several roles
+  - apps/shop/: the public storefront (index.html, assets/, config.js with the same Supabase values)
+  - supabase/migrations/006_shop.sql: shop fields on items/locations, shop_settings, shop_profiles (auto-created for customer sign-ups), shop_orders + lines, public functions shop_catalog/shop_info/place_order, staff functions set_shop_product/fulfil_order, product-images storage bucket
   - .github/workflows/publish-production.yml: on push to main, copies apps/production to the deploy-production branch
+  - .github/workflows/publish-shop.yml: on push to main, copies apps/shop to the deploy-shop branch
 - Supabase project: royal-glow (North EU, Stockholm)
-- Hosting: Hostinger deploys branch deploy-production to production.royalglowgh.com (/inventory.html, /sales.html, /staff.html)
+- Hosting: Hostinger deploys branch deploy-production to production.royalglowgh.com (/inventory.html, /sales.html, /shop-admin.html, /staff.html) and branch deploy-shop to shop.royalglowgh.com
 
 ## Supabase Auth settings (Authentication -> ...)
 - Sign In / Providers: "Allow new users to sign up" ON; email confirmation ON.
-- URL Configuration: Site URL https://production.royalglowgh.com ; Redirect URLs include https://production.royalglowgh.com/**
+- URL Configuration: Site URL https://production.royalglowgh.com ; Redirect URLs include https://production.royalglowgh.com/** and https://shop.royalglowgh.com/**
 - Supabase's built-in email sender is limited and meant for testing. Before go-live, set up custom SMTP (e.g. a Royal Glow mailbox on Hostinger) so confirmation and reset emails are reliable and come from Royal Glow.
 
 ## How a change goes live
@@ -44,10 +48,14 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - Stockists / wholesalers / distributors buy at wholesale prices (customer price tier).
 - Payment methods: cash, mobile money, card, bank transfer, credit.
 - Sale lines store the unit cost at the time of sale, so margins never change retroactively.
+- Online shop: prices and stock are checked in the database (place_order), never trusted from the browser. Orders not yet fulfilled hold their stock. Fulfilling an order records it as a sale (receipt = order number). Delivery fees are on the order, not in sales revenue.
+- Online payment phase 1: MoMo to the Royal Glow number (order number as reference) or cash on delivery/pickup; staff mark orders paid. Phase 2: Paystack.
+- Customer sign-ups (account_type 'customer') get a shop profile and never appear in the staff approval list.
 
 ## Data status
 - Decision: the database holds SAMPLE data while the apps are being built. Clear all sample data once the build is finished, before entering real data.
 - Clearing sample data (extend this list as new tables are added):
+   delete from public.shop_orders;        -- also removes shop_order_lines
    delete from public.sale_returns;
    delete from public.customer_payments;
    delete from public.sales;              -- also removes sale_lines
@@ -59,6 +67,7 @@ Remove access or change roles on the same page (tick/untick; at least one role m
    delete from public.batches;            -- also removes batch_inputs
    delete from public.items;
    delete from public.locations where kind <> 'factory';
+   update public.shop_settings set delivery_fee = 0, momo_number = null, momo_name = null, whatsapp = null;
 
 ## Milestones
 - [x] Production batch costing prototype
@@ -71,7 +80,8 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - [x] Staff management: self sign-up, admin approval and roles, forgot/change password (004)
 - [x] Multiple roles per person (005)
 - [ ] Custom SMTP for auth emails (before go-live)
-- [ ] Storefront and customer accounts
+- [x] Online storefront, customer accounts, online orders (006)
+- [ ] Paystack online payments (MoMo + card)
 - [ ] Spa bookings
 - [ ] Blog
 - [ ] Decide how distributors fit in (e.g. pickup points)

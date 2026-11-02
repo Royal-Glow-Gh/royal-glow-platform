@@ -3,5 +3,6 @@
 // Use the Project URL and the PUBLISHABLE key. NEVER the secret / service_role key.
 window.RG_CONFIG = {
   SUPABASE_URL: 'https://oluzgkanxwddonxampli.supabase.co',
-  SUPABASE_KEY: 'sb_publishable_WldzEgVU-GsQhxbObxN66A_GDI3C_sZ'
+  SUPABASE_KEY: 'PASTE_PUBLISHABLE_KEY_HERE',
+  SHOP_URL: 'https://shop.royalglowgh.com'
 };
