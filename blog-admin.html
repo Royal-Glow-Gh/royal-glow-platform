@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Royal Glow — Blog</title>
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#111111">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f7f5f2; --surface:#fcfcfb; --surface-2:#f1eee9; --border:#e2ddd5;
+  --text:#1b1a18; --text-2:#55524c; --muted:#8a867e;
+  --accent:#9a6b00; --accent-ink:#fff; --gold:#d9a21b;
+  --series-1:#2a78d6; --grid:#e8e4dd;
+  --good:#1f7a3a; --bad:#b3261e;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --bg:#121211; --surface:#1a1a19; --surface-2:#232321; --border:#34332f;
+    --text:#f0efec; --text-2:#c3c2b7; --muted:#8f8c84;
+    --accent:#f0b429; --accent-ink:#1a1a19; --gold:#f0b429;
+    --series-1:#3987e5; --grid:#2c2b28;
+    --good:#5cc27a; --bad:#ef7a72;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+header{padding:20px 24px 0;max-width:1100px;margin:0 auto}
+h1{font-size:22px;margin:0;letter-spacing:.2px}
+h1 span{color:var(--accent)}
+.sub{color:var(--text-2);margin:4px 0 14px;font-size:14px}
+nav{display:flex;gap:4px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+nav button{background:none;border:0;padding:10px 14px;font:inherit;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+nav button.on{color:var(--text);border-bottom-color:var(--accent);font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:20px 24px 60px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.card h2{font-size:16px;margin:0 0 12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+label.f{display:flex;flex-direction:column;font-size:12px;color:var(--text-2);gap:4px}
+input,select,textarea{font:inherit;padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);min-width:0}
+textarea{width:100%;min-height:120px;font:12px/1.4 ui-monospace,Menlo,monospace}
+button.b{font:inherit;padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer}
+button.b:hover{border-color:var(--muted)}
+button.p{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px}
+button.x:hover{color:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:12px;color:var(--text-2);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--surface-2);color:var(--text-2);border:1px solid var(--border)}
+.pill.product{color:var(--accent);border-color:var(--accent)}
+.muted{color:var(--muted)} .small{font-size:12px}
+.tot{font-size:14px;margin-top:10px;color:var(--text-2)} .tot b{color:var(--text)}
+.tiles{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.tile{flex:1 1 160px;background:var(--surface-2);border-radius:8px;padding:10px 14px}
+.tile .k{font-size:12px;color:var(--text-2)} .tile .v{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.up{color:var(--bad)} .down{color:var(--good)}
+.chart{position:relative}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.12);display:none;white-space:nowrap}
+.tip b{font-size:14px;display:block}
+.banner{background:var(--surface-2);border-left:3px solid var(--gold);padding:8px 12px;border-radius:4px;font-size:13px;color:var(--text-2);margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.hidden{display:none}
+.applink{color:var(--accent);font-weight:600;text-decoration:none}
+.apps a{color:var(--text-2);font-weight:600;text-decoration:none;margin-right:12px}
+.apps a:hover{color:var(--text)}
+.apps a[aria-current]{color:var(--accent)}
+.pill.partner,.pill.wholesale{color:var(--accent);border-color:var(--accent)}
+.pill.goods{color:var(--gold);border-color:var(--gold)}
+.brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{height:44px;width:auto}
+.applabel{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);border-left:1px solid var(--border);padding-left:14px}
+#gate .applabel{border:0;padding:0}
+details summary{cursor:pointer;color:var(--text-2)}
+.msg{font-size:13px;margin-left:8px}
+.lnk{color:var(--accent)}
+</style>
+</head>
+<body>
+<!-- Supabase connection values live in config.js (same folder). -->
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+.ed{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:900px){.ed{grid-template-columns:1fr}}
+.ed textarea{width:100%;min-height:420px;font:14px/1.55 ui-monospace,Menlo,Consolas,monospace}
+.prose{border:1px solid var(--border);border-radius:8px;padding:6px 18px;background:var(--surface);min-height:420px;overflow:auto;font-size:15px;line-height:1.6}
+.prose img{max-width:100%;border-radius:8px}.prose figure{margin:14px 0}.prose figcaption{font-size:12px;color:var(--muted)}
+.prose blockquote{border-left:3px solid var(--gold);margin:12px 0;padding:2px 12px;color:var(--text-2)}
+.cover{width:220px;aspect-ratio:16/9;border-radius:8px;background:var(--surface-2) center/cover;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px}
+.help{font-size:12px;color:var(--muted);margin:6px 0 0}
+.help code{background:var(--surface-2);padding:0 4px;border-radius:4px}
+</style>
+
+<section id="gate" class="hidden" style="max-width:420px;margin:60px auto;padding:0 20px">
+  <div class="card">
+    <img src="assets/logo.png" alt="Royal Glow" class="logo" style="width:220px;height:auto;display:block;margin:4px 0 6px"><div class="applabel" style="margin-bottom:10px">Blog</div>
+    <div id="gSetup" class="hidden small"><p>This page is not connected to Supabase yet.</p><p>Create <code>apps/production/config.js</code> (copy <code>config.example.js</code>) and paste in your Project URL and publishable key.</p></div>
+    <form id="gLogin" class="hidden">
+      <p class="small muted">Staff sign-in</p>
+      <label class="f" style="margin-bottom:10px">Email<input type="email" id="gEmail" autocomplete="username" required></label>
+      <label class="f" style="margin-bottom:14px">Password<input type="password" id="gPass" autocomplete="current-password" required></label>
+      <button class="b p" type="submit" id="gBtn">Sign in</button><span class="msg" id="gMsg"></span>
+      <p class="small" style="margin:14px 0 0"><a href="staff.html#reset" class="lnk">Forgot password?</a> · <a href="staff.html#signup" class="lnk">New staff? Create an account</a></p>
+    </form>
+    <div id="gNoStaff" class="hidden small"><p>Signed in as <b id="gWho"></b>. This account is waiting for an admin to approve it.</p><button class="b" id="gOut">Sign out</button></div>
+  </div>
+</section>
+
+<div id="app" class="hidden">
+<header>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+    <h1 class="brand"><img src="assets/logo.png" alt="Royal Glow" class="logo"><span class="applabel">Blog</span></h1>
+    <div class="small muted"><span class="apps"><a href="index.html">Production</a><a href="inventory.html">Inventory</a><a href="sales.html">Sales</a><a href="shop-admin.html">Online shop</a><a href="spa.html">Spa</a><a href="blog-admin.html" aria-current="page">Blog</a><a href="accounts.html">Accounts</a><a href="staff.html">Account</a></span> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
+  </div>
+  <p class="sub">Write and publish articles for the Royal Glow website, and reach the people who asked to hear about them. <a id="blogLink" class="lnk" href="#" target="_blank" rel="noopener">Open the blog ↗</a></p>
+  <nav id="tabs">
+    <button data-v="posts" class="on">Articles</button>
+    <button data-v="edit">Editor</button>
+    <button data-v="subs">Subscribers</button>
+  </nav>
+</header>
+<main>
+  <div class="banner hidden" id="sampleBanner">No articles yet. Load three sample articles to see how the blog looks. <button class="b" id="loadSample">Load sample articles</button></div>
+  <div class="banner hidden" id="roBanner">Your role can read drafts but not write or publish articles. Ask an admin for the Blog role.</div>
+
+  <section id="v-posts">
+    <div class="card">
+      <div class="row" style="margin-bottom:12px;justify-content:space-between"><h2 style="margin:0">Articles</h2><button class="b p" id="newPost">New article</button></div>
+      <table><thead><tr><th>Title</th><th>Category</th><th>Status</th><th>Published</th><th>Updated</th><th></th></tr></thead><tbody id="pList"></tbody></table>
+    </div>
+  </section>
+
+  <section id="v-edit" class="hidden">
+    <div class="card">
+      <div class="row">
+        <label class="f" style="flex:1;min-width:260px">Title<input id="eTitle" style="font-size:18px"></label>
+        <label class="f">Category<input id="eCat" list="cats" size="14"></label><datalist id="cats"></datalist>
+        <label class="f">Author<input id="eAuthor" size="16"></label>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label class="f" style="flex:1;min-width:260px">Web address<input id="eSlug" placeholder="carrot-oil-guide"></label>
+        <span class="small muted" id="eUrl" style="padding-bottom:8px"></span>
+      </div>
+      <label class="f" style="margin-top:10px">Summary (one or two sentences; shown in the article list and when shared)<textarea id="eExcerpt" style="min-height:56px;width:100%"></textarea></label>
+      <div class="row" style="margin-top:10px;align-items:center">
+        <div class="cover" id="eCover">No cover photo</div>
+        <div><label class="f">Cover photo (wide, under 2 MB)<input type="file" id="eCoverFile" accept="image/jpeg,image/png,image/webp"></label>
+          <button class="b" id="eCoverDel" style="font-size:13px">Remove cover</button></div>
+      </div>
+      <div class="ed" style="margin-top:14px">
+        <div><div class="small muted" style="margin-bottom:4px">Article</div><textarea id="eBody" placeholder="Write here…"></textarea>
+          <p class="help"><code># Heading</code> <code>## Subheading</code> <code>**bold**</code> <code>*italic*</code> <code>- list</code> <code>1. list</code> <code>&gt; quote</code> <code>[words](https://link)</code>. Leave an empty line between paragraphs.</p>
+          <div class="row" style="margin-top:8px"><label class="f">Add a photo into the article<input type="file" id="eImg" accept="image/jpeg,image/png,image/webp"></label></div></div>
+        <div><div class="small muted" style="margin-bottom:4px">Preview</div><div class="prose" id="ePrev"></div></div>
+      </div>
+      <div class="row" style="margin-top:14px;align-items:center">
+        <button class="b" id="eSave">Save draft</button>
+        <button class="b p" id="ePub">Publish</button>
+        <button class="b" id="eAnn">Copy announcement</button>
+        <button class="b" id="eDel" style="margin-left:auto">Delete article</button>
+        <span class="msg" id="eMsg"></span>
+      </div>
+      <p class="small muted" id="eState" style="margin:8px 0 0"></p>
+    </div>
+  </section>
+
+  <section id="v-subs" class="hidden">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0" id="sCount">Subscribers</h2>
+        <div><button class="b" id="sCopy">Copy all emails</button> <button class="b" id="sCsv">Copy as CSV</button> <span class="msg" id="sMsg"></span></div></div>
+      <p class="small muted">People who signed up on the blog, plus customers who ticked "Send me new skincare articles" on their account. Paste the emails into your email tool (as BCC, or into a mailing list), or use <b>Copy announcement</b> in the editor for WhatsApp.</p>
+      <table><thead><tr><th>Email</th><th>Name</th><th>How they joined</th><th>Since</th><th></th></tr></thead><tbody id="sList"></tbody></table>
+    </div>
+  </section>
+</main>
+</div>
+
+<script>
+// Small, safe Markdown: everything is escaped first, then a few marks are turned into HTML.
+// # Heading, ## Subheading, **bold**, *italic*, [link](https://…), ![photo](https://…), - lists, 1. lists, > quotes
+function md(src){
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const inline=s=>esc(s)
+    .replace(/!\[([^\]]*)\]\((https:\/\/[^\s)]+)\)/g,'<img alt="$1" src="$2" loading="lazy">')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]*|#[^\s)]*|[a-z0-9.-]+\.html[^\s)]*)\)/gi,'<a href="$2">$1</a>')
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/(^|[^*])\*([^*\s][^*]*)\*/g,'$1<em>$2</em>');
+  const out=[];let para=[],list=null;
+  const flushP=()=>{if(para.length){out.push('<p>'+para.map(inline).join('<br>')+'</p>');para=[]}};
+  const flushL=()=>{if(list){out.push('<'+list.t+'>'+list.items.map(i=>'<li>'+inline(i)+'</li>').join('')+'</'+list.t+'>');list=null}};
+  for(const raw of String(src||'').replace(/\r/g,'').split('\n')){
+    const line=raw.trimEnd();let m;
+    if(!line.trim()){flushP();flushL();continue}
+    if((m=line.match(/^(#{1,3})\s+(.*)$/))){flushP();flushL();const n=m[1].length+1;out.push('<h'+n+'>'+inline(m[2])+'</h'+n+'>');continue}
+    if((m=line.match(/^\s*[-*]\s+(.*)$/))){flushP();if(!list||list.t!=='ul'){flushL();list={t:'ul',items:[]}}list.items.push(m[1]);continue}
+    if((m=line.match(/^\s*\d+[.)]\s+(.*)$/))){flushP();if(!list||list.t!=='ol'){flushL();list={t:'ol',items:[]}}list.items.push(m[1]);continue}
+    if((m=line.match(/^>\s?(.*)$/))){flushP();flushL();out.push('<blockquote>'+inline(m[1])+'</blockquote>');continue}
+    if((m=line.match(/^!\[([^\]]*)\]\((https:\/\/[^\s)]+)\)$/))){flushP();flushL();out.push('<figure>'+inline(line)+(m[1]?'<figcaption>'+esc(m[1])+'</figcaption>':'')+'</figure>');continue}
+    flushL();para.push(line);
+  }
+  flushP();flushL();return out.join('\n');
+}
+
+(function(){
+const $=id=>document.getElementById(id);
+function h(tag,attrs,...kids){const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==='on')for(const ev in attrs.on)e.addEventListener(ev,attrs.on[ev]);else if(k==='class')e.className=attrs[k];else if(k==='style')e.setAttribute('style',attrs[k]);else if(k in e&&k!=='list')e[k]=attrs[k];else e.setAttribute(k,attrs[k]);}for(const c of kids.flat()){if(c==null||c===false)continue;e.appendChild(typeof c==='object'?c:document.createTextNode(String(c)));}return e;}
+const dt=t=>t?new Date(t).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—';
+const slugify=s=>s.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,80);
+
+const CFG=window.RG_CONFIG||{};
+const cfgOk=!!CFG.SUPABASE_URL&&!/PASTE_/.test(CFG.SUPABASE_URL+CFG.SUPABASE_KEY);
+const sb=cfgOk&&window.supabase?window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_KEY):null;
+// Articles are published on the main website, rebuilt automatically every 30 minutes.
+const SITE=(CFG.SITE_URL||'https://royalglowgh.com').replace(/\/$/,'');
+const postUrl=slug=>SITE+'/blog/'+slug+'/';
+const imgUrl=p=>p?CFG.SUPABASE_URL+'/storage/v1/object/public/blog-images/'+p.split('/').map(encodeURIComponent).join('/'):'';
+$('blogLink').href=SITE+'/blog/';
+let ME=null;
+const canWrite=()=>ME&&ME.roles.some(r=>['admin','content'].includes(r));
+const status=t=>{$('status').textContent=t};
+function friendly(err){
+  if(!err)return 'Unknown error';
+  if(err.code==='42501'||/row-level security|not allowed/i.test(err.message||''))return 'Your role is not allowed to do this.';
+  if(err.code==='23505')return 'Another article already uses that web address. Change it slightly.';
+  if(err.code==='23514')return 'The web address can only use lowercase letters, numbers and dashes.';
+  return err.message||String(err);
+}
+async function q(promise){const r=await promise;if(r.error)throw r.error;return r.data;}
+async function copy(text,msgEl){try{await navigator.clipboard.writeText(text);msgEl.textContent='Copied.'}catch(e){msgEl.textContent='Copy blocked by the browser.'}setTimeout(()=>msgEl.textContent='',2500)}
+
+let POSTS=[],cur=null,slugTouched=false;
+async function loadPosts(){POSTS=await q(sb.from('blog_posts').select('*').order('updated_at',{ascending:false}));}
+
+function showGate(which,email){
+  $('app').classList.add('hidden');$('gate').classList.remove('hidden');
+  ['gSetup','gLogin','gNoStaff'].forEach(id=>$(id).classList.add('hidden'));
+  $({setup:'gSetup',login:'gLogin',nostaff:'gNoStaff'}[which]).classList.remove('hidden');
+  if(email)$('gWho').textContent=email;
+}
+async function boot(){
+  if(!sb)return showGate('setup');
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)return showGate('login');
+  const {data:me,error}=await sb.from('staff').select('full_name,roles').eq('user_id',session.user.id).maybeSingle();
+  if(error||!me)return showGate('nostaff',session.user.email);
+  ME={...me,email:session.user.email};
+  $('whoami').textContent=ME.full_name+' ('+ME.roles.join(', ')+')';
+  try{status('Loading…');await loadPosts();status('Connected')}catch(e){status('Error: '+friendly(e))}
+  $('gate').classList.add('hidden');$('app').classList.remove('hidden');
+  document.querySelectorAll('#newPost,#eSave,#ePub,#eDel,#loadSample,#eCoverFile,#eImg,#eCoverDel').forEach(b=>b.disabled=!canWrite());
+  $('roBanner').classList.toggle('hidden',canWrite());
+  $('sampleBanner').classList.toggle('hidden',!(canWrite()&&!POSTS.length));
+  show(location.hash.slice(1)||'posts');
+}
+$('gLogin').addEventListener('submit',async e=>{
+  e.preventDefault();$('gBtn').disabled=true;$('gMsg').textContent='Signing in…';
+  const {error}=await sb.auth.signInWithPassword({email:$('gEmail').value.trim(),password:$('gPass').value});
+  $('gBtn').disabled=false;if(error){$('gMsg').textContent=error.message;return}
+  $('gMsg').textContent='';$('gPass').value='';boot();
+});
+async function signOut(e){if(e)e.preventDefault();await sb.auth.signOut();ME=null;boot();}
+$('gOut').addEventListener('click',signOut);$('signOut').addEventListener('click',signOut);
+
+const views=['posts','edit','subs'];
+function show(v){if(!views.includes(v))v='posts';views.forEach(x=>$('v-'+x).classList.toggle('hidden',x!==v));document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  ({posts:renderPosts,edit:renderEdit,subs:renderSubs})[v]();}
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.v){location.hash=b.dataset.v;show(b.dataset.v)}});
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+
+// ---------- list ----------
+function renderPosts(){
+  const tb=$('pList');tb.replaceChildren();
+  POSTS.forEach(p=>tb.appendChild(h('tr',null,h('td',null,h('b',null,p.title),p.excerpt?h('div',{class:'small muted'},p.excerpt.slice(0,110)+(p.excerpt.length>110?'…':'')):''),
+    h('td',null,p.category),h('td',null,h('span',{class:'pill'+(p.status==='published'?' product':'')},p.status==='published'?'Published':'Draft')),
+    h('td',{class:'small'},dt(p.published_at)),h('td',{class:'small'},dt(p.updated_at)),
+    h('td',{style:'white-space:nowrap'},h('button',{class:'b',style:'padding:3px 10px;font-size:13px',on:{click:()=>{cur=p;slugTouched=true;location.hash='edit'}}},canWrite()?'Edit':'Open'),' ',
+      p.status==='published'?h('a',{class:'lnk small',href:postUrl(p.slug),target:'_blank',rel:'noopener'},'View ↗'):''))));
+  if(!POSTS.length)tb.appendChild(h('tr',null,h('td',{colspan:6,class:'muted small'},'No articles yet.')));
+}
+$('newPost').addEventListener('click',()=>{cur=null;slugTouched=false;location.hash='edit';show('edit')});
+
+// ---------- editor ----------
+function renderEdit(){
+  const p=cur||{};
+  $('eTitle').value=p.title||'';$('eCat').value=p.category||'Skincare';$('eAuthor').value=p.author_name||(ME?ME.full_name:'');
+  $('eSlug').value=p.slug||'';$('eExcerpt').value=p.excerpt||'';$('eBody').value=p.body||'';
+  $('cats').replaceChildren(...[...new Set(['Skincare','Spa','Ingredients','News',...POSTS.map(x=>x.category)])].map(c=>h('option',{value:c})));
+  setCover(p.cover_path);preview();
+  const pub=p.status==='published';
+  $('ePub').textContent=pub?'Unpublish':'Publish';$('eDel').classList.toggle('hidden',!p.id);
+  $('eAnn').disabled=!pub;
+  $('eState').textContent=p.id?(pub?'Published '+dt(p.published_at)+'. New articles and saved changes appear on royalglowgh.com within about 30 minutes.':'Draft: only staff can see it.'):'New article, not saved yet.';
+  ['eTitle','eCat','eAuthor','eSlug','eExcerpt','eBody'].forEach(id=>$(id).disabled=!canWrite());
+  showUrl();
+}
+let coverPath=null;
+function setCover(path){coverPath=path||null;const c=$('eCover');c.style.backgroundImage=coverPath?'url("'+imgUrl(coverPath)+'")':'';c.textContent=coverPath?'':'No cover photo';$('eCoverDel').classList.toggle('hidden',!coverPath);}
+function preview(){$('ePrev').innerHTML=($('eTitle').value?'<h1 style="font-size:26px">'+$('eTitle').value.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c])+'</h1>':'')+md($('eBody').value);}
+function showUrl(){$('eUrl').textContent=$('eSlug').value?postUrl($('eSlug').value):''}
+$('eTitle').addEventListener('input',()=>{if(!slugTouched)$('eSlug').value=slugify($('eTitle').value);showUrl();preview()});
+$('eSlug').addEventListener('input',()=>{slugTouched=true;$('eSlug').value=slugify($('eSlug').value.replace(/\s/g,'-'))+($('eSlug').value.endsWith('-')?'-':'');showUrl()});
+$('eBody').addEventListener('input',preview);
+async function upload(file,folder){
+  if(file.size>2*1024*1024)throw new Error('Photo is over 2 MB. Please use a smaller one.');
+  const ext=(file.name.split('.').pop()||'jpg').toLowerCase();const path=folder+'/'+Date.now()+'-'+Math.random().toString(36).slice(2,7)+'.'+ext;
+  const {error}=await sb.storage.from('blog-images').upload(path,file,{contentType:file.type});if(error)throw error;return path;
+}
+$('eCoverFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;$('eMsg').textContent='Uploading…';
+  try{setCover(await upload(f,'covers'));$('eMsg').textContent='Cover added. Save to keep it.'}catch(err){$('eMsg').textContent=friendly(err)}e.target.value=''});
+$('eCoverDel').addEventListener('click',()=>{setCover(null);$('eMsg').textContent='Cover removed. Save to keep the change.'});
+$('eImg').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;$('eMsg').textContent='Uploading…';
+  try{const path=await upload(f,'inline');const ta=$('eBody');const tag='\n\n!['+(f.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' '))+']('+imgUrl(path)+')\n\n';
+    const at=ta.selectionStart??ta.value.length;ta.value=ta.value.slice(0,at)+tag+ta.value.slice(at);preview();$('eMsg').textContent='Photo added. Edit the words in [ ] to describe it.'}catch(err){$('eMsg').textContent=friendly(err)}e.target.value=''});
+async function save(statusOverride){
+  const row={title:$('eTitle').value.trim(),slug:$('eSlug').value.replace(/-+$/,''),category:$('eCat').value.trim()||'Skincare',author_name:$('eAuthor').value.trim()||null,
+    excerpt:$('eExcerpt').value.trim()||null,body:$('eBody').value,cover_path:coverPath};
+  if(!row.title)throw new Error('Give the article a title.');
+  if(!row.slug)throw new Error('Give the article a web address.');
+  if(statusOverride)row.status=statusOverride;
+  if(row.status==='published'&&!row.body.trim())throw new Error('Write the article before publishing.');
+  const saved=cur&&cur.id?await q(sb.from('blog_posts').update(row).eq('id',cur.id).select().single()):await q(sb.from('blog_posts').insert(row).select().single());
+  cur=saved;slugTouched=true;await loadPosts();renderEdit();
+}
+$('eSave').addEventListener('click',async()=>{try{await save();$('eMsg').textContent='Saved.'}catch(e){$('eMsg').textContent=friendly(e)}});
+$('ePub').addEventListener('click',async()=>{const pub=cur&&cur.status==='published';
+  try{await save(pub?'draft':'published');$('eMsg').textContent=pub?'Unpublished: back to draft. It leaves the website at the next update (within about 30 minutes).':'Published. It will appear on royalglowgh.com within about 30 minutes.'}catch(e){$('eMsg').textContent=friendly(e)}});
+$('eDel').addEventListener('click',async e=>{const b=e.currentTarget;if(!cur||!cur.id)return;
+  if(!b.dataset.arm){b.dataset.arm=1;b.textContent='Click again to delete';setTimeout(()=>{b.removeAttribute('data-arm');b.textContent='Delete article'},3000);return}
+  try{await q(sb.from('blog_posts').delete().eq('id',cur.id));cur=null;await loadPosts();location.hash='posts'}catch(err){$('eMsg').textContent=friendly(err)}});
+$('eAnn').addEventListener('click',()=>{if(!cur)return;
+  const text='New on the Royal Glow blog: '+cur.title+(cur.excerpt?'\n\n'+cur.excerpt:'')+'\n\nRead it here: '+postUrl(cur.slug);copy(text,$('eMsg'))});
+
+// ---------- subscribers ----------
+let SUBS=[];
+async function renderSubs(){
+  try{SUBS=await q(sb.rpc('list_blog_subscribers'))}catch(e){$('sList').replaceChildren(h('tr',null,h('td',{colspan:5,class:'muted small'},friendly(e))));return}
+  $('sCount').textContent=SUBS.length+' subscriber'+(SUBS.length===1?'':'s');
+  $('sList').replaceChildren(...(SUBS.length?SUBS.map(s=>h('tr',null,h('td',null,s.email),h('td',null,s.name||''),h('td',{class:'small'},s.source),h('td',{class:'small'},dt(s.since)),
+    h('td',null,s.source==='Blog sign-up'&&canWrite()?h('button',{class:'x',title:'Remove',on:{click:async()=>{await q(sb.from('blog_subscribers').delete().eq('email',s.email));renderSubs()}}},'×'):''))):
+    [h('tr',null,h('td',{colspan:5,class:'muted small'},'No subscribers yet. Visitors can subscribe at the bottom of every article.'))]));
+}
+$('sCopy').addEventListener('click',()=>copy(SUBS.map(s=>s.email).join(', '),$('sMsg')));
+$('sCsv').addEventListener('click',()=>copy('email,name,source\n'+SUBS.map(s=>[s.email,s.name||'',s.source].map(v=>/[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v).join(',')).join('\n'),$('sMsg')));
+
+// ---------- sample ----------
+$('loadSample').addEventListener('click',async()=>{const btn=$('loadSample');btn.disabled=true;btn.textContent='Loading…';
+  const A='Royal Glow (sample)';
+  const posts=[
+   {slug:'how-to-use-carrot-oil',title:'How to use carrot oil in your skincare routine',category:'Ingredients',excerpt:'Carrot oil is light, rich in natural beta-carotene and easy to add to the products you already use. Here are four simple ways.',
+    body:'Carrot oil is one of the oils we make ourselves, in small batches, from fresh carrots infused into a light carrier oil.\n\n## Four easy ways to use it\n\n1. **As a final step at night.** Warm two or three drops between your palms and press them into clean skin.\n2. **Mixed into body butter.** Add a few drops to a scoop of body butter for extra glide on dry elbows and knees.\n3. **On the ends of your hair.** A drop smoothed through dry ends adds shine.\n4. **In a bath.** Five drops in warm water leave skin soft.\n\n## A few tips\n\n- Start with less than you think you need: a little goes a long way.\n- Patch test on your inner arm first if you have sensitive skin.\n- Keep the bottle closed and out of direct sun.\n\n> Our carrot oil is also an ingredient in our Glow Body Butter.\n\n[Shop carrot oil](index.html)'},
+   {slug:'shea-butter-for-dry-skin',title:'Why shea butter works so well for dry skin',category:'Ingredients',excerpt:'Unrefined shea butter has been part of skincare in West Africa for generations. Here is what makes it so good at keeping skin soft.',
+    body:'Shea butter comes from the nuts of the shea tree, which grows across the savannah of northern Ghana and the wider region.\n\n## What makes it special\n\n- **It is rich and slow to absorb**, so it forms a soft layer that helps skin hold on to moisture.\n- **Unrefined shea keeps more of its natural character**: a nutty smell and an ivory colour.\n- **It melts at body temperature**, so it spreads easily once warmed in your hands.\n\n## How to get the most from it\n\nApply it straight after a bath or shower, while your skin is still slightly damp. Focus on the driest areas: elbows, knees, heels and hands.\n\nIf your skin is oily or prone to breakouts, use it on your body rather than your face.'},
+   {slug:'your-first-spa-facial',title:'Your first spa facial: what to expect',category:'Spa',excerpt:'Booked your first facial? Here is what happens during the hour, and how to get the most from it.',
+    body:'A facial is one of the most relaxing treatments you can book, and it is a good place to start if you are new to the spa.\n\n## Before you arrive\n\n- Arrive about ten minutes early so you can settle in.\n- Come with clean skin if you can, but don\'t worry if you are wearing make-up: we remove it.\n- Tell your therapist about any allergies, sensitive skin or products you are using.\n\n## During the treatment\n\nYour therapist cleanses, gently exfoliates, applies a mask suited to your skin and finishes with a face and shoulder massage. You can talk or simply rest.\n\n## Afterwards\n\nDrink some water, avoid heavy make-up for the rest of the day, and use sunscreen.\n\n[Book a facial](index.html#spa)'}];
+  try{for(const p of posts)await q(sb.from('blog_posts').insert({...p,author_name:A,status:'published'}));await loadPosts();$('sampleBanner').classList.add('hidden');renderPosts()}
+  catch(e){status('Error: '+friendly(e))}
+  btn.disabled=!canWrite();btn.textContent='Load sample articles';});
+
+boot();
+})();
+</script>
+</body>
+</html>

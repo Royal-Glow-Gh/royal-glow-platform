@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Royal Glow — Production Batch Costing</title>
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#111111">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f7f5f2; --surface:#fcfcfb; --surface-2:#f1eee9; --border:#e2ddd5;
+  --text:#1b1a18; --text-2:#55524c; --muted:#8a867e;
+  --accent:#9a6b00; --accent-ink:#fff; --gold:#d9a21b;
+  --series-1:#2a78d6; --grid:#e8e4dd;
+  --good:#1f7a3a; --bad:#b3261e;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --bg:#121211; --surface:#1a1a19; --surface-2:#232321; --border:#34332f;
+    --text:#f0efec; --text-2:#c3c2b7; --muted:#8f8c84;
+    --accent:#f0b429; --accent-ink:#1a1a19; --gold:#f0b429;
+    --series-1:#3987e5; --grid:#2c2b28;
+    --good:#5cc27a; --bad:#ef7a72;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+header{padding:20px 24px 0;max-width:1100px;margin:0 auto}
+h1{font-size:22px;margin:0;letter-spacing:.2px}
+h1 span{color:var(--accent)}
+.sub{color:var(--text-2);margin:4px 0 14px;font-size:14px}
+nav{display:flex;gap:4px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+nav button{background:none;border:0;padding:10px 14px;font:inherit;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+nav button.on{color:var(--text);border-bottom-color:var(--accent);font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:20px 24px 60px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.card h2{font-size:16px;margin:0 0 12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+label.f{display:flex;flex-direction:column;font-size:12px;color:var(--text-2);gap:4px}
+input,select,textarea{font:inherit;padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);min-width:0}
+textarea{width:100%;min-height:120px;font:12px/1.4 ui-monospace,Menlo,monospace}
+button.b{font:inherit;padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer}
+button.b:hover{border-color:var(--muted)}
+button.p{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px}
+button.x:hover{color:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:12px;color:var(--text-2);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--surface-2);color:var(--text-2);border:1px solid var(--border)}
+.pill.product{color:var(--accent);border-color:var(--accent)}
+.muted{color:var(--muted)} .small{font-size:12px}
+.tot{font-size:14px;margin-top:10px;color:var(--text-2)} .tot b{color:var(--text)}
+.tiles{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.tile{flex:1 1 160px;background:var(--surface-2);border-radius:8px;padding:10px 14px}
+.tile .k{font-size:12px;color:var(--text-2)} .tile .v{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.up{color:var(--bad)} .down{color:var(--good)}
+.chart{position:relative}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.12);display:none;white-space:nowrap}
+.tip b{font-size:14px;display:block}
+.banner{background:var(--surface-2);border-left:3px solid var(--gold);padding:8px 12px;border-radius:4px;font-size:13px;color:var(--text-2);margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.hidden{display:none}
+.applink{color:var(--accent);font-weight:600;text-decoration:none}
+.apps a{color:var(--text-2);font-weight:600;text-decoration:none;margin-right:12px}
+.apps a:hover{color:var(--text)}
+.apps a[aria-current]{color:var(--accent)}
+.pill.partner,.pill.wholesale{color:var(--accent);border-color:var(--accent)}
+.pill.goods{color:var(--gold);border-color:var(--gold)}
+.brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{height:44px;width:auto}
+.applabel{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);border-left:1px solid var(--border);padding-left:14px}
+#gate .applabel{border:0;padding:0}
+details summary{cursor:pointer;color:var(--text-2)}
+.msg{font-size:13px;margin-left:8px}
+.lnk{color:var(--accent)}
+</style>
+</head>
+<body>
+<!-- Supabase connection values live in config.js (same folder). -->
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<section id="gate" class="hidden" style="max-width:420px;margin:60px auto;padding:0 20px">
+  <div class="card">
+    <img src="assets/logo.png" alt="Royal Glow" class="logo" style="width:220px;display:block;margin:4px 0 6px"><div class="applabel" style="margin-bottom:10px">Production</div>
+    <div id="gSetup" class="hidden small"><p>This page is not connected to Supabase yet.</p><p>Create <code>apps/production/config.js</code> (copy <code>config.example.js</code>) and paste in your Project URL and publishable key.</p></div>
+    <form id="gLogin" class="hidden">
+      <p class="small muted">Staff sign-in</p>
+      <label class="f" style="margin-bottom:10px">Email<input type="email" id="gEmail" autocomplete="username" required></label>
+      <label class="f" style="margin-bottom:14px">Password<input type="password" id="gPass" autocomplete="current-password" required></label>
+      <button class="b p" type="submit" id="gBtn">Sign in</button><span class="msg" id="gMsg"></span>
+      <p class="small" style="margin:14px 0 0"><a href="staff.html#reset" class="lnk">Forgot password?</a> · <a href="staff.html#signup" class="lnk">New staff? Create an account</a></p>
+    </form>
+    <div id="gNoStaff" class="hidden small"><p>Signed in as <b id="gWho"></b>. This account is waiting for an admin to approve it.</p><button class="b" id="gOut">Sign out</button></div>
+  </div>
+</section>
+
+<div id="app" class="hidden">
+<header>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+    <h1 class="brand"><img src="assets/logo.png" alt="Royal Glow" class="logo"><span class="applabel">Production Batch Costing</span></h1>
+    <div class="small muted"><span class="apps"><a href="index.html" aria-current="page">Production</a><a href="inventory.html">Inventory</a><a href="sales.html">Sales</a><a href="shop-admin.html">Online shop</a><a href="spa.html">Spa</a><a href="blog-admin.html">Blog</a><a href="accounts.html">Accounts</a><a href="staff.html">Account</a></span> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
+  </div>
+  <p class="sub">Log what each batch consumed and what it produced. Cost per unit is tracked across batches, and in-house inputs (like carrot oil) carry their own batch cost forward.</p>
+  <nav id="tabs">
+    <button data-v="batches" class="on">Batches</button>
+    <button data-v="items">Materials &amp; products</button>
+    <button data-v="trend">Cost trend</button>
+    <button data-v="data">Import / export</button>
+  </nav>
+</header>
+<main>
+  <div class="banner hidden" id="sampleBanner">The database is empty. Load sample data (illustrative GH₵ prices) to try things out, or start adding your real materials under <b>Materials &amp; products</b>. <button class="b" id="loadSample">Load sample data</button></div>
+  <div class="banner hidden" id="roBanner">Your role can view but not change production records.</div>
+
+  <!-- BATCHES -->
+  <section id="v-batches">
+    <div class="card">
+      <h2>Record a production batch</h2>
+      <div class="row">
+        <label class="f">Product made<select id="bProduct"></select></label>
+        <label class="f">Date<input type="date" id="bDate"></label>
+        <label class="f">Batch code<input id="bCode" placeholder="e.g. BB-2026-05" size="12"></label>
+        <label class="f">Output quantity<input type="number" id="bOut" min="0" step="any" style="width:110px"></label>
+        <label class="f">Other costs (labour, energy) GH₵<input type="number" id="bOther" min="0" step="any" value="0" style="width:130px"></label>
+      </div>
+      <h3 class="small muted" style="margin:16px 0 6px">INPUTS USED</h3>
+      <table><thead><tr><th>Item</th><th>Type</th><th class="n">Qty</th><th>Unit</th><th class="n">Unit cost GH₵</th><th class="n">Line cost</th><th></th></tr></thead><tbody id="bInputs"></tbody></table>
+      <div class="row" style="margin-top:8px">
+        <select id="bAddItem"></select><button class="b" id="bAdd">+ Add input</button>
+      </div>
+      <div class="tot" id="bTotals"></div>
+      <div class="row" style="margin-top:12px"><button class="b p" id="bSave">Save batch</button><span class="msg" id="bMsg"></span></div>
+    </div>
+    <div class="card">
+      <h2>Batch history</h2>
+      <table><thead><tr><th>Date</th><th>Code</th><th>Product</th><th class="n">Output</th><th class="n">Total cost</th><th class="n">Cost / unit</th><th></th></tr></thead><tbody id="bList"></tbody></table>
+    </div>
+  </section>
+
+  <!-- ITEMS -->
+  <section id="v-items" class="hidden">
+    <div class="card">
+      <h2>Add an item</h2>
+      <div class="row">
+        <label class="f">Name<input id="iName" size="22"></label>
+        <label class="f">Type<select id="iKind">
+          <option value="raw">Raw material</option><option value="packaging">Packaging</option>
+          <option value="label">Label</option><option value="product">Product (made in-house)</option><option value="goods">Resale goods (bought in)</option></select></label>
+        <label class="f">Unit<input id="iUnit" placeholder="kg, L, piece" size="8"></label>
+        <label class="f">Unit cost GH₵<input type="number" id="iCost" step="any" min="0" style="width:110px"></label>
+        <button class="b p" id="iAdd">Add</button>
+      </div>
+      <p class="small muted" style="margin:10px 0 0">Products made in-house take their unit cost from their most recent batch. Any product can also be used as an input to another product.</p>
+    </div>
+    <div class="card">
+      <h2>Catalogue</h2>
+      <table><thead><tr><th>Name</th><th>Type</th><th>Unit</th><th class="n">Current unit cost GH₵</th><th></th></tr></thead><tbody id="iList"></tbody></table>
+    </div>
+  </section>
+
+  <!-- TREND -->
+  <section id="v-trend" class="hidden">
+    <div class="card">
+      <div class="row" style="margin-bottom:14px"><label class="f">Product<select id="tProduct"></select></label></div>
+      <div class="tiles" id="tTiles"></div>
+      <div class="chart" id="tChart"></div>
+      <details style="margin-top:12px"><summary>Table view</summary><div id="tTable" style="margin-top:8px"></div></details>
+    </div>
+    <div class="card">
+      <h2>Where the cost goes (latest batch)</h2>
+      <div id="tBreak"></div>
+    </div>
+  </section>
+
+  <!-- DATA -->
+  <section id="v-data" class="hidden">
+    <div class="card">
+      <h2>Export for reporting</h2>
+      <p class="small muted">Copy, then paste into Excel or Google Sheets.</p>
+      <div class="row"><button class="b" data-copy="batchcsv">Copy batch summary (CSV)</button><button class="b" data-copy="inputcsv">Copy input lines (CSV)</button><button class="b" data-copy="json">Copy full backup (JSON)</button><span class="msg" id="cMsg"></span></div>
+    </div>
+    <div class="card">
+      <h2>Import</h2>
+      <p class="small muted">Paste or load an items CSV with columns <code>name,kind,unit,unit_cost</code> (kind = raw, packaging, label or product). Existing items with the same name get their unit and cost updated.</p>
+      <input type="file" id="imFile" accept=".csv,.json,.txt">
+      <textarea id="imText" placeholder="…or paste here" style="margin-top:8px"></textarea>
+      <div class="row" style="margin-top:8px"><button class="b p" id="imGo">Import</button><span class="msg" id="imMsg"></span></div>
+    </div>
+  </section>
+</main>
+</div>
+
+<script>
+(function(){
+const KINDS={raw:'Raw material',packaging:'Packaging',label:'Label',product:'Product',goods:'Resale goods'};
+const uid=()=>Math.random().toString(36).slice(2,10);
+const money=v=>'GH₵ '+(Number(v)||0).toLocaleString('en-GH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const num=v=>(Number(v)||0).toLocaleString('en-GH',{maximumFractionDigits:3});
+const $=id=>document.getElementById(id);
+function h(tag,attrs,...kids){const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==='on')for(const ev in attrs.on)e.addEventListener(ev,attrs.on[ev]);else if(k==='class')e.className=attrs[k];else if(k in e&&k!=='list')e[k]=attrs[k];else e.setAttribute(k,attrs[k]);}for(const c of kids.flat()){if(c==null||c===false)continue;e.appendChild(typeof c==='object'?c:document.createTextNode(String(c)));}return e;}
+
+// ---------- sample data ----------
+function sample(){
+  const I=(name,kind,unit,unitCost)=>({id:uid(),name,kind,unit,unitCost});
+  const shea=I('Shea butter (unrefined)','raw','kg',42), cocoa=I('Cocoa butter','raw','kg',115),
+        coco=I('Coconut oil','raw','L',36), carrot=I('Fresh carrots','raw','kg',7),
+        vitE=I('Vitamin E oil','raw','L',310), frag=I('Fragrance oil','raw','L',420),
+        jar=I('Jar 200 ml amber','packaging','piece',4.2), lid=I('Lid, gold','packaging','piece',1.1),
+        lab=I('Label, body butter','label','piece',0.75), bottle=I('Bottle 100 ml dropper','packaging','piece',3.8),
+        labO=I('Label, carrot oil','label','piece',0.6),
+        cOil=I('Carrot oil','product','L',0), butter=I('Glow Body Butter 200 ml','product','jar',0),
+        cOilRetail=I('Carrot Oil 100 ml (retail)','product','bottle',0);
+  const items=[shea,cocoa,coco,carrot,vitE,frag,jar,lid,lab,bottle,labO,cOil,butter,cOilRetail];
+  const batches=[];
+  const B=(prod,date,code,out,other,inputs)=>batches.push({id:uid(),productId:prod.id,date,code,outputQty:out,otherCost:other,inputs:inputs.map(([it,q,c])=>({itemId:it.id,qty:q,unitCost:c}))});
+  // carrot oil: carrots + coconut oil
+  B(cOil,'2026-06-04','CO-01',20,60,[[carrot,40,6.5],[coco,22,34]]);
+  B(cOil,'2026-07-20','CO-02',20,60,[[carrot,40,7],[coco,22,36]]);
+  B(cOil,'2026-09-15','CO-03',20,70,[[carrot,42,8],[coco,22,39]]);
+  const coCost=b=>{const t=b.inputs.reduce((s,x)=>s+x.qty*x.unitCost,0)+b.otherCost;return t/b.outputQty};
+  const c1=coCost(batches[0]),c2=coCost(batches[1]),c3=coCost(batches[2]);
+  // body butter (uses carrot oil)
+  B(butter,'2026-06-10','BB-01',100,120,[[shea,12,40],[cocoa,3,110],[cOil,2,c1],[vitE,.2,300],[frag,.15,400],[jar,100,4],[lid,100,1],[lab,100,.7]]);
+  B(butter,'2026-07-25','BB-02',100,120,[[shea,12,41],[cocoa,3,112],[cOil,2,c2],[vitE,.2,300],[frag,.15,410],[jar,100,4.1],[lid,100,1.05],[lab,100,.72]]);
+  B(butter,'2026-08-28','BB-03',110,130,[[shea,13,42],[cocoa,3.2,115],[cOil,2.2,c2],[vitE,.22,310],[frag,.16,420],[jar,110,4.2],[lid,110,1.1],[lab,110,.75]]);
+  B(butter,'2026-10-02','BB-04',100,130,[[shea,12,46],[cocoa,3,124],[cOil,2,c3],[vitE,.2,320],[frag,.15,430],[jar,100,4.5],[lid,100,1.1],[lab,100,.75]]);
+  B(cOilRetail,'2026-07-22','COR-01',150,40,[[cOil,15,c2],[bottle,150,3.8],[labO,150,.6]]);
+  B(cOilRetail,'2026-09-18','COR-02',150,45,[[cOil,15,c3],[bottle,150,3.9],[labO,150,.6]]);
+  return {items,batches,isSample:true};
+}
+
+// ---------- Supabase connection ----------
+const CFG=window.RG_CONFIG||{};
+const cfgOk=!!CFG.SUPABASE_URL&&!/PASTE_/.test(CFG.SUPABASE_URL+CFG.SUPABASE_KEY);
+const sb=cfgOk&&window.supabase?window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_KEY):null;
+let S={items:[],batches:[]}, ME=null;
+const canWrite=()=>ME&&ME.roles.some(r=>['admin','production'].includes(r));
+const status=t=>{$('status').textContent=t};
+function friendly(err){
+  if(!err)return 'Unknown error';
+  if(err.code==='23505')return 'That name or batch code is already used.';
+  if(err.code==='42501'||/row-level security/i.test(err.message||''))return 'Your role is not allowed to make this change.';
+  if(err.code==='23503')return 'This item is used in batches and cannot be removed.';
+  return err.message||String(err);
+}
+async function q(promise){const r=await promise;if(r.error)throw r.error;return r.data;}
+
+async function loadAll(){
+  status('Loading…');
+  const [items,batches]=await Promise.all([
+    q(sb.from('items').select('*').order('name')),
+    q(sb.from('batches').select('*, batch_inputs(*)').order('batch_date'))
+  ]);
+  S.items=items.map(r=>({id:r.id,name:r.name,kind:r.kind,unit:r.unit,unitCost:Number(r.unit_cost)}));
+  S.batches=batches.map(b=>({id:b.id,productId:b.product_id,date:b.batch_date,code:b.code||'',outputQty:Number(b.output_qty),otherCost:Number(b.other_cost),
+    inputs:(b.batch_inputs||[]).map(x=>({itemId:x.item_id,qty:Number(x.qty),unitCost:Number(x.unit_cost)}))}));
+  status('Connected');
+}
+
+function showGate(which,email){
+  $('app').classList.add('hidden');$('gate').classList.remove('hidden');
+  ['gSetup','gLogin','gNoStaff'].forEach(id=>$(id).classList.add('hidden'));
+  $({setup:'gSetup',login:'gLogin',nostaff:'gNoStaff'}[which]).classList.remove('hidden');
+  if(email)$('gWho').textContent=email;
+}
+async function boot(){
+  if(!sb)return showGate('setup');
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)return showGate('login');
+  const {data:me,error}=await sb.from('staff').select('full_name,roles').eq('user_id',session.user.id).maybeSingle();
+  if(error||!me)return showGate('nostaff',session.user.email);
+  ME={...me,email:session.user.email};
+  $('whoami').textContent=ME.full_name+' ('+ME.roles.join(', ')+')';
+  try{await loadAll()}catch(e){status('Error: '+friendly(e))}
+  $('gate').classList.add('hidden');$('app').classList.remove('hidden');
+  document.querySelectorAll('#bSave,#bAdd,#iAdd,#imGo,#loadSample').forEach(b=>b.disabled=!canWrite());
+  $('roBanner').classList.toggle('hidden',canWrite());
+  show(location.hash.slice(1)||'batches');
+}
+$('gLogin').addEventListener('submit',async e=>{
+  e.preventDefault();$('gBtn').disabled=true;$('gMsg').textContent='Signing in…';
+  const {error}=await sb.auth.signInWithPassword({email:$('gEmail').value.trim(),password:$('gPass').value});
+  $('gBtn').disabled=false;
+  if(error){$('gMsg').textContent=error.message;return}
+  $('gMsg').textContent='';$('gPass').value='';boot();
+});
+async function signOut(e){if(e)e.preventDefault();await sb.auth.signOut();ME=null;S={items:[],batches:[]};boot();}
+$('gOut').addEventListener('click',signOut);
+$('signOut').addEventListener('click',signOut);
+const item=id=>S.items.find(i=>i.id===id);
+const batchTotal=b=>b.inputs.reduce((s,x)=>s+x.qty*x.unitCost,0)+(Number(b.otherCost)||0);
+const batchUnit=b=>b.outputQty>0?batchTotal(b)/b.outputQty:0;
+const byDate=(a,b)=>a.date<b.date?-1:a.date>b.date?1:0;
+function unitCostOf(it,onDate){
+  if(it.kind!=='product')return Number(it.unitCost)||0;
+  const bs=S.batches.filter(b=>b.productId===it.id&&(!onDate||b.date<=onDate)).sort(byDate);
+  return bs.length?batchUnit(bs[bs.length-1]):(Number(it.unitCost)||0);
+}
+const products=()=>S.items.filter(i=>i.kind==='product');
+
+// ---------- tabs ----------
+const views=['batches','items','trend','data'];
+function show(v){if(!views.includes(v))v='batches';views.forEach(x=>$('v-'+x).classList.toggle('hidden',x!==v));document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render(v);}
+$('tabs').addEventListener('click',e=>{const v=e.target.dataset&&e.target.dataset.v;if(v){location.hash=v;show(v)}});
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+
+// ---------- batch form ----------
+let draft=[];
+function fillSelect(sel,list,keep){const cur=sel.value;sel.replaceChildren(...list.map(i=>h('option',{value:i.id},i.name)));if(keep&&list.some(i=>i.id===cur))sel.value=cur;}
+function renderForm(){
+  fillSelect($('bProduct'),products(),true);
+  const pid=$('bProduct').value;
+  fillSelect($('bAddItem'),S.items.filter(i=>i.id!==pid&&!draft.some(d=>d.itemId===i.id)),false);
+  const tb=$('bInputs');tb.replaceChildren();
+  draft.forEach((d,ix)=>{const it=item(d.itemId);if(!it)return;
+    const q=h('input',{type:'number',step:'any',min:'0',value:d.qty,style:'width:90px;text-align:right',on:{input:e=>{d.qty=+e.target.value;totals()}}});
+    const c=h('input',{type:'number',step:'any',min:'0',value:+d.unitCost.toFixed(4),style:'width:100px;text-align:right',on:{input:e=>{d.unitCost=+e.target.value;totals()}}});
+    tb.appendChild(h('tr',null,h('td',null,it.name),h('td',null,h('span',{class:'pill '+it.kind},KINDS[it.kind])),h('td',{class:'n'},q),h('td',null,it.unit),h('td',{class:'n'},c),h('td',{class:'n',id:'lc'+ix},''),h('td',null,h('button',{class:'x',title:'Remove',on:{click:()=>{draft.splice(ix,1);renderForm()}}},'×'))));
+  });
+  if(!draft.length)tb.appendChild(h('tr',null,h('td',{colspan:7,class:'muted small'},'No inputs yet. Add raw materials, packaging, labels or in-house products below.')));
+  totals();
+}
+function totals(){
+  draft.forEach((d,ix)=>{const c=$('lc'+ix);if(c)c.textContent=money(d.qty*d.unitCost)});
+  const mat=draft.reduce((s,d)=>s+d.qty*d.unitCost,0),oth=+$('bOther').value||0,out=+$('bOut').value||0,t=mat+oth;
+  $('bTotals').replaceChildren('Inputs ',h('b',null,money(mat)),' + other ',h('b',null,money(oth)),' = total ',h('b',null,money(t)),...(out>0?[' → cost per unit ',h('b',null,money(t/out))]:[' — enter output quantity to see cost per unit']));
+}
+$('bProduct').addEventListener('change',()=>{draft=draft.filter(d=>d.itemId!==$('bProduct').value);renderForm()});
+$('bDate').addEventListener('change',()=>{draft.forEach(d=>{const it=item(d.itemId);if(it.kind==='product')d.unitCost=unitCostOf(it,$('bDate').value)});renderForm()});
+['bOut','bOther'].forEach(id=>$(id).addEventListener('input',totals));
+$('bAdd').addEventListener('click',()=>{const id=$('bAddItem').value;if(!id)return;draft.push({itemId:id,qty:0,unitCost:unitCostOf(item(id),$('bDate').value)});renderForm();});
+$('bSave').addEventListener('click',async()=>{
+  const out=+$('bOut').value,date=$('bDate').value,pid=$('bProduct').value;
+  const msg=t=>{$('bMsg').textContent=t};
+  if(!pid)return msg('Add a product first (Materials & products tab).');
+  if(!date)return msg('Pick a date.'); if(!(out>0))return msg('Enter the output quantity.');
+  const inputs=draft.filter(d=>d.qty>0); if(!inputs.length)return msg('Add at least one input with a quantity.');
+  $('bSave').disabled=true;msg('Saving…');
+  try{
+    await saveBatch({productId:pid,date,code:$('bCode').value.trim(),outputQty:out,otherCost:+$('bOther').value||0,inputs});
+    await loadAll();
+    draft=[];$('bCode').value='';$('bOut').value='';$('bOther').value=0;msg('Saved.');setTimeout(()=>msg(''),2500);render('batches');
+  }catch(e){msg(friendly(e))}
+  finally{$('bSave').disabled=!canWrite()}
+});
+// Insert a batch, then its input lines. If the lines fail, remove the batch so no half-saved batch remains.
+async function saveBatch(b){
+  const row=await q(sb.from('batches').insert({product_id:b.productId,batch_date:b.date,code:b.code||null,output_qty:b.outputQty,other_cost:b.otherCost}).select('id').single());
+  try{
+    await q(sb.from('batch_inputs').insert(b.inputs.map(d=>({batch_id:row.id,item_id:d.itemId,qty:d.qty,unit_cost:+(+d.unitCost).toFixed(4)}))));
+  }catch(e){await sb.from('batches').delete().eq('id',row.id);throw e}
+}
+function renderBatchList(){
+  const tb=$('bList');tb.replaceChildren();
+  const bs=[...S.batches].sort(byDate).reverse();
+  if(!bs.length)tb.appendChild(h('tr',null,h('td',{colspan:7,class:'muted small'},'No batches recorded yet.')));
+  bs.forEach(b=>{const p=item(b.productId);
+    tb.appendChild(h('tr',null,h('td',null,b.date),h('td',null,b.code||'—'),h('td',null,p?p.name:'?'),h('td',{class:'n'},num(b.outputQty)+' '+(p?p.unit:'')),h('td',{class:'n'},money(batchTotal(b))),h('td',{class:'n'},h('b',null,money(batchUnit(b)))),
+      h('td',null,h('button',{class:'x',title:'Delete batch',on:{click:e=>{const btn=e.currentTarget;if(!canWrite())return;if(btn.dataset.arm){btn.disabled=true;q(sb.from('batches').delete().eq('id',b.id)).then(loadAll).then(()=>render('batches')).catch(err=>{status('Error: '+friendly(err));btn.disabled=false})}else{btn.dataset.arm=1;btn.textContent='delete?';btn.style.fontSize='12px';setTimeout(()=>{btn.removeAttribute('data-arm');btn.textContent='×';btn.style.fontSize=''},3000)}}}},'×'))));
+  });
+}
+
+// ---------- items ----------
+$('iAdd').addEventListener('click',async()=>{const n=$('iName').value.trim();if(!n)return;
+  try{
+    await q(sb.from('items').insert({name:n,kind:$('iKind').value,unit:$('iUnit').value.trim()||'unit',unit_cost:+$('iCost').value||0}));
+    await loadAll();['iName','iUnit','iCost'].forEach(id=>$(id).value='');render('items');
+  }catch(e){status('Error: '+friendly(e))}
+});
+async function updateCost(it,v){try{await q(sb.from('items').update({unit_cost:v}).eq('id',it.id));it.unitCost=v;status('Saved')}catch(e){status('Error: '+friendly(e))}}
+async function removeItem(it){try{await q(sb.from('items').delete().eq('id',it.id));await loadAll();render('items')}catch(e){status('Error: '+friendly(e))}}
+function renderItems(){
+  const tb=$('iList');tb.replaceChildren();
+  const order={product:0,goods:1,raw:2,packaging:3,label:4};
+  [...S.items].sort((a,b)=>order[a.kind]-order[b.kind]||a.name.localeCompare(b.name)).forEach(it=>{
+    const used=S.batches.some(b=>b.productId===it.id||b.inputs.some(x=>x.itemId===it.id));
+    const costCell=it.kind==='product'
+      ? h('td',{class:'n'},money(unitCostOf(it)),h('div',{class:'small muted'},'from latest batch'))
+      : h('td',{class:'n'},h('input',{type:'number',step:'any',min:'0',value:it.unitCost,style:'width:100px;text-align:right',disabled:!canWrite(),on:{change:e=>updateCost(it,+e.target.value)}}));
+    tb.appendChild(h('tr',null,h('td',null,it.name),h('td',null,h('span',{class:'pill '+it.kind},KINDS[it.kind])),h('td',null,it.unit),costCell,
+      h('td',null,used?h('span',{class:'small muted',title:'Used in batches'},'in use'):canWrite()?h('button',{class:'x',title:'Remove',on:{click:()=>removeItem(it)}},'×'):'')));
+  });
+}
+
+// ---------- trend ----------
+function renderTrend(){
+  const sel=$('tProduct');fillSelect(sel,products().filter(p=>S.batches.some(b=>b.productId===p.id)),true);
+  const p=item(sel.value);const box=$('tChart');box.replaceChildren();$('tTiles').replaceChildren();$('tTable').replaceChildren();$('tBreak').replaceChildren();
+  if(!p){box.appendChild(h('p',{class:'muted'},'Record a batch to see its cost trend.'));return;}
+  const bs=S.batches.filter(b=>b.productId===p.id).sort(byDate);const ys=bs.map(batchUnit);
+  const last=ys[ys.length-1],prev=ys[ys.length-2],first=ys[0];
+  const pct=(a,b)=>b?((a-b)/b*100):null;
+  const tile=(k,v,d)=>h('div',{class:'tile'},h('div',{class:'k'},k),h('div',{class:'v'+(d==null?'':d>0?' up':d<0?' down':'')},v));
+  const fmtP=d=>d==null?'—':(d>0?'▲ +':d<0?'▼ ':'')+d.toFixed(1)+'%';
+  const dPrev=ys.length>1?pct(last,prev):null,dFirst=ys.length>1?pct(last,first):null;
+  $('tTiles').append(tile('Latest cost per '+p.unit,money(last)),tile('vs previous batch',fmtP(dPrev),dPrev),tile('vs first batch ('+bs[0].date+')',fmtP(dFirst),dFirst));
+  // chart
+  const W=Math.max(320,box.clientWidth||700),H=280,m={l:64,r:20,t:14,b:36};
+  const lo=Math.min(...ys),hi=Math.max(...ys);const pad=(hi-lo)*0.15||hi*0.1||1;
+  let y0=Math.max(0,lo-pad),y1=hi+pad;
+  const ticks=niceTicks(y0,y1,5);y0=ticks[0];y1=ticks[ticks.length-1];
+  const X=i=>bs.length===1?(m.l+(W-m.l-m.r)/2):m.l+i*(W-m.l-m.r)/(bs.length-1);
+  const Y=v=>m.t+(1-(v-y0)/(y1-y0))*(H-m.t-m.b);
+  const NS='http://www.w3.org/2000/svg';const s=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e};
+  const svg=s('svg',{width:W,height:H,viewBox:`0 0 ${W} ${H}`,role:'img','aria-label':'Cost per unit by batch for '+p.name});svg.style.display='block';
+  ticks.forEach(t=>{svg.appendChild(s('line',{x1:m.l,x2:W-m.r,y1:Y(t),y2:Y(t),stroke:'var(--grid)','stroke-width':1}));const tx=s('text',{x:m.l-8,y:Y(t)+4,'text-anchor':'end','font-size':11,fill:'var(--muted)'});tx.textContent=t.toFixed(2);svg.appendChild(tx);});
+  const yl=s('text',{x:12,y:m.t+4,'font-size':11,fill:'var(--text-2)'});yl.textContent='';svg.appendChild(yl);
+  const step=Math.ceil(bs.length/Math.max(1,Math.floor((W-m.l-m.r)/90)));
+  bs.forEach((b,i)=>{if(i%step&&i!==bs.length-1)return;const tx=s('text',{x:X(i),y:H-m.b+18,'text-anchor':'middle','font-size':11,fill:'var(--muted)'});tx.textContent=b.date.slice(5)+(b.code?' · '+b.code:'');svg.appendChild(tx);});
+  svg.appendChild(s('path',{d:ys.map((v,i)=>(i?'L':'M')+X(i)+','+Y(v)).join(''),fill:'none',stroke:'var(--series-1)','stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'}));
+  ys.forEach((v,i)=>svg.appendChild(s('circle',{cx:X(i),cy:Y(v),r:4,fill:'var(--series-1)',stroke:'var(--surface)','stroke-width':2})));
+  const lt=s('text',{x:Math.min(X(ys.length-1),W-m.r),y:Y(last)-10,'text-anchor':'end','font-size':12,'font-weight':600,fill:'var(--text)'});lt.textContent=money(last);svg.appendChild(lt);
+  const hair=s('line',{y1:m.t,y2:H-m.b,stroke:'var(--muted)','stroke-width':1,'stroke-dasharray':'3 3',visibility:'hidden'});svg.appendChild(hair);
+  const hit=s('rect',{x:m.l-10,y:0,width:W-m.l-m.r+20,height:H,fill:'transparent'});svg.appendChild(hit);
+  const tip=h('div',{class:'tip'});
+  hit.addEventListener('pointermove',e=>{const r=svg.getBoundingClientRect();const px=e.clientX-r.left;let bi=0,bd=1e9;bs.forEach((_,i)=>{const d=Math.abs(X(i)-px);if(d<bd){bd=d;bi=i}});
+    hair.setAttribute('x1',X(bi));hair.setAttribute('x2',X(bi));hair.setAttribute('visibility','visible');
+    const b=bs[bi];tip.replaceChildren(h('b',null,money(ys[bi])+' / '+p.unit),b.date+(b.code?' · '+b.code:''),h('br'),num(b.outputQty)+' '+p.unit+' · total '+money(batchTotal(b)));
+    tip.style.display='block';const tx=X(bi)+12;tip.style.left=(tx+180>W?X(bi)-192:tx)+'px';tip.style.top=(Y(ys[bi])-20)+'px';});
+  hit.addEventListener('pointerleave',()=>{tip.style.display='none';hair.setAttribute('visibility','hidden')});
+  box.append(h('div',{class:'small muted',style:'margin-bottom:4px'},'Cost per '+p.unit+' (GH₵), by batch'),svg,tip);
+  // table
+  $('tTable').appendChild(h('table',null,h('thead',null,h('tr',null,h('th',null,'Date'),h('th',null,'Code'),h('th',{class:'n'},'Output'),h('th',{class:'n'},'Total'),h('th',{class:'n'},'Cost / unit'),h('th',{class:'n'},'Change'))),
+    h('tbody',null,bs.map((b,i)=>{const d=i?pct(ys[i],ys[i-1]):null;return h('tr',null,h('td',null,b.date),h('td',null,b.code||'—'),h('td',{class:'n'},num(b.outputQty)),h('td',{class:'n'},money(batchTotal(b))),h('td',{class:'n'},money(ys[i])),h('td',{class:'n '+(d>0?'up':d<0?'down':'')},fmtP(d)))}))));
+  // breakdown of latest batch, compared to previous
+  const lb=bs[bs.length-1],pb=bs[bs.length-2];
+  const per=(b,itemId)=>{if(!b)return null;const x=b.inputs.find(x=>x.itemId===itemId);return x?x.qty*x.unitCost/b.outputQty:null};
+  const tot=batchTotal(lb);
+  const rows=lb.inputs.map(x=>({name:(item(x.itemId)||{}).name||'?',kind:(item(x.itemId)||{}).kind,cost:x.qty*x.unitCost,pu:x.qty*x.unitCost/lb.outputQty,prev:per(pb,x.itemId)}));
+  if(lb.otherCost)rows.push({name:'Other costs (labour, energy)',kind:null,cost:lb.otherCost,pu:lb.otherCost/lb.outputQty,prev:pb?pb.otherCost/pb.outputQty:null});
+  rows.sort((a,b)=>b.cost-a.cost);
+  $('tBreak').appendChild(h('table',null,h('thead',null,h('tr',null,h('th',null,'Input'),h('th',{class:'n'},'Batch cost'),h('th',{class:'n'},'Share'),h('th',{class:'n'},'Per '+p.unit),h('th',{class:'n'},pb?'Change per unit vs '+pb.date:''))),
+    h('tbody',null,rows.map(r=>{const d=r.prev!=null?r.pu-r.prev:null;return h('tr',null,h('td',null,r.name,' ',r.kind?h('span',{class:'pill '+r.kind},KINDS[r.kind]):''),h('td',{class:'n'},money(r.cost)),h('td',{class:'n'},(r.cost/tot*100).toFixed(1)+'%'),h('td',{class:'n'},money(r.pu)),h('td',{class:'n '+(d>0.005?'up':d<-0.005?'down':'')},d==null?(pb?'new':''):(d>0?'+':'')+d.toFixed(2)))}))));
+}
+function niceTicks(a,b,n){const span=b-a||1;const raw=span/n;const mag=Math.pow(10,Math.floor(Math.log10(raw)));const st=[1,2,2.5,5,10].map(x=>x*mag).find(x=>x>=raw);const s0=Math.floor(a/st)*st,out=[];for(let v=s0;v<=b+st*0.999;v+=st)out.push(+v.toFixed(10));return out;}
+$('tProduct').addEventListener('change',renderTrend);
+window.addEventListener('resize',()=>{if(!$('v-trend').classList.contains('hidden'))renderTrend()});
+
+// ---------- export / import ----------
+const csvq=v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+function exports(kind){
+  if(kind==='json')return JSON.stringify({items:S.items,batches:S.batches},null,1);
+  if(kind==='batchcsv')return ['date,batch_code,product,output_qty,unit,input_cost,other_cost,total_cost,cost_per_unit',...[...S.batches].sort(byDate).map(b=>{const p=item(b.productId)||{};const t=batchTotal(b);return [b.date,b.code,p.name,b.outputQty,p.unit,(t-b.otherCost).toFixed(2),(+b.otherCost).toFixed(2),t.toFixed(2),batchUnit(b).toFixed(4)].map(csvq).join(',')})].join('\n');
+  return ['date,batch_code,product,input_item,input_type,qty,unit,unit_cost,line_cost',...[...S.batches].sort(byDate).flatMap(b=>{const p=item(b.productId)||{};return b.inputs.map(x=>{const it=item(x.itemId)||{};return [b.date,b.code,p.name,it.name,it.kind,x.qty,it.unit,x.unitCost,(x.qty*x.unitCost).toFixed(2)].map(csvq).join(',')})})].join('\n');
+}
+document.querySelectorAll('[data-copy]').forEach(btn=>btn.addEventListener('click',async()=>{
+  const t=exports(btn.dataset.copy);try{await navigator.clipboard.writeText(t);$('cMsg').textContent='Copied.'}catch(e){$('imText').value=t;$('cMsg').textContent='Clipboard blocked; the text is in the Import box below — copy it from there.'}
+  setTimeout(()=>$('cMsg').textContent='',4000);}));
+$('imFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('imText').value=r.result};r.readAsText(f);});
+function parseCSV(t){const rows=[];let row=[],f='',q=false;for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c=='"'&&t[i+1]=='"'){f+='"';i++}else if(c=='"')q=false;else f+=c}else if(c=='"')q=true;else if(c==','){row.push(f);f=''}else if(c=='\n'||c=='\r'){if(c=='\r'&&t[i+1]=='\n')i++;row.push(f);rows.push(row);row=[];f=''}else f+=c}if(f||row.length){row.push(f);rows.push(row)}return rows.filter(r=>r.some(x=>x.trim()))}
+$('imGo').addEventListener('click',async()=>{
+  const t=$('imText').value.trim(),msg=x=>$('imMsg').textContent=x;if(!t)return msg('Nothing to import.');
+  const rows=parseCSV(t);const hd=rows.shift().map(x=>x.trim().toLowerCase());const ix=k=>hd.indexOf(k);
+  if(ix('name')<0)return msg('CSV needs a header row with at least: name,kind,unit,unit_cost');
+  let added=0,updated=0,failed=[];msg('Importing…');
+  for(const r of rows){
+    const name=(r[ix('name')]||'').trim();if(!name)continue;
+    const kind=(r[ix('kind')]||'raw').trim().toLowerCase();const k=KINDS[kind]?kind:'raw';
+    const unit=(r[ix('unit')]||'unit').trim();const cost=+(r[ix('unit_cost')]||0)||0;
+    const ex=S.items.find(i=>i.name.toLowerCase()===name.toLowerCase());
+    try{
+      if(ex){await q(sb.from('items').update(ex.kind==='product'?{unit}:{unit,unit_cost:cost}).eq('id',ex.id));updated++}
+      else{await q(sb.from('items').insert({name,kind:k,unit,unit_cost:cost}));added++}
+    }catch(e){failed.push(name+': '+friendly(e))}
+  }
+  await loadAll();
+  msg(added+' added, '+updated+' updated'+(failed.length?'. Failed: '+failed.join('; '):'.'));
+});
+$('loadSample').addEventListener('click',async()=>{
+  const btn=$('loadSample');btn.disabled=true;btn.textContent='Loading sample…';
+  try{
+    const smp=sample();
+    const rows=await q(sb.from('items').insert(smp.items.map(i=>({name:i.name,kind:i.kind,unit:i.unit,unit_cost:i.unitCost}))).select('id,name'));
+    const idByName=Object.fromEntries(rows.map(r=>[r.name,r.id]));
+    const map=Object.fromEntries(smp.items.map(i=>[i.id,idByName[i.name]]));
+    for(const b of smp.batches)await saveBatch({...b,productId:map[b.productId],inputs:b.inputs.map(x=>({...x,itemId:map[x.itemId]}))});
+    await loadAll();show('trend');location.hash='trend';
+  }catch(e){status('Error: '+friendly(e))}
+  btn.disabled=!canWrite();btn.textContent='Load sample data';
+});
+
+// ---------- render ----------
+function render(v){
+  $('sampleBanner').classList.toggle('hidden',S.items.length>0||!canWrite());
+  if(v==='batches'){if(!$('bDate').value)$('bDate').value=new Date().toISOString().slice(0,10);renderForm();renderBatchList();}
+  if(v==='items')renderItems();
+  if(v==='trend')renderTrend();
+}
+boot();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Royal Glow — Spa</title>
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#111111">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f7f5f2; --surface:#fcfcfb; --surface-2:#f1eee9; --border:#e2ddd5;
+  --text:#1b1a18; --text-2:#55524c; --muted:#8a867e;
+  --accent:#9a6b00; --accent-ink:#fff; --gold:#d9a21b;
+  --series-1:#2a78d6; --grid:#e8e4dd;
+  --good:#1f7a3a; --bad:#b3261e;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --bg:#121211; --surface:#1a1a19; --surface-2:#232321; --border:#34332f;
+    --text:#f0efec; --text-2:#c3c2b7; --muted:#8f8c84;
+    --accent:#f0b429; --accent-ink:#1a1a19; --gold:#f0b429;
+    --series-1:#3987e5; --grid:#2c2b28;
+    --good:#5cc27a; --bad:#ef7a72;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+header{padding:20px 24px 0;max-width:1100px;margin:0 auto}
+h1{font-size:22px;margin:0;letter-spacing:.2px}
+h1 span{color:var(--accent)}
+.sub{color:var(--text-2);margin:4px 0 14px;font-size:14px}
+nav{display:flex;gap:4px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+nav button{background:none;border:0;padding:10px 14px;font:inherit;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+nav button.on{color:var(--text);border-bottom-color:var(--accent);font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:20px 24px 60px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.card h2{font-size:16px;margin:0 0 12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+label.f{display:flex;flex-direction:column;font-size:12px;color:var(--text-2);gap:4px}
+input,select,textarea{font:inherit;padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);min-width:0}
+textarea{width:100%;min-height:120px;font:12px/1.4 ui-monospace,Menlo,monospace}
+button.b{font:inherit;padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer}
+button.b:hover{border-color:var(--muted)}
+button.p{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px}
+button.x:hover{color:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:12px;color:var(--text-2);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--surface-2);color:var(--text-2);border:1px solid var(--border)}
+.pill.product{color:var(--accent);border-color:var(--accent)}
+.muted{color:var(--muted)} .small{font-size:12px}
+.tot{font-size:14px;margin-top:10px;color:var(--text-2)} .tot b{color:var(--text)}
+.tiles{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.tile{flex:1 1 160px;background:var(--surface-2);border-radius:8px;padding:10px 14px}
+.tile .k{font-size:12px;color:var(--text-2)} .tile .v{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.up{color:var(--bad)} .down{color:var(--good)}
+.chart{position:relative}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.12);display:none;white-space:nowrap}
+.tip b{font-size:14px;display:block}
+.banner{background:var(--surface-2);border-left:3px solid var(--gold);padding:8px 12px;border-radius:4px;font-size:13px;color:var(--text-2);margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.hidden{display:none}
+.applink{color:var(--accent);font-weight:600;text-decoration:none}
+.apps a{color:var(--text-2);font-weight:600;text-decoration:none;margin-right:12px}
+.apps a:hover{color:var(--text)}
+.apps a[aria-current]{color:var(--accent)}
+.pill.partner,.pill.wholesale{color:var(--accent);border-color:var(--accent)}
+.pill.goods{color:var(--gold);border-color:var(--gold)}
+.brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{height:44px;width:auto}
+.applabel{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);border-left:1px solid var(--border);padding-left:14px}
+#gate .applabel{border:0;padding:0}
+details summary{cursor:pointer;color:var(--text-2)}
+.msg{font-size:13px;margin-left:8px}
+.lnk{color:var(--accent)}
+</style>
+</head>
+<body>
+<!-- Supabase connection values live in config.js (same folder). -->
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+.cal{display:grid;border:1px solid var(--border);border-radius:8px;overflow:auto;position:relative;background:var(--surface)}
+.cal .hd{position:sticky;top:0;background:var(--surface-2);font-size:13px;font-weight:600;padding:8px;border-bottom:1px solid var(--border);z-index:2;text-align:center}
+.cal .tcol{font-size:11px;color:var(--muted);text-align:right;padding-right:6px}
+.cal .col{position:relative;border-left:1px solid var(--border)}
+.cal .slot{height:40px;border-bottom:1px dashed var(--grid)}
+.cal .tl{height:40px;padding-top:2px}
+.bk{position:absolute;left:3px;right:3px;border-radius:6px;padding:4px 6px;font-size:12px;line-height:1.25;overflow:hidden;cursor:pointer;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface));color:var(--text)}
+.bk.confirmed{background:color-mix(in srgb,var(--accent) 32%,var(--surface))}
+.bk.completed{border-color:var(--good);background:color-mix(in srgb,var(--good) 18%,var(--surface))}
+.bk.no_show{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--surface));opacity:.8}
+.bk.sel{outline:2px solid var(--text)}
+.off{position:absolute;left:0;right:0;background:repeating-linear-gradient(135deg,var(--surface-2),var(--surface-2) 6px,transparent 6px,transparent 12px);font-size:11px;color:var(--muted);padding:3px 6px}
+.slotbtn{font:inherit;font-size:13px;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;margin:0 6px 6px 0}
+.slotbtn.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.st{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;border:1px solid var(--border);color:var(--text-2)}
+.st.booked{color:var(--accent);border-color:var(--accent)}.st.confirmed{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.st.completed{color:var(--good);border-color:var(--good)}.st.no_show,.st.cancelled{color:var(--bad);border-color:var(--bad)}
+</style>
+
+<section id="gate" class="hidden" style="max-width:420px;margin:60px auto;padding:0 20px">
+  <div class="card">
+    <img src="assets/logo.png" alt="Royal Glow" class="logo" style="width:220px;height:auto;display:block;margin:4px 0 6px"><div class="applabel" style="margin-bottom:10px">Spa</div>
+    <div id="gSetup" class="hidden small"><p>This page is not connected to Supabase yet.</p><p>Create <code>apps/production/config.js</code> (copy <code>config.example.js</code>) and paste in your Project URL and publishable key.</p></div>
+    <form id="gLogin" class="hidden">
+      <p class="small muted">Staff sign-in</p>
+      <label class="f" style="margin-bottom:10px">Email<input type="email" id="gEmail" autocomplete="username" required></label>
+      <label class="f" style="margin-bottom:14px">Password<input type="password" id="gPass" autocomplete="current-password" required></label>
+      <button class="b p" type="submit" id="gBtn">Sign in</button><span class="msg" id="gMsg"></span>
+      <p class="small" style="margin:14px 0 0"><a href="staff.html#reset" class="lnk">Forgot password?</a> · <a href="staff.html#signup" class="lnk">New staff? Create an account</a></p>
+    </form>
+    <div id="gNoStaff" class="hidden small"><p>Signed in as <b id="gWho"></b>. This account is waiting for an admin to approve it.</p><button class="b" id="gOut">Sign out</button></div>
+  </div>
+</section>
+
+<div id="app" class="hidden">
+<header>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+    <h1 class="brand"><img src="assets/logo.png" alt="Royal Glow" class="logo"><span class="applabel">Spa</span></h1>
+    <div class="small muted"><span class="apps"><a href="index.html">Production</a><a href="inventory.html">Inventory</a><a href="sales.html">Sales</a><a href="shop-admin.html">Online shop</a><a href="spa.html" aria-current="page">Spa</a><a href="blog-admin.html">Blog</a><a href="accounts.html">Accounts</a><a href="staff.html">Account</a></span> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
+  </div>
+  <p class="sub">Bookings by therapist, phone bookings, treatments, therapists, opening hours and spa reports. All times are Ghana time.</p>
+  <nav id="tabs">
+    <button data-v="day" class="on">Day</button>
+    <button data-v="list">Upcoming</button>
+    <button data-v="services">Treatments</button>
+    <button data-v="therapists">Therapists</button>
+    <button data-v="settings">Hours &amp; settings</button>
+    <button data-v="reports">Reports</button>
+  </nav>
+</header>
+<main>
+  <div class="banner hidden" id="sampleBanner">No spa bookings yet. Load sample bookings over the next few days to see the calendar in use. <button class="b" id="loadSample">Load spa sample bookings</button></div>
+  <div class="banner hidden" id="roBanner">Your role can view the spa but not change bookings or settings.</div>
+
+  <!-- DAY -->
+  <section id="v-day">
+    <div class="card">
+      <div class="row" style="margin-bottom:12px;align-items:center">
+        <button class="b" id="dPrev" aria-label="Previous day">‹</button>
+        <input type="date" id="dDate">
+        <button class="b" id="dNext" aria-label="Next day">›</button>
+        <button class="b" id="dToday">Today</button>
+        <b id="dLabel" style="margin-left:8px"></b>
+      </div>
+      <div id="dCal"></div>
+    </div>
+    <div class="card hidden" id="bkCard"></div>
+    <div class="card">
+      <h2>New booking (phone or walk-in)</h2>
+      <div class="row">
+        <label class="f">Treatment<select id="nSvc"></select></label>
+        <label class="f">Therapist<select id="nTh"></select></label>
+        <label class="f">Day<input type="date" id="nDate"></label>
+        <button class="b" id="nFind">Show free times</button>
+      </div>
+      <div id="nSlots" style="margin-top:12px"></div>
+      <div class="row hidden" id="nWho" style="margin-top:8px">
+        <label class="f">Customer name<input id="nName" size="20"></label>
+        <label class="f">Phone<input id="nPhone" size="14"></label>
+        <label class="f">Notes<input id="nNotes" size="24"></label>
+        <button class="b p" id="nBook">Book</button>
+      </div>
+      <span class="msg" id="nMsg"></span>
+    </div>
+  </section>
+
+  <!-- LIST -->
+  <section id="v-list" class="hidden">
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <label class="f">Show<select id="lStatus"><option value="open">Booked and confirmed</option><option value="">All</option><option value="booked">Booked</option><option value="confirmed">Confirmed</option><option value="completed">Completed</option><option value="no_show">No-show</option><option value="cancelled">Cancelled</option></select></label>
+        <label class="f">From<input type="date" id="lFrom"></label>
+        <label class="f">To<input type="date" id="lTo"></label>
+      </div>
+      <table><thead><tr><th>When</th><th>Booking</th><th>Customer</th><th>Treatment</th><th>Therapist</th><th>Status</th><th>Source</th></tr></thead><tbody id="lList"></tbody></table>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section id="v-services" class="hidden">
+    <div class="card">
+      <h2>Treatments</h2>
+      <p class="small muted" style="margin-top:0">Shown on the website's Spa page, grouped by category. Untick <b>Shown</b> to hide a treatment without deleting it.</p>
+      <table><thead><tr><th>Name</th><th>Category</th><th class="n">Minutes</th><th class="n">Price GH₵</th><th>Description</th><th>Shown</th></tr></thead><tbody id="svList"></tbody></table>
+      <div class="row" style="margin-top:10px">
+        <label class="f">Name<input id="svName" size="20"></label>
+        <label class="f">Category<input id="svCat" size="12" placeholder="e.g. Facials"></label>
+        <label class="f">Minutes<input type="number" id="svDur" min="10" step="5" style="width:80px"></label>
+        <label class="f">Price GH₵<input type="number" id="svPrice" min="0" step="any" style="width:90px"></label>
+        <button class="b p" id="svAdd">Add treatment</button><span class="msg" id="svMsg"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- THERAPISTS -->
+  <section id="v-therapists" class="hidden">
+    <div id="thList"></div>
+    <div class="card">
+      <div class="row"><label class="f">New therapist<input id="thName" size="20"></label><button class="b p" id="thAdd">Add therapist</button><span class="msg" id="thMsg"></span></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="v-settings" class="hidden">
+    <div class="card">
+      <h2>Opening hours</h2>
+      <table style="max-width:520px"><thead><tr><th>Day</th><th>Open</th><th>From</th><th>To</th></tr></thead><tbody id="hrList"></tbody></table>
+      <div class="row" style="margin-top:10px"><button class="b p" id="hrSave">Save hours</button><span class="msg" id="hrMsg"></span></div>
+    </div>
+    <div class="card">
+      <h2>Booking rules and contact</h2>
+      <div class="row">
+        <label class="f">Times offered every (minutes)<input type="number" id="stStep" min="5" max="120" step="5" style="width:90px"></label>
+        <label class="f">Minimum notice for online booking (hours)<input type="number" id="stNotice" min="0" max="72" style="width:90px"></label>
+        <label class="f">Book up to (days ahead)<input type="number" id="stAhead" min="1" max="180" style="width:90px"></label>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label class="f">Spa phone<input id="stPhone" size="14"></label>
+        <label class="f">Spa address<input id="stAddr" size="30"></label>
+        <label class="f">Note to customers<input id="stNote" size="40"></label>
+        <button class="b p" id="stSave">Save</button><span class="msg" id="stMsg"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- REPORTS -->
+  <section id="v-reports" class="hidden">
+    <div class="card">
+      <div class="row" style="margin-bottom:14px"><label class="f">From<input type="date" id="rpFrom"></label><label class="f">To<input type="date" id="rpTo"></label></div>
+      <div class="tiles" id="rpTiles"></div>
+      <h3 class="small muted" style="margin:16px 0 6px">BY TREATMENT</h3>
+      <table><thead><tr><th>Treatment</th><th class="n">Completed</th><th class="n">Revenue</th></tr></thead><tbody id="rpSvc"></tbody></table>
+      <h3 class="small muted" style="margin:20px 0 6px">BY THERAPIST</h3>
+      <table><thead><tr><th>Therapist</th><th class="n">Completed</th><th class="n">No-shows</th><th class="n">Revenue</th></tr></thead><tbody id="rpTh"></tbody></table>
+      <h3 class="small muted" style="margin:20px 0 6px">BY PAYMENT METHOD</h3>
+      <table><thead><tr><th>Method</th><th class="n">Completed</th><th class="n">Revenue</th></tr></thead><tbody id="rpPay"></tbody></table>
+    </div>
+  </section>
+</main>
+</div>
+
+<script>
+(function(){
+// Ghana is on GMT all year (no daylight saving), so Ghana time = UTC.
+const TZ='Africa/Accra';
+const STATUS={booked:'Booked',confirmed:'Confirmed',completed:'Completed',cancelled:'Cancelled',no_show:'No-show'};
+const PAY={cash:'Cash',momo:'Mobile money',card:'Card',bank:'Bank transfer'};
+const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const money=v=>'GH₵ '+(Number(v)||0).toLocaleString('en-GH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const hm=t=>new Date(t).toLocaleTimeString('en-GB',{timeZone:TZ,hour:'2-digit',minute:'2-digit'});
+const dLong=d=>new Date(d+'T12:00:00Z').toLocaleDateString('en-GB',{timeZone:TZ,weekday:'long',day:'numeric',month:'long',year:'numeric'});
+const dShort=t=>new Date(t).toLocaleDateString('en-GB',{timeZone:TZ,weekday:'short',day:'numeric',month:'short'});
+const todayG=()=>new Date().toISOString().slice(0,10);
+const addDays=(d,n)=>new Date(Date.parse(d+'T00:00:00Z')+n*864e5).toISOString().slice(0,10);
+const iso=(d,time)=>d+'T'+time+':00Z';
+const mins=t=>{const [a,b]=t.split(':').map(Number);return a*60+b};
+const $=id=>document.getElementById(id);
+function h(tag,attrs,...kids){const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==='on')for(const ev in attrs.on)e.addEventListener(ev,attrs.on[ev]);else if(k==='class')e.className=attrs[k];else if(k==='style')e.setAttribute('style',attrs[k]);else if(k in e&&k!=='list')e[k]=attrs[k];else e.setAttribute(k,attrs[k]);}for(const c of kids.flat()){if(c==null||c===false)continue;e.appendChild(typeof c==='object'?c:document.createTextNode(String(c)));}return e;}
+function fillSelect(sel,list,keep,first){const cur=sel.value;const opts=list.map(i=>h('option',{value:i.id},i.label||i.name));if(first)opts.unshift(h('option',{value:''},first));sel.replaceChildren(...opts);if(keep&&[...sel.options].some(o=>o.value===cur))sel.value=cur;}
+
+const CFG=window.RG_CONFIG||{};
+const cfgOk=!!CFG.SUPABASE_URL&&!/PASTE_/.test(CFG.SUPABASE_URL+CFG.SUPABASE_KEY);
+const sb=cfgOk&&window.supabase?window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_KEY):null;
+let ME=null;
+const canWrite=()=>ME&&ME.roles.some(r=>['admin','spa'].includes(r));
+const status=t=>{$('status').textContent=t};
+function friendly(err){
+  if(!err)return 'Unknown error';
+  if(err.code==='42501'||/row-level security|not allowed/i.test(err.message||''))return 'Your role is not allowed to do this.';
+  if(err.code==='23505')return 'That name is already used.';
+  if(err.code==='23P01')return 'That time overlaps another booking for this therapist.';
+  return err.message||String(err);
+}
+async function q(promise){const r=await promise;if(r.error)throw r.error;return r.data;}
+
+let D={svc:[],th:[],ths:[],hours:[],set:{},day:[],off:[]};
+async function loadSetup(){
+  const [svc,th,ths,hours,set]=await Promise.all([
+    q(sb.from('spa_services').select('*').order('sort_order').order('name')),
+    q(sb.from('spa_therapists').select('*').order('name')),
+    q(sb.from('spa_therapist_services').select('*')),
+    q(sb.from('spa_hours').select('*').order('weekday')),
+    q(sb.from('spa_settings').select('*').maybeSingle())]);
+  D.svc=svc;D.th=th;D.ths=ths;D.hours=hours;D.set=set||{};
+}
+const svc=id=>D.svc.find(s=>s.id===id);
+const th=id=>D.th.find(t=>t.id===id);
+async function bookingsBetween(from,to){return q(sb.from('spa_bookings').select('*').gte('starts_at',iso(from,'00:00')).lt('starts_at',iso(addDays(to,1),'00:00')).order('starts_at'));}
+
+function showGate(which,email){
+  $('app').classList.add('hidden');$('gate').classList.remove('hidden');
+  ['gSetup','gLogin','gNoStaff'].forEach(id=>$(id).classList.add('hidden'));
+  $({setup:'gSetup',login:'gLogin',nostaff:'gNoStaff'}[which]).classList.remove('hidden');
+  if(email)$('gWho').textContent=email;
+}
+async function boot(){
+  if(!sb)return showGate('setup');
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)return showGate('login');
+  const {data:me,error}=await sb.from('staff').select('full_name,roles').eq('user_id',session.user.id).maybeSingle();
+  if(error||!me)return showGate('nostaff',session.user.email);
+  ME={...me,email:session.user.email};
+  $('whoami').textContent=ME.full_name+' ('+ME.roles.join(', ')+')';
+  try{status('Loading…');await loadSetup();status('Connected')}catch(e){status('Error: '+friendly(e))}
+  $('gate').classList.add('hidden');$('app').classList.remove('hidden');
+  document.querySelectorAll('#nFind,#nBook,#svAdd,#thAdd,#hrSave,#stSave,#loadSample').forEach(b=>b.disabled=!canWrite());
+  $('roBanner').classList.toggle('hidden',canWrite());
+  const t=todayG();['dDate','nDate'].forEach(id=>{if(!$(id).value)$(id).value=t});
+  if(!$('lFrom').value){$('lFrom').value=t;$('lTo').value=addDays(t,30)}
+  if(!$('rpFrom').value){$('rpFrom').value=addDays(t,-30);$('rpTo').value=t}
+  try{const any=await q(sb.from('spa_bookings').select('id').limit(1));$('sampleBanner').classList.toggle('hidden',!(canWrite()&&!any.length))}catch(e){}
+  show(location.hash.slice(1)||'day');
+}
+$('gLogin').addEventListener('submit',async e=>{
+  e.preventDefault();$('gBtn').disabled=true;$('gMsg').textContent='Signing in…';
+  const {error}=await sb.auth.signInWithPassword({email:$('gEmail').value.trim(),password:$('gPass').value});
+  $('gBtn').disabled=false;if(error){$('gMsg').textContent=error.message;return}
+  $('gMsg').textContent='';$('gPass').value='';boot();
+});
+async function signOut(e){if(e)e.preventDefault();await sb.auth.signOut();ME=null;boot();}
+$('gOut').addEventListener('click',signOut);$('signOut').addEventListener('click',signOut);
+
+const views=['day','list','services','therapists','settings','reports'];
+function show(v){if(!views.includes(v))v='day';views.forEach(x=>$('v-'+x).classList.toggle('hidden',x!==v));document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render(v);}
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.v){location.hash=b.dataset.v;show(b.dataset.v)}});
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+function render(v){if(v==='day')fillNew();({day:renderDay,list:renderList,services:renderServices,therapists:renderTherapists,settings:renderSettings,reports:renderReports})[v]();}
+
+// ---------- DAY CALENDAR ----------
+let selected=null;
+async function renderDay(){
+  const d=$('dDate').value||todayG();$('nDate').value=d;$('dLabel').textContent=dLong(d);
+  const wd=new Date(d+'T12:00:00Z').getUTCDay();const hr=D.hours.find(x=>x.weekday===wd)||{opens:'09:00',closes:'18:00',closed:true};
+  let bks,off;
+  try{[bks,off]=await Promise.all([bookingsBetween(d,d),q(sb.from('spa_time_off').select('*').lt('starts_at',iso(addDays(d,1),'00:00')).gt('ends_at',iso(d,'00:00')))])}catch(e){status('Error: '+friendly(e));return}
+  D.day=bks;D.off=off;
+  const live=bks.filter(b=>b.status!=='cancelled');
+  // visible window: opening hours, stretched to include any booking outside them
+  let start=mins(String(hr.opens).slice(0,5)),end=mins(String(hr.closes).slice(0,5));
+  live.forEach(b=>{const s=mins(hm(b.starts_at)),e=mins(hm(b.ends_at))||1440;start=Math.min(start,s);end=Math.max(end,e)});
+  start=Math.floor(start/30)*30;end=Math.ceil(end/30)*30;
+  const rows=(end-start)/30,ths=D.th.filter(t=>t.active||live.some(b=>b.therapist_id===t.id));
+  const box=$('dCal');
+  if(!ths.length){box.replaceChildren(h('p',{class:'muted'},'Add therapists on the Therapists tab.'));return}
+  const cal=h('div',{class:'cal',style:'grid-template-columns:56px repeat('+ths.length+',minmax(140px,1fr))'});
+  cal.appendChild(h('div',{class:'hd'},''));ths.forEach(t=>cal.appendChild(h('div',{class:'hd'},t.name)));
+  const tcol=h('div',{class:'tcol'});for(let i=0;i<rows;i++){const m=start+i*30;tcol.appendChild(h('div',{class:'tl'},String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')));}
+  cal.appendChild(tcol);
+  ths.forEach(t=>{
+    const col=h('div',{class:'col',style:'height:'+(rows*40)+'px'});for(let i=0;i<rows;i++)col.appendChild(h('div',{class:'slot'}));
+    const y=ts=>{const m=Math.max(start,Math.min(end,mins(hm(ts))));return (m-start)/30*40};
+    off.filter(o=>o.therapist_id===t.id).forEach(o=>{const top=Date.parse(o.starts_at)<Date.parse(iso(d,'00:00'))?0:y(o.starts_at);const bot=Date.parse(o.ends_at)>=Date.parse(iso(addDays(d,1),'00:00'))?rows*40:y(o.ends_at);
+      if(bot>top)col.appendChild(h('div',{class:'off',style:'top:'+top+'px;height:'+(bot-top)+'px'},'Off'+(o.reason?': '+o.reason:'')));});
+    live.filter(b=>b.therapist_id===t.id).forEach(b=>{const top=y(b.starts_at),ht=Math.max(22,y(b.ends_at)-top-2);
+      col.appendChild(h('div',{class:'bk '+b.status+(selected===b.id?' sel':''),style:'top:'+top+'px;height:'+ht+'px',title:b.service_name+' — '+b.full_name,on:{click:()=>{selected=b.id;renderDay();showBooking(b)}}},
+        h('b',null,hm(b.starts_at)+' '+b.full_name),h('br'),b.service_name.replace(' (sample)','')));});
+    cal.appendChild(col);
+  });
+  const cancelled=bks.filter(b=>b.status==='cancelled');
+  box.replaceChildren(hr.closed?h('p',{class:'small muted',style:'margin-top:0'},'The spa is normally closed on '+DAYS[wd]+'s.'):'',cal,
+    cancelled.length?h('p',{class:'small muted'},'Cancelled today: '+cancelled.map(b=>hm(b.starts_at)+' '+b.full_name).join(', ')):'');
+  const sel=bks.find(b=>b.id===selected);if(sel)showBooking(sel);else $('bkCard').classList.add('hidden');
+}
+function showBooking(b){
+  const card=$('bkCard');card.classList.remove('hidden');const can=canWrite();const msg=h('span',{class:'msg'});
+  const upd=async patch=>{try{await q(sb.from('spa_bookings').update({...patch,updated_at:new Date().toISOString()}).eq('id',b.id));await renderDay()}catch(e){msg.textContent=friendly(e)}};
+  const btn=(label,fn,p)=>h('button',{class:'b'+(p?' p':''),style:'margin-right:6px',disabled:!can,on:{click:fn}},label);
+  const amt=h('input',{type:'number',min:'0',step:'any',value:b.paid_amount!=null?b.paid_amount:b.price,style:'width:100px'});
+  const pay=h('select',null,...Object.entries(PAY).map(([k,v])=>h('option',{value:k,selected:k===(b.payment_method||'momo')},v)));
+  const open=['booked','confirmed'].includes(b.status);
+  card.replaceChildren(
+    h('div',{style:'display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap'},h('h2',{style:'margin:0'},b.booking_no+' · '+b.full_name),h('span',{class:'st '+b.status},STATUS[b.status])),
+    h('p',{class:'small',style:'margin:8px 0'},h('b',null,b.service_name),' with '+((th(b.therapist_id)||{}).name||'?')+' · '+dShort(b.starts_at)+', '+hm(b.starts_at)+'–'+hm(b.ends_at)+' · '+money(b.price),h('br'),
+      'Phone: '+b.phone+(b.email?' · '+b.email:'')+' · booked '+(b.source==='online'?'online':'by staff'),b.notes?[h('br'),'Note: '+b.notes]:'',
+      b.status==='completed'?[h('br'),'Paid '+money(b.paid_amount)+' by '+(PAY[b.payment_method]||'?')]:''),
+    open?h('div',{class:'row',style:'align-items:center'},
+      b.status==='booked'?btn('Confirm',()=>upd({status:'confirmed'}),true):'',
+      h('span',{class:'small'},'Paid '),amt,pay,btn('Complete',()=>upd({status:'completed',paid_amount:+amt.value||0,payment_method:pay.value}),b.status==='confirmed'),
+      btn('No-show',()=>upd({status:'no_show'})),btn('Cancel booking',()=>upd({status:'cancelled'})),msg):
+      (b.status!=='completed'?h('div',null,btn('Reopen booking',()=>upd({status:'booked'})),msg):''));
+}
+$('dDate').addEventListener('change',()=>{selected=null;renderDay()});
+$('dPrev').addEventListener('click',()=>{$('dDate').value=addDays($('dDate').value||todayG(),-1);selected=null;renderDay()});
+$('dNext').addEventListener('click',()=>{$('dDate').value=addDays($('dDate').value||todayG(),1);selected=null;renderDay()});
+$('dToday').addEventListener('click',()=>{$('dDate').value=todayG();selected=null;renderDay()});
+
+// new booking
+let pick=null;
+function fillNew(){fillSelect($('nSvc'),D.svc.filter(s=>s.active).map(s=>({id:s.id,name:s.name+' ('+s.duration_min+' min, '+money(s.price)+')'})),true);fillSelect($('nTh'),D.th.filter(t=>t.active),true,'Any therapist');}
+$('nFind').addEventListener('click',async()=>{
+  pick=null;$('nWho').classList.add('hidden');$('nMsg').textContent='';
+  let slots;try{slots=await q(sb.rpc('spa_slots',{p_service:$('nSvc').value,p_date:$('nDate').value,p_therapist:$('nTh').value||null,p_staff:true}))}catch(e){$('nMsg').textContent=friendly(e);return}
+  const byTime={};slots.forEach(s=>{(byTime[s.starts_at]=byTime[s.starts_at]||[]).push(s)});
+  const box=$('nSlots');box.replaceChildren();
+  if(!slots.length){box.appendChild(h('p',{class:'small muted'},'No free times that day (closed, fully booked, or past).'));return}
+  Object.keys(byTime).sort().forEach(t=>box.appendChild(h('button',{class:'slotbtn',title:byTime[t].map(s=>s.therapist_name).join(', '),on:{click:e=>{pick=t;box.querySelectorAll('.slotbtn').forEach(x=>x.classList.remove('on'));e.currentTarget.classList.add('on');$('nWho').classList.remove('hidden')}}},hm(t))));
+});
+$('nBook').addEventListener('click',async()=>{
+  const msg=t=>$('nMsg').textContent=t;if(!pick)return msg('Pick a time.');
+  try{const r=await q(sb.rpc('book_spa',{p_service:$('nSvc').value,p_starts_at:pick,p_therapist:$('nTh').value||null,p_name:$('nName').value,p_phone:$('nPhone').value,p_email:null,p_notes:$('nNotes').value,p_staff:true}));
+    msg('Booked '+r.booking_no+' with '+r.therapist+' at '+hm(r.starts_at)+'.');['nName','nPhone','nNotes'].forEach(id=>$(id).value='');$('nSlots').replaceChildren();$('nWho').classList.add('hidden');
+    $('dDate').value=$('nDate').value;selected=null;renderDay()}catch(e){msg(friendly(e))}
+});
+
+// ---------- LIST ----------
+async function renderList(){
+  const f=$('lStatus').value;let rows;try{rows=await bookingsBetween($('lFrom').value,$('lTo').value)}catch(e){status('Error: '+friendly(e));return}
+  rows=rows.filter(b=>f==='open'?['booked','confirmed'].includes(b.status):(!f||b.status===f));
+  $('lList').replaceChildren(...(rows.length?rows.map(b=>h('tr',null,h('td',null,dShort(b.starts_at)+' '+hm(b.starts_at)),h('td',null,b.booking_no),h('td',null,b.full_name,h('div',{class:'small muted'},b.phone)),
+    h('td',null,b.service_name),h('td',null,(th(b.therapist_id)||{}).name||'?'),h('td',null,h('span',{class:'st '+b.status},STATUS[b.status])),h('td',{class:'small'},b.source==='online'?'Website':'Staff'))):
+    [h('tr',null,h('td',{colspan:7,class:'muted small'},'No bookings match.'))]));
+}
+['lStatus','lFrom','lTo'].forEach(id=>$(id).addEventListener('change',renderList));
+
+// ---------- SERVICES ----------
+function renderServices(){
+  const can=canWrite();const tb=$('svList');tb.replaceChildren();
+  D.svc.forEach(s=>{const msg=h('span',{class:'msg'});
+    const f={name:h('input',{value:s.name,size:22,disabled:!can}),category:h('input',{value:s.category,size:12,disabled:!can}),duration_min:h('input',{type:'number',min:10,step:5,value:s.duration_min,style:'width:70px',disabled:!can}),
+      price:h('input',{type:'number',min:0,step:'any',value:Number(s.price),style:'width:90px',disabled:!can}),description:h('input',{value:s.description||'',size:30,disabled:!can}),active:h('input',{type:'checkbox',checked:!!s.active,disabled:!can})};
+    const save=async()=>{try{await q(sb.from('spa_services').update({name:f.name.value.trim()||s.name,category:f.category.value.trim()||'Treatments',duration_min:+f.duration_min.value||s.duration_min,price:+f.price.value||0,description:f.description.value.trim()||null,active:f.active.checked}).eq('id',s.id));
+      msg.textContent='Saved';setTimeout(()=>msg.textContent='',1500);await loadSetup()}catch(e){msg.textContent=friendly(e)}};
+    Object.values(f).forEach(el=>el.addEventListener('change',save));
+    tb.appendChild(h('tr',null,h('td',null,f.name),h('td',null,f.category),h('td',{class:'n'},f.duration_min),h('td',{class:'n'},f.price),h('td',null,f.description),h('td',null,f.active,msg)));});
+}
+$('svAdd').addEventListener('click',async()=>{const n=$('svName').value.trim(),dur=+$('svDur').value;if(!n||!(dur>=10))return $('svMsg').textContent='Give a name and minutes (10 or more).';
+  try{await q(sb.from('spa_services').insert({name:n,category:$('svCat').value.trim()||'Treatments',duration_min:dur,price:+$('svPrice').value||0,sort_order:D.svc.length+1}));
+    ['svName','svCat','svDur','svPrice'].forEach(id=>$(id).value='');$('svMsg').textContent='';await loadSetup();renderServices()}catch(e){$('svMsg').textContent=friendly(e)}});
+
+// ---------- THERAPISTS ----------
+async function renderTherapists(){
+  const can=canWrite();const box=$('thList');
+  let off=[];try{off=await q(sb.from('spa_time_off').select('*').gte('ends_at',new Date().toISOString()).order('starts_at'))}catch(e){}
+  box.replaceChildren(...D.th.map(t=>{const msg=h('span',{class:'msg'});
+    const name=h('input',{value:t.name,size:20,disabled:!can}),act=h('input',{type:'checkbox',checked:!!t.active,disabled:!can});
+    const saveT=async()=>{try{await q(sb.from('spa_therapists').update({name:name.value.trim()||t.name,active:act.checked}).eq('id',t.id));await loadSetup();msg.textContent='Saved'}catch(e){msg.textContent=friendly(e)}};
+    name.addEventListener('change',saveT);act.addEventListener('change',saveT);
+    const mine=D.ths.filter(x=>x.therapist_id===t.id).map(x=>x.service_id);
+    const boxes=D.svc.map(s=>{const c=h('input',{type:'checkbox',checked:mine.includes(s.id),disabled:!can,on:{change:async e=>{
+      try{if(e.target.checked)await q(sb.from('spa_therapist_services').insert({therapist_id:t.id,service_id:s.id}));else await q(sb.from('spa_therapist_services').delete().eq('therapist_id',t.id).eq('service_id',s.id));
+        await loadSetup();renderTherapists()}catch(err){msg.textContent=friendly(err)}}}});
+      return h('label',{style:'margin-right:12px;white-space:nowrap;font-size:13px'},c,' '+s.name.replace(' (sample)',''))});
+    const from=h('input',{type:'datetime-local',disabled:!can}),to=h('input',{type:'datetime-local',disabled:!can}),why=h('input',{placeholder:'Reason (e.g. leave)',size:16,disabled:!can});
+    const mineOff=off.filter(o=>o.therapist_id===t.id);
+    return h('div',{class:'card'},h('div',{class:'row',style:'align-items:center'},h('label',{class:'f'},'Name',name),h('label',{style:'display:flex;gap:6px;align-items:center;font-size:14px'},act,'Active (takes bookings)'),msg),
+      h('p',{class:'small muted',style:'margin:12px 0 4px'},'Treatments '+t.name.replace(' (sample)','')+' does'+(mine.length?'':' (none ticked = all treatments)')+':'),h('div',null,boxes),
+      h('p',{class:'small muted',style:'margin:14px 0 4px'},'Time off (leave, training, blocked time):'),
+      h('table',{class:'small',style:'max-width:620px'},h('tbody',null,mineOff.length?mineOff.map(o=>h('tr',null,h('td',null,dShort(o.starts_at)+' '+hm(o.starts_at)+' → '+dShort(o.ends_at)+' '+hm(o.ends_at)),h('td',null,o.reason||''),
+        h('td',null,can?h('button',{class:'x',title:'Remove',on:{click:async()=>{await q(sb.from('spa_time_off').delete().eq('id',o.id));renderTherapists()}}},'×'):''))):h('tr',null,h('td',{class:'muted'},'None upcoming.')))),
+      h('div',{class:'row',style:'margin-top:8px'},h('label',{class:'f'},'From',from),h('label',{class:'f'},'To',to),why,
+        h('button',{class:'b',disabled:!can,on:{click:async()=>{if(!from.value||!to.value||to.value<=from.value){msg.textContent='Choose a start and a later end.';return}
+          try{await q(sb.from('spa_time_off').insert({therapist_id:t.id,starts_at:from.value+':00Z',ends_at:to.value+':00Z',reason:why.value.trim()||null}));renderTherapists()}catch(e){msg.textContent=friendly(e)}}}},'Add time off')));
+  }));
+  if(!D.th.length)box.replaceChildren(h('div',{class:'card muted'},'No therapists yet.'));
+}
+$('thAdd').addEventListener('click',async()=>{const n=$('thName').value.trim();if(!n)return;
+  try{await q(sb.from('spa_therapists').insert({name:n}));$('thName').value='';$('thMsg').textContent='';await loadSetup();renderTherapists()}catch(e){$('thMsg').textContent=friendly(e)}});
+
+// ---------- SETTINGS ----------
+function renderSettings(){
+  const can=canWrite();
+  $('hrList').replaceChildren(...[1,2,3,4,5,6,0].map(wd=>{const r=D.hours.find(x=>x.weekday===wd)||{weekday:wd,opens:'09:00',closes:'18:00',closed:true};
+    return h('tr',{'data-wd':wd},h('td',null,DAYS[wd]),h('td',null,h('input',{type:'checkbox',checked:!r.closed,disabled:!can})),
+      h('td',null,h('input',{type:'time',value:String(r.opens).slice(0,5),disabled:!can})),h('td',null,h('input',{type:'time',value:String(r.closes).slice(0,5),disabled:!can})))}));
+  const s=D.set;$('stStep').value=s.slot_step_min||30;$('stNotice').value=s.min_notice_hours??2;$('stAhead').value=s.max_days_ahead||30;$('stPhone').value=s.phone||'';$('stAddr').value=s.address||'';$('stNote').value=s.note||'';
+}
+$('hrSave').addEventListener('click',async()=>{
+  try{for(const tr of $('hrList').children){const [open,from,to]=tr.querySelectorAll('input');
+      if(open.checked&&to.value<=from.value)throw new Error(DAYS[+tr.dataset.wd]+': closing time must be after opening time.');
+      await q(sb.from('spa_hours').update({closed:!open.checked,opens:from.value,closes:to.value}).eq('weekday',+tr.dataset.wd));}
+    await loadSetup();$('hrMsg').textContent='Saved.'}catch(e){$('hrMsg').textContent=friendly(e)}});
+$('stSave').addEventListener('click',async()=>{
+  try{await q(sb.from('spa_settings').update({slot_step_min:+$('stStep').value||30,min_notice_hours:+$('stNotice').value||0,max_days_ahead:+$('stAhead').value||30,
+      phone:$('stPhone').value.trim()||null,address:$('stAddr').value.trim()||null,note:$('stNote').value.trim()||null,updated_at:new Date().toISOString()}).eq('id',1));
+    await loadSetup();$('stMsg').textContent='Saved.'}catch(e){$('stMsg').textContent=friendly(e)}});
+
+// ---------- REPORTS ----------
+async function renderReports(){
+  let rows;try{rows=await bookingsBetween($('rpFrom').value,$('rpTo').value)}catch(e){status('Error: '+friendly(e));return}
+  const done=rows.filter(b=>b.status==='completed'),rev=done.reduce((s,b)=>s+Number(b.paid_amount||0),0);
+  const ns=rows.filter(b=>b.status==='no_show').length,cx=rows.filter(b=>b.status==='cancelled').length;
+  const tile=(k,v,sub)=>h('div',{class:'tile'},h('div',{class:'k'},k),h('div',{class:'v'},v),sub?h('div',{class:'small muted'},sub):'');
+  $('rpTiles').replaceChildren(tile('Spa revenue',money(rev),'completed treatments'),tile('Treatments done',String(done.length)),tile('No-shows',String(ns)),tile('Cancellations',String(cx)));
+  const grp=(list,key)=>{const m={};list.forEach(b=>{const k=key(b);const g=m[k]||(m[k]={n:0,rev:0,ns:0});if(b.status==='completed'){g.n++;g.rev+=Number(b.paid_amount||0)}if(b.status==='no_show')g.ns++;});return Object.entries(m).sort((a,b)=>b[1].rev-a[1].rev)};
+  const empty=c=>[h('tr',null,h('td',{colspan:c,class:'muted small'},'Nothing in this period.'))];
+  const a=grp(done,b=>b.service_name);$('rpSvc').replaceChildren(...(a.length?a.map(([k,g])=>h('tr',null,h('td',null,k),h('td',{class:'n'},String(g.n)),h('td',{class:'n'},money(g.rev)))):empty(3)));
+  const t=grp(rows.filter(b=>['completed','no_show'].includes(b.status)),b=>(th(b.therapist_id)||{}).name||'?');$('rpTh').replaceChildren(...(t.length?t.map(([k,g])=>h('tr',null,h('td',null,k),h('td',{class:'n'},String(g.n)),h('td',{class:'n'},String(g.ns)),h('td',{class:'n'},money(g.rev)))):empty(4)));
+  const p=grp(done,b=>PAY[b.payment_method]||'?');$('rpPay').replaceChildren(...(p.length?p.map(([k,g])=>h('tr',null,h('td',null,k),h('td',{class:'n'},String(g.n)),h('td',{class:'n'},money(g.rev)))):empty(3)));
+}
+['rpFrom','rpTo'].forEach(id=>$(id).addEventListener('change',renderReports));
+
+// ---------- SAMPLE ----------
+$('loadSample').addEventListener('click',async()=>{
+  const btn=$('loadSample');btn.disabled=true;btn.textContent='Loading sample…';
+  const people=[['Adwoa Mensah (sample)','024 100 0001'],['Yaa Asantewaa (sample)','024 100 0002'],['Kofi Boateng (sample)','024 100 0003'],['Esi Owusu (sample)','024 100 0004'],['Akua Darko (sample)','024 100 0005'],['Nana Ama (sample)','024 100 0006']];
+  let made=0,i=0;
+  try{
+    for(let dd=1;dd<=6&&made<14;dd++){const day=addDays(todayG(),dd);
+      for(const s of D.svc.filter(x=>x.active).slice(0,5)){
+        const slots=await q(sb.rpc('spa_slots',{p_service:s.id,p_date:day,p_therapist:null,p_staff:true}));if(!slots.length)continue;
+        const pickS=slots[(dd*7+i*5)%slots.length];const [n,ph]=people[i%people.length];i++;
+        try{await q(sb.rpc('book_spa',{p_service:s.id,p_starts_at:pickS.starts_at,p_therapist:pickS.therapist_id,p_name:n,p_phone:ph,p_email:null,p_notes:null,p_staff:true}));made++}catch(e){}
+      }}
+    status('Added '+made+' sample bookings');$('sampleBanner').classList.add('hidden');$('dDate').value=addDays(todayG(),1);selected=null;renderDay();
+  }catch(e){status('Error: '+friendly(e))}
+  btn.disabled=!canWrite();btn.textContent='Load spa sample bookings';
+});
+
+boot();
+})();
+</script>
+</body>
+</html>

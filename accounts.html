@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Royal Glow — Accounts</title>
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#111111">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f7f5f2; --surface:#fcfcfb; --surface-2:#f1eee9; --border:#e2ddd5;
+  --text:#1b1a18; --text-2:#55524c; --muted:#8a867e;
+  --accent:#9a6b00; --accent-ink:#fff; --gold:#d9a21b;
+  --series-1:#2a78d6; --grid:#e8e4dd;
+  --good:#1f7a3a; --bad:#b3261e;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --bg:#121211; --surface:#1a1a19; --surface-2:#232321; --border:#34332f;
+    --text:#f0efec; --text-2:#c3c2b7; --muted:#8f8c84;
+    --accent:#f0b429; --accent-ink:#1a1a19; --gold:#f0b429;
+    --series-1:#3987e5; --grid:#2c2b28;
+    --good:#5cc27a; --bad:#ef7a72;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+header{padding:20px 24px 0;max-width:1100px;margin:0 auto}
+h1{font-size:22px;margin:0;letter-spacing:.2px}
+h1 span{color:var(--accent)}
+.sub{color:var(--text-2);margin:4px 0 14px;font-size:14px}
+nav{display:flex;gap:4px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+nav button{background:none;border:0;padding:10px 14px;font:inherit;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+nav button.on{color:var(--text);border-bottom-color:var(--accent);font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:20px 24px 60px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.card h2{font-size:16px;margin:0 0 12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+label.f{display:flex;flex-direction:column;font-size:12px;color:var(--text-2);gap:4px}
+input,select,textarea{font:inherit;padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);min-width:0}
+textarea{width:100%;min-height:120px;font:12px/1.4 ui-monospace,Menlo,monospace}
+button.b{font:inherit;padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer}
+button.b:hover{border-color:var(--muted)}
+button.p{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px}
+button.x:hover{color:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:12px;color:var(--text-2);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--surface-2);color:var(--text-2);border:1px solid var(--border)}
+.pill.product{color:var(--accent);border-color:var(--accent)}
+.muted{color:var(--muted)} .small{font-size:12px}
+.tot{font-size:14px;margin-top:10px;color:var(--text-2)} .tot b{color:var(--text)}
+.tiles{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.tile{flex:1 1 160px;background:var(--surface-2);border-radius:8px;padding:10px 14px}
+.tile .k{font-size:12px;color:var(--text-2)} .tile .v{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.up{color:var(--bad)} .down{color:var(--good)}
+.chart{position:relative}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.12);display:none;white-space:nowrap}
+.tip b{font-size:14px;display:block}
+.banner{background:var(--surface-2);border-left:3px solid var(--gold);padding:8px 12px;border-radius:4px;font-size:13px;color:var(--text-2);margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.hidden{display:none}
+.applink{color:var(--accent);font-weight:600;text-decoration:none}
+.apps a{color:var(--text-2);font-weight:600;text-decoration:none;margin-right:12px}
+.apps a:hover{color:var(--text)}
+.apps a[aria-current]{color:var(--accent)}
+.pill.partner,.pill.wholesale{color:var(--accent);border-color:var(--accent)}
+.pill.goods{color:var(--gold);border-color:var(--gold)}
+.brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{height:44px;width:auto}
+.applabel{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);border-left:1px solid var(--border);padding-left:14px}
+#gate .applabel{border:0;padding:0}
+details summary{cursor:pointer;color:var(--text-2)}
+.msg{font-size:13px;margin-left:8px}
+.lnk{color:var(--accent)}
+</style>
+</head>
+<body>
+<!-- Supabase connection values live in config.js (same folder). -->
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+.rep{max-width:820px}
+.rep td,.rep th{padding:6px 8px}
+.rep tr.sec td{font-weight:600;padding-top:18px;border-bottom:1px solid var(--border);color:var(--text-2);font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+.rep tr.tot td{font-weight:700;border-top:2px solid var(--text);border-bottom:0}
+.rep tr.sub td{font-weight:600;border-top:1px solid var(--text-2)}
+.rep tr.ind td:first-child{padding-left:22px}
+.rep a{color:inherit;text-decoration:none;border-bottom:1px dotted var(--muted)}
+.ok{color:var(--good)}.bad{color:var(--bad)}
+.period{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px}
+.jl td{padding:4px}
+</style>
+
+<section id="gate" class="hidden" style="max-width:420px;margin:60px auto;padding:0 20px">
+  <div class="card">
+    <img src="assets/logo.png" alt="Royal Glow" class="logo" style="width:220px;height:auto;display:block;margin:4px 0 6px"><div class="applabel" style="margin-bottom:10px">Accounts</div>
+    <div id="gSetup" class="hidden small"><p>This page is not connected to Supabase yet.</p><p>Create <code>apps/production/config.js</code> (copy <code>config.example.js</code>) and paste in your Project URL and publishable key.</p></div>
+    <form id="gLogin" class="hidden">
+      <p class="small muted">Staff sign-in</p>
+      <label class="f" style="margin-bottom:10px">Email<input type="email" id="gEmail" autocomplete="username" required></label>
+      <label class="f" style="margin-bottom:14px">Password<input type="password" id="gPass" autocomplete="current-password" required></label>
+      <button class="b p" type="submit" id="gBtn">Sign in</button><span class="msg" id="gMsg"></span>
+      <p class="small" style="margin:14px 0 0"><a href="staff.html#reset" class="lnk">Forgot password?</a> · <a href="staff.html#signup" class="lnk">New staff? Create an account</a></p>
+    </form>
+    <div id="gNoStaff" class="hidden small"><p>Signed in as <b id="gWho"></b>. This account is waiting for an admin to approve it.</p><button class="b" id="gOut">Sign out</button></div>
+    <div id="gNoRole" class="hidden small"><p>The accounts are only open to staff with the <b>Admin</b> or <b>Accounts</b> role. Ask an admin if you need access.</p><p><a class="lnk" href="index.html">← Back to the staff apps</a></p></div>
+  </div>
+</section>
+
+<div id="app" class="hidden">
+<header>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+    <h1 class="brand"><img src="assets/logo.png" alt="Royal Glow" class="logo"><span class="applabel">Accounts</span></h1>
+    <div class="small muted"><span class="apps"><a href="index.html">Production</a><a href="inventory.html">Inventory</a><a href="sales.html">Sales</a><a href="shop-admin.html">Online shop</a><a href="spa.html">Spa</a><a href="blog-admin.html">Blog</a><a href="accounts.html" aria-current="page">Accounts</a><a href="staff.html">Account</a></span> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
+  </div>
+  <p class="sub">Management accounts built automatically from sales, purchases, production, stock, spa and payments, plus the expenses and journals entered here. Amounts in GH₵.</p>
+  <nav id="tabs">
+    <button data-v="pl" class="on">Profit &amp; loss</button>
+    <button data-v="bs">Balance sheet</button>
+    <button data-v="cf">Cash flow</button>
+    <button data-v="tb">Trial balance</button>
+    <button data-v="ledger">Account ledger</button>
+    <button data-v="exp">Expenses</button>
+    <button data-v="sup">Suppliers</button>
+    <button data-v="jnl">Journals</button>
+    <button data-v="coa">Chart of accounts</button>
+  </nav>
+</header>
+<main>
+  <div class="banner hidden" id="sampleBanner">No expenses or journals yet. Load sample accounting data: opening capital and equipment, two months of rent, salaries and bills, and October depreciation, so the reports look like a real business. <button class="b" id="loadSample">Load sample accounting data</button></div>
+
+  <div class="card period" id="periodBar">
+    <label class="f">Period<select id="pPreset">
+      <option value="this_month">This month</option><option value="last_month">Last month</option><option value="this_year">This year</option>
+      <option value="last_year">Last year</option><option value="custom">Custom…</option></select></label>
+    <label class="f">From<input type="date" id="pFrom"></label>
+    <label class="f">To<input type="date" id="pTo"></label>
+    <span class="small muted" id="pNote" style="padding-bottom:8px"></span>
+    <button class="b" id="copyCsv" style="margin-left:auto">Copy as CSV</button><span class="msg" id="csvMsg"></span>
+  </div>
+
+  <section id="v-pl"><div class="card"><h2 id="plTitle">Profit and loss</h2><table class="rep"><tbody id="plBody"></tbody></table></div></section>
+  <section id="v-bs" class="hidden"><div class="card"><h2 id="bsTitle">Balance sheet</h2><table class="rep"><tbody id="bsBody"></tbody></table></div></section>
+  <section id="v-cf" class="hidden"><div class="card"><h2 id="cfTitle">Cash flow</h2><table class="rep"><tbody id="cfBody"></tbody></table>
+    <p class="small muted">Cash means cash on hand, mobile money and bank together. Moving money between them is not counted as money in or out.</p></div></section>
+  <section id="v-tb" class="hidden"><div class="card"><h2 id="tbTitle">Trial balance</h2><table class="rep"><thead><tr><th>Code</th><th>Account</th><th class="n">Debit</th><th class="n">Credit</th></tr></thead><tbody id="tbBody"></tbody></table></div></section>
+
+  <section id="v-ledger" class="hidden"><div class="card">
+    <div class="row" style="margin-bottom:12px"><label class="f">Account<select id="lAcc"></select></label></div>
+    <table><thead><tr><th>Date</th><th>From</th><th>Details</th><th class="n">Debit</th><th class="n">Credit</th><th class="n">Balance</th></tr></thead><tbody id="lBody"></tbody></table>
+  </div></section>
+
+  <section id="v-exp" class="hidden">
+    <div class="card">
+      <h2>Record an expense</h2>
+      <div class="row">
+        <label class="f">Date<input type="date" id="eDate"></label>
+        <label class="f">Type<select id="eAcc"></select></label>
+        <label class="f">Amount GH₵<input type="number" id="eAmt" min="0" step="any" style="width:110px"></label>
+        <label class="f">Paid from<select id="ePaid"><option value="bank">Bank</option><option value="momo">Mobile money</option><option value="cash">Cash</option><option value="card">Card</option><option value="payable">Not yet paid (owed to a supplier)</option></select></label>
+        <label class="f" id="eSupBox" style="display:none">Supplier<select id="eSup"></select></label>
+        <label class="f">Paid to<input id="ePayee" size="16" placeholder="e.g. ECG, landlord"></label>
+        <label class="f">Details<input id="eDesc" size="22" placeholder="e.g. October rent"></label>
+        <button class="b p" id="eSave">Save expense</button><span class="msg" id="eMsg"></span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Expenses in this period</h2>
+      <div class="tiles" id="eTiles"></div>
+      <table><thead><tr><th>Date</th><th>Type</th><th>Paid to</th><th>Details</th><th>Paid from</th><th class="n">Amount</th><th></th></tr></thead><tbody id="eList"></tbody></table>
+    </div>
+  </section>
+
+  <section id="v-sup" class="hidden">
+    <div class="card">
+      <h2>What we owe suppliers</h2>
+      <p class="small muted" style="margin-top:0">From purchases marked "not yet paid" on the Inventory page and unpaid expenses, less payments recorded here.</p>
+      <table><thead><tr><th>Supplier</th><th class="n">Owed</th></tr></thead><tbody id="sBal"></tbody></table>
+    </div>
+    <div class="card">
+      <h2>Record a payment to a supplier</h2>
+      <div class="row">
+        <label class="f">Supplier<select id="spSup"></select></label>
+        <label class="f">Amount GH₵<input type="number" id="spAmt" min="0" step="any" style="width:110px"></label>
+        <label class="f">Paid from<select id="spMeth"><option value="bank">Bank</option><option value="momo">Mobile money</option><option value="cash">Cash</option><option value="card">Card</option></select></label>
+        <label class="f">Date<input type="date" id="spDate"></label>
+        <label class="f">Ref<input id="spRef" size="12"></label>
+        <button class="b p" id="spSave">Save payment</button><span class="msg" id="spMsg"></span>
+      </div>
+      <table style="margin-top:14px"><thead><tr><th>Date</th><th>Supplier</th><th>Paid from</th><th>Ref</th><th class="n">Amount</th><th></th></tr></thead><tbody id="spList"></tbody></table>
+    </div>
+  </section>
+
+  <section id="v-jnl" class="hidden">
+    <div class="card">
+      <h2>New journal</h2>
+      <p class="small muted" style="margin-top:0">For things the apps don't record themselves: money the owner puts in or takes out, loans, buying equipment, depreciation, moving money between cash, MoMo and bank, and opening balances. Start from a template or build it line by line; debits must equal credits.</p>
+      <div class="row">
+        <label class="f">Start from<select id="jTpl"><option value="">— Blank —</option></select></label>
+        <label class="f">Date<input type="date" id="jDate"></label>
+        <label class="f" style="flex:1;min-width:240px">Description<input id="jMemo"></label>
+        <label class="f" style="flex-direction:row;align-items:center;gap:6px;padding-bottom:8px"><input type="checkbox" id="jOpen"> Opening balances</label>
+      </div>
+      <table class="jl" style="margin-top:10px"><thead><tr><th>Account</th><th class="n">Debit</th><th class="n">Credit</th><th>Note</th><th></th></tr></thead><tbody id="jLines"></tbody></table>
+      <div class="row" style="margin-top:8px;align-items:center"><button class="b" id="jAdd">+ Line</button><span id="jTot" class="small" style="margin-left:12px"></span>
+        <button class="b p" id="jSave" style="margin-left:auto">Post journal</button><span class="msg" id="jMsg"></span></div>
+    </div>
+    <div class="card">
+      <h2>Journals in this period</h2>
+      <div id="jList"></div>
+    </div>
+  </section>
+
+  <section id="v-coa" class="hidden">
+    <div class="card">
+      <h2>Chart of accounts</h2>
+      <p class="small muted" style="margin-top:0">Accounts marked <b>auto</b> are used by the automatic postings: you can rename them but not remove them.</p>
+      <table><thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Group</th><th>In use</th></tr></thead><tbody id="cList"></tbody></table>
+      <div class="row" style="margin-top:12px">
+        <label class="f">Code<input id="cCode" size="6" placeholder="6350"></label>
+        <label class="f">Name<input id="cName" size="26"></label>
+        <label class="f">Type<select id="cType"><option value="expense">Expense</option><option value="income">Income</option><option value="asset">Asset</option><option value="liability">Liability</option><option value="equity">Equity</option></select></label>
+        <button class="b p" id="cAdd">Add account</button><span class="msg" id="cMsg"></span>
+      </div>
+    </div>
+  </section>
+</main>
+</div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+function h(tag,attrs,...kids){const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==='on')for(const ev in attrs.on)e.addEventListener(ev,attrs.on[ev]);else if(k==='class')e.className=attrs[k];else if(k==='style')e.setAttribute('style',attrs[k]);else if(k in e&&k!=='list')e[k]=attrs[k];else e.setAttribute(k,attrs[k]);}for(const c of kids.flat()){if(c==null||c===false)continue;e.appendChild(typeof c==='object'?c:document.createTextNode(String(c)));}return e;}
+function fillSelect(sel,list,keep,first){const cur=sel.value;const opts=list.map(i=>h('option',{value:i.id},i.label||i.name));if(first)opts.unshift(h('option',{value:''},first));sel.replaceChildren(...opts);if(keep&&[...sel.options].some(o=>o.value===cur))sel.value=cur;}
+const N=v=>Math.round((Number(v)||0)*100)/100;
+const amt=v=>{v=N(v);const s=Math.abs(v).toLocaleString('en-GH',{minimumFractionDigits:2,maximumFractionDigits:2});return v<0?'('+s+')':s};
+const money=v=>'GH₵ '+amt(v);
+const ymd=d=>d.toISOString().slice(0,10);
+const today=()=>ymd(new Date());
+const dLong=d=>new Date(d+'T12:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+const TYPES={asset:'Asset',liability:'Liability',equity:'Equity',income:'Income',expense:'Expense'};
+const SRC={sale:'Sale',return:'Return',customer_payment:'Customer payment',purchase:'Purchase',supplier_payment:'Supplier payment',production:'Production',adjustment:'Stock adjustment',spa:'Spa',expense:'Expense',journal:'Journal',opening:'Opening balance'};
+const PAY={cash:'Cash',momo:'Mobile money',bank:'Bank',card:'Card',payable:'Not yet paid'};
+
+const CFG=window.RG_CONFIG||{};
+const cfgOk=!!CFG.SUPABASE_URL&&!/PASTE_/.test(CFG.SUPABASE_URL+CFG.SUPABASE_KEY);
+const sb=cfgOk&&window.supabase?window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_KEY):null;
+let ME=null;
+const isAcc=()=>ME&&ME.roles.some(r=>['admin','accounts'].includes(r));
+const status=t=>{$('status').textContent=t};
+function friendly(err){
+  if(!err)return 'Unknown error';
+  if(err.code==='42501'||/row-level security|not allowed/i.test(err.message||''))return 'Your role is not allowed to do this.';
+  if(err.code==='23505')return 'That code is already used.';
+  if(err.code==='23503')return 'This account is in use and cannot be removed. Untick it to hide it instead.';
+  return err.message||String(err);
+}
+async function q(promise){const r=await promise;if(r.error)throw r.error;return r.data;}
+let ACC=[],SUPS=[];
+const acc=c=>ACC.find(a=>a.code===c)||{code:c,name:c};
+async function loadBase(){[ACC,SUPS]=await Promise.all([q(sb.from('accounts').select('*').order('code')),q(sb.from('suppliers').select('id,name').order('name'))]);}
+
+// ---------- period ----------
+function setPreset(){
+  const p=$('pPreset').value,now=new Date(),y=now.getUTCFullYear(),m=now.getUTCMonth();
+  const D=(Y,M,d)=>ymd(new Date(Date.UTC(Y,M,d)));
+  if(p==='this_month'){$('pFrom').value=D(y,m,1);$('pTo').value=D(y,m+1,0)}
+  if(p==='last_month'){$('pFrom').value=D(y,m-1,1);$('pTo').value=D(y,m,0)}
+  if(p==='this_year'){$('pFrom').value=D(y,0,1);$('pTo').value=D(y,11,31)}
+  if(p==='last_year'){$('pFrom').value=D(y-1,0,1);$('pTo').value=D(y-1,11,31)}
+}
+const F=()=>$('pFrom').value,T=()=>$('pTo').value;
+$('pPreset').addEventListener('change',()=>{setPreset();render(cur)});
+['pFrom','pTo'].forEach(id=>$(id).addEventListener('change',()=>{$('pPreset').value='custom';render(cur)}));
+
+// ---------- gate ----------
+function showGate(which,email){
+  $('app').classList.add('hidden');$('gate').classList.remove('hidden');
+  ['gSetup','gLogin','gNoStaff','gNoRole'].forEach(id=>$(id).classList.add('hidden'));
+  $({setup:'gSetup',login:'gLogin',nostaff:'gNoStaff',norole:'gNoRole'}[which]).classList.remove('hidden');
+  if(email)$('gWho').textContent=email;
+}
+async function boot(){
+  if(!sb)return showGate('setup');
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)return showGate('login');
+  const {data:me,error}=await sb.from('staff').select('full_name,roles').eq('user_id',session.user.id).maybeSingle();
+  if(error||!me)return showGate('nostaff',session.user.email);
+  ME={...me,email:session.user.email};
+  if(!isAcc())return showGate('norole');
+  $('whoami').textContent=ME.full_name+' ('+ME.roles.join(', ')+')';
+  try{status('Loading…');await loadBase();status('Connected')}catch(e){status('Error: '+friendly(e))}
+  $('gate').classList.add('hidden');$('app').classList.remove('hidden');
+  if(!$('pFrom').value)setPreset();
+  ['eDate','spDate','jDate'].forEach(id=>{if(!$(id).value)$(id).value=today()});
+  try{const [e,j]=await Promise.all([q(sb.from('expenses').select('id').limit(1)),q(sb.from('journals').select('id').limit(1))]);$('sampleBanner').classList.toggle('hidden',!!(e.length||j.length))}catch(e){}
+  show(location.hash.slice(1)||'pl');
+}
+$('gLogin').addEventListener('submit',async e=>{
+  e.preventDefault();$('gBtn').disabled=true;$('gMsg').textContent='Signing in…';
+  const {error}=await sb.auth.signInWithPassword({email:$('gEmail').value.trim(),password:$('gPass').value});
+  $('gBtn').disabled=false;if(error){$('gMsg').textContent=error.message;return}
+  $('gMsg').textContent='';$('gPass').value='';boot();
+});
+async function signOut(e){if(e)e.preventDefault();await sb.auth.signOut();ME=null;boot();}
+$('gOut').addEventListener('click',signOut);$('signOut').addEventListener('click',signOut);
+
+const views=['pl','bs','cf','tb','ledger','exp','sup','jnl','coa'];let cur='pl',CSV=null;
+function show(v){if(!views.includes(v))v='pl';cur=v;views.forEach(x=>$('v-'+x).classList.toggle('hidden',x!==v));document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render(v);}
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.v){location.hash=b.dataset.v;show(b.dataset.v)}});
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+function render(v){
+  CSV=null;$('copyCsv').classList.toggle('hidden',!['pl','bs','cf','tb','ledger','exp'].includes(v));
+  $('periodBar').classList.toggle('hidden',v==='coa'||v==='sup');
+  $('pNote').textContent=['bs','tb'].includes(v)?'Shown as at the "To" date.':'';
+  ({pl:renderPL,bs:renderBS,cf:renderCF,tb:renderTB,ledger:renderLedger,exp:renderExp,sup:renderSup,jnl:renderJnl,coa:renderCoa})[v]().catch(e=>status('Error: '+friendly(e)));
+}
+$('copyCsv').addEventListener('click',async()=>{if(!CSV)return;const t=CSV.map(r=>r.map(v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(',')).join('\n');
+  try{await navigator.clipboard.writeText(t);$('csvMsg').textContent='Copied: paste into Excel or Google Sheets.'}catch(e){$('csvMsg').textContent='Copy blocked by the browser.'}setTimeout(()=>$('csvMsg').textContent='',3000)});
+
+// helpers for statements
+const summary=(from,to)=>q(sb.rpc('gl_summary',{p_from:from,p_to:to}));
+const row=(label,val,cls,link)=>h('tr',{class:cls||''},h('td',null,link?h('a',{href:'#ledger',on:{click:e=>{e.preventDefault();openLedger(link)}}},label):label),h('td',{class:'n'},val==null?'':amt(val)));
+const sec=label=>h('tr',{class:'sec'},h('td',{colspan:2},label));
+function openLedger(code){$('lAcc').value=code;location.hash='ledger';show('ledger');}
+
+// ---------- PROFIT AND LOSS ----------
+async function renderPL(){
+  const S=await summary(F(),T());
+  const val=a=>a.type==='income'?N(a.period_credit-a.period_debit):N(a.period_debit-a.period_credit);
+  const inc=S.filter(a=>a.type==='income'&&val(a)!==0),cogs=S.filter(a=>a.type==='expense'&&a.category==='cogs'&&val(a)!==0),opex=S.filter(a=>a.type==='expense'&&a.category!=='cogs'&&val(a)!==0);
+  const sum=l=>N(l.reduce((s,a)=>s+val(a),0));
+  const R=sum(inc),C=sum(cogs),G=N(R-C),O=sum(opex),P=N(G-O);
+  $('plTitle').textContent='Profit and loss, '+dLong(F())+' to '+dLong(T());
+  const rows=[sec('Revenue'),...inc.map(a=>row(a.name,a.code==='4010'||a.code==='4020'?val(a):val(a),'ind',a.code)),row('Total revenue',R,'sub'),
+    sec('Cost of sales'),...cogs.map(a=>row(a.name,val(a),'ind',a.code)),row('Total cost of sales',C,'sub'),
+    row('Gross profit'+(R?' ('+(G/R*100).toFixed(1)+'% of revenue)':''),G,'sub'),
+    sec('Operating expenses'),...opex.map(a=>row(a.name,val(a),'ind',a.code)),row('Total operating expenses',O,'sub'),
+    row(P>=0?'Net profit':'Net loss',P,'tot')];
+  if(!inc.length&&!cogs.length&&!opex.length)rows.push(h('tr',null,h('td',{colspan:2,class:'muted small'},'Nothing recorded in this period.')));
+  $('plBody').replaceChildren(...rows);
+  CSV=[['Profit and loss',F(),T()],['Section','Account','Amount'],...inc.map(a=>['Revenue',a.name,val(a)]),['','Total revenue',R],...cogs.map(a=>['Cost of sales',a.name,val(a)]),['','Gross profit',G],...opex.map(a=>['Operating expenses',a.name,val(a)]),['','Net profit',P]];
+}
+
+// ---------- BALANCE SHEET ----------
+async function renderBS(){
+  const S=await summary(T(),T());
+  const bal=a=>N((a.before_debit+a.period_debit)-(a.before_credit+a.period_credit));
+  const A=S.filter(a=>a.type==='asset'&&bal(a)!==0),L=S.filter(a=>a.type==='liability'&&bal(a)!==0),E=S.filter(a=>a.type==='equity'&&bal(a)!==0);
+  const profit=N(S.filter(a=>a.type==='income'||a.type==='expense').reduce((s,a)=>s-bal(a),0));
+  const cur=A.filter(a=>a.category!=='fixed'),fix=A.filter(a=>a.category==='fixed');
+  const tA=N(A.reduce((s,a)=>s+bal(a),0)),tL=N(L.reduce((s,a)=>s-bal(a),0)),tE=N(E.reduce((s,a)=>s-bal(a),0)+profit);
+  $('bsTitle').textContent='Balance sheet as at '+dLong(T());
+  const ok=Math.abs(N(tA-(tL+tE)))<0.01;
+  $('bsBody').replaceChildren(
+    sec('Current assets'),...cur.map(a=>row(a.name,bal(a),'ind',a.code)),
+    fix.length?sec('Fixed assets'):'',...fix.map(a=>row(a.name,bal(a),'ind',a.code)),
+    row('Total assets',tA,'sub'),
+    sec('Liabilities'),...(L.length?L.map(a=>row(a.name,-bal(a),'ind',a.code)):[row('None',0,'ind')]),row('Total liabilities',tL,'sub'),
+    sec('Equity'),...E.map(a=>row(a.name,-bal(a),'ind',a.code)),row('Profit to date (all years)',profit,'ind'),row('Total equity',tE,'sub'),
+    row('Total liabilities and equity',N(tL+tE),'tot'),
+    h('tr',null,h('td',{colspan:2,class:'small '+(ok?'ok':'bad')},ok?'✓ Balanced: assets equal liabilities plus equity.':'⚠ Out of balance by '+money(tA-tL-tE)+'. Please tell your administrator.')));
+  CSV=[['Balance sheet as at',T()],['Section','Account','Amount'],...A.map(a=>['Assets',a.name,bal(a)]),['','Total assets',tA],...L.map(a=>['Liabilities',a.name,-bal(a)]),['','Total liabilities',tL],...E.map(a=>['Equity',a.name,-bal(a)]),['Equity','Profit to date',profit],['','Total equity',tE]];
+}
+
+// ---------- CASH FLOW ----------
+async function renderCF(){
+  const [S,cf]=await Promise.all([summary(F(),T()),q(sb.rpc('cash_flow',{p_from:F(),p_to:T()}))]);
+  const cash=S.filter(a=>a.category==='cash');
+  const open=N(cash.reduce((s,a)=>s+a.before_debit-a.before_credit,0)),close=N(cash.reduce((s,a)=>s+a.before_debit+a.period_debit-a.before_credit-a.period_credit,0));
+  $('cfTitle').textContent='Cash flow, '+dLong(F())+' to '+dLong(T());
+  const rows=[row('Cash at the start',open,'sub')];let csv=[['Cash flow',F(),T()],['Section','Item','Amount'],['','Cash at the start',open]];
+  for(const s of ['Operating','Investing','Financing']){
+    const L=cf.filter(r=>r.section===s);if(!L.length)continue;
+    const title={Operating:'Day-to-day trading',Investing:'Equipment and investments',Financing:'Owner and loans'}[s];
+    rows.push(sec(title));
+    L.forEach(r=>{const net=N(r.money_in-r.money_out);rows.push(row(r.label.replace(' (sample)',''),net,'ind'));csv.push([title,r.label,net])});
+    const t=N(L.reduce((x,r)=>x+r.money_in-r.money_out,0));rows.push(row('Net from '+title.toLowerCase(),t,'sub'));
+  }
+  const net=N(close-open);
+  rows.push(row('Net change in cash',net,'sub'),row('Cash at the end',close,'tot'),
+    sec('Cash at the end, by account'),...cash.map(a=>row(a.name,N(a.before_debit+a.period_debit-a.before_credit-a.period_credit),'ind',a.code)));
+  $('cfBody').replaceChildren(...rows);csv.push(['','Net change',net],['','Cash at the end',close]);CSV=csv;
+}
+
+// ---------- TRIAL BALANCE ----------
+async function renderTB(){
+  const S=await summary(T(),T());
+  const bal=a=>N((a.before_debit+a.period_debit)-(a.before_credit+a.period_credit));
+  const L=S.filter(a=>bal(a)!==0);let dr=0,cr=0;
+  $('tbTitle').textContent='Trial balance as at '+dLong(T());
+  $('tbBody').replaceChildren(...L.map(a=>{const b=bal(a);if(b>0)dr+=b;else cr-=b;
+    return h('tr',null,h('td',null,a.code),h('td',null,h('a',{href:'#ledger',on:{click:e=>{e.preventDefault();openLedger(a.code)}}},a.name)),h('td',{class:'n'},b>0?amt(b):''),h('td',{class:'n'},b<0?amt(-b):''))}),
+    h('tr',{class:'tot'},h('td'),h('td',null,'Total'),h('td',{class:'n'},amt(dr)),h('td',{class:'n'},amt(cr))),
+    h('tr',null,h('td',{colspan:4,class:'small '+(Math.abs(N(dr-cr))<0.01?'ok':'bad')},Math.abs(N(dr-cr))<0.01?'✓ Debits equal credits.':'⚠ Debits and credits differ by '+money(dr-cr)+'.')));
+  CSV=[['Trial balance as at',T()],['Code','Account','Debit','Credit'],...L.map(a=>{const b=bal(a);return [a.code,a.name,b>0?b:'',b<0?-b:'']}),['','Total',N(dr),N(cr)]];
+}
+
+// ---------- LEDGER ----------
+async function renderLedger(){
+  fillSelect($('lAcc'),ACC.map(a=>({id:a.code,name:a.code+' · '+a.name})),true);
+  const code=$('lAcc').value;const rows=await q(sb.rpc('account_ledger',{p_code:code,p_from:F(),p_to:T()}));
+  const a=acc(code);const credNat=['liability','equity','income'].includes(a.type);
+  let bal;
+  if(rows.length)bal=N(rows[0].opening);
+  else{const S=await summary(F(),T());const s=S.find(x=>x.code===code)||{before_debit:0,before_credit:0};bal=N(s.before_debit-s.before_credit)}
+  const show=v=>amt(credNat?-v:v);
+  const out=[h('tr',{class:'sub'},h('td',null,F()),h('td',{colspan:4},'Balance brought forward'),h('td',{class:'n'},show(bal)))];
+  const csv=[['Account',code,a.name],['Date','From','Details','Debit','Credit','Balance'],[F(),'','Brought forward','','',credNat?-bal:bal]];
+  rows.forEach(r=>{bal=N(bal+Number(r.debit)-Number(r.credit));out.push(h('tr',null,h('td',null,r.entry_date),h('td',{class:'small'},SRC[r.source]||r.source),h('td',null,(r.memo||'').replace(' (sample)','')),
+    h('td',{class:'n'},Number(r.debit)?amt(r.debit):''),h('td',{class:'n'},Number(r.credit)?amt(r.credit):''),h('td',{class:'n'},show(bal))));csv.push([r.entry_date,SRC[r.source]||r.source,r.memo,N(r.debit),N(r.credit),credNat?-bal:bal])});
+  if(rows.length>=1000)out.push(h('tr',null,h('td',{colspan:6,class:'small bad'},'Showing the first 1,000 lines. Choose a shorter period to see everything.')));
+  out.push(h('tr',{class:'tot'},h('td',{colspan:5},'Balance at '+T()+(credNat?' (shown as a positive amount owed / earned)':'')),h('td',{class:'n'},show(bal))));
+  $('lBody').replaceChildren(...out);CSV=csv;
+}
+$('lAcc').addEventListener('change',()=>renderLedger().catch(e=>status('Error: '+friendly(e))));
+
+// ---------- EXPENSES ----------
+async function renderExp(){
+  fillSelect($('eAcc'),ACC.filter(a=>a.type==='expense'&&a.category!=='cogs'&&a.active).map(a=>({id:a.code,name:a.name})),true);
+  fillSelect($('eSup'),SUPS,true,'— choose —');
+  const rows=await q(sb.from('expenses').select('*').gte('expense_date',F()).lte('expense_date',T()).order('expense_date',{ascending:false}));
+  const by={};rows.forEach(e=>{by[e.account_code]=(by[e.account_code]||0)+Number(e.amount)});
+  const tot=N(rows.reduce((s,e)=>s+Number(e.amount),0));
+  $('eTiles').replaceChildren(h('div',{class:'tile'},h('div',{class:'k'},'Total expenses'),h('div',{class:'v'},money(tot))),
+    ...Object.entries(by).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,v])=>h('div',{class:'tile'},h('div',{class:'k'},acc(c).name),h('div',{class:'v'},money(v)))));
+  $('eList').replaceChildren(...(rows.length?rows.map(e=>h('tr',null,h('td',null,e.expense_date),h('td',null,acc(e.account_code).name),h('td',null,(e.payee||'').replace(' (sample)','')),h('td',null,e.description||''),
+    h('td',{class:'small'+(e.paid_from==='payable'?' up':'')},PAY[e.paid_from]+(e.paid_from==='payable'?' ('+((SUPS.find(s=>s.id===e.supplier_id)||{}).name||'')+')':'')),h('td',{class:'n'},money(e.amount)),
+    h('td',null,h('button',{class:'x',title:'Delete',on:{click:async ev=>{const b=ev.currentTarget;if(!b.dataset.arm){b.dataset.arm=1;b.textContent='delete?';b.style.fontSize='12px';return}await q(sb.from('expenses').delete().eq('id',e.id));renderExp()}}},'×')))):
+    [h('tr',null,h('td',{colspan:7,class:'muted small'},'No expenses in this period.'))]));
+  CSV=[['Expenses',F(),T()],['Date','Type','Paid to','Details','Paid from','Amount'],...rows.map(e=>[e.expense_date,acc(e.account_code).name,e.payee,e.description,PAY[e.paid_from],N(e.amount)])];
+}
+$('ePaid').addEventListener('change',()=>{$('eSupBox').style.display=$('ePaid').value==='payable'?'':'none'});
+$('eSave').addEventListener('click',async()=>{const msg=t=>$('eMsg').textContent=t;const a=+$('eAmt').value;
+  if(!(a>0))return msg('Enter the amount.');if($('ePaid').value==='payable'&&!$('eSup').value)return msg('Choose the supplier you owe.');
+  try{await q(sb.from('expenses').insert({expense_date:$('eDate').value||today(),account_code:$('eAcc').value,amount:a,paid_from:$('ePaid').value,supplier_id:$('ePaid').value==='payable'?$('eSup').value:null,
+      payee:$('ePayee').value.trim()||null,description:$('eDesc').value.trim()||null}));['eAmt','ePayee','eDesc'].forEach(id=>$(id).value='');msg('Saved.');setTimeout(()=>msg(''),2000);renderExp()}catch(e){msg(friendly(e))}});
+
+// ---------- SUPPLIERS ----------
+async function renderSup(){
+  const [bal,pays]=await Promise.all([q(sb.from('supplier_balances').select('*').order('name')),q(sb.from('supplier_payments').select('*').order('payment_date',{ascending:false}).limit(100))]);
+  const owed=bal.filter(b=>Math.abs(Number(b.balance))>0.005);
+  $('sBal').replaceChildren(...(owed.length?owed.map(b=>h('tr',null,h('td',null,b.name.replace(' (sample)','')),h('td',{class:'n'+(Number(b.balance)>0?' up':'')},money(b.balance)))):[h('tr',null,h('td',{colspan:2,class:'muted small'},'Nothing owed to suppliers.'))]),
+    h('tr',{class:'tot'},h('td',null,'Total'),h('td',{class:'n'},money(owed.reduce((s,b)=>s+Number(b.balance),0)))));
+  fillSelect($('spSup'),SUPS,true);
+  $('spList').replaceChildren(...(pays.length?pays.map(p=>h('tr',null,h('td',null,p.payment_date),h('td',null,((SUPS.find(s=>s.id===p.supplier_id)||{}).name||'?').replace(' (sample)','')),h('td',null,PAY[p.method]),h('td',null,p.ref||''),h('td',{class:'n'},money(p.amount)),
+    h('td',null,h('button',{class:'x',title:'Delete',on:{click:async ev=>{const b=ev.currentTarget;if(!b.dataset.arm){b.dataset.arm=1;b.textContent='delete?';b.style.fontSize='12px';return}await q(sb.from('supplier_payments').delete().eq('id',p.id));renderSup()}}},'×')))):
+    [h('tr',null,h('td',{colspan:6,class:'muted small'},'No supplier payments yet.'))]));
+}
+$('spSave').addEventListener('click',async()=>{const msg=t=>$('spMsg').textContent=t;const a=+$('spAmt').value;if(!$('spSup').value)return msg('Choose a supplier.');if(!(a>0))return msg('Enter the amount.');
+  try{await q(sb.from('supplier_payments').insert({supplier_id:$('spSup').value,amount:a,method:$('spMeth').value,payment_date:$('spDate').value||today(),ref:$('spRef').value.trim()||null}));$('spAmt').value='';$('spRef').value='';msg('Saved.');setTimeout(()=>msg(''),2000);renderSup()}catch(e){msg(friendly(e))}});
+
+// ---------- JOURNALS ----------
+const TPL={
+  capital:{label:'Owner puts money into the business',memo:'Owner capital introduced',lines:[['1020','d'],['3000','c']]},
+  drawings:{label:'Owner takes money out',memo:'Owner drawings',lines:[['3200','d'],['1020','c']]},
+  loan:{label:'Loan received',memo:'Loan received',lines:[['1020','d'],['2200','c']]},
+  loanpay:{label:'Loan repayment',memo:'Loan repayment',lines:[['2200','d'],['1020','c']]},
+  equip:{label:'Buy equipment',memo:'Equipment purchased',lines:[['1500','d'],['1020','c']]},
+  dep:{label:'Depreciation for the month',memo:'Depreciation',lines:[['6900','d'],['1510','c']]},
+  move:{label:'Move money between cash, MoMo and bank',memo:'Transfer',lines:[['1020','d'],['1000','c']]},
+  opening:{label:'Opening balances (when starting the books)',memo:'Opening balances',open:true,lines:[['1000','d'],['1010','d'],['1020','d'],['1500','d'],['2200','c'],['3900','c']]},
+};
+Object.entries(TPL).forEach(([k,t])=>$('jTpl').appendChild(h('option',{value:k},t.label)));
+let JL=[];
+const accOpts=()=>ACC.filter(a=>a.active).map(a=>h('option',{value:a.code},a.code+' · '+a.name));
+function drawJ(){
+  $('jLines').replaceChildren(...JL.map((l,i)=>{const s=h('select',null,accOpts());s.value=l.code;s.addEventListener('change',()=>l.code=s.value);
+    const d=h('input',{type:'number',min:0,step:'any',value:l.debit||'',style:'width:110px;text-align:right',on:{input:e=>{l.debit=+e.target.value||0;if(l.debit){l.credit=0;c.value=''}jTot()}}});
+    const c=h('input',{type:'number',min:0,step:'any',value:l.credit||'',style:'width:110px;text-align:right',on:{input:e=>{l.credit=+e.target.value||0;if(l.credit){l.debit=0;d.value=''}jTot()}}});
+    return h('tr',null,h('td',null,s),h('td',{class:'n'},d),h('td',{class:'n'},c),h('td',null,h('input',{value:l.memo||'',size:18,on:{input:e=>l.memo=e.target.value}})),
+      h('td',null,h('button',{class:'x',on:{click:()=>{JL.splice(i,1);drawJ()}}},'×')))}));jTot();
+}
+function jTot(){const dr=N(JL.reduce((s,l)=>s+(l.debit||0),0)),cr=N(JL.reduce((s,l)=>s+(l.credit||0),0));
+  $('jTot').className='small '+(dr===cr&&dr>0?'ok':'bad');$('jTot').textContent='Debits '+amt(dr)+' · Credits '+amt(cr)+(dr===cr&&dr>0?' ✓ balanced':' · difference '+amt(dr-cr));}
+$('jTpl').addEventListener('change',()=>{const t=TPL[$('jTpl').value];if(!t){JL=[{code:'1020'},{code:'3000'}]}else{JL=t.lines.map(([code])=>({code}));$('jMemo').value=t.memo;$('jOpen').checked=!!t.open}drawJ()});
+$('jAdd').addEventListener('click',()=>{JL.push({code:ACC[0].code});drawJ()});
+$('jSave').addEventListener('click',async()=>{const msg=t=>$('jMsg').textContent=t;
+  try{await q(sb.rpc('post_journal',{p_date:$('jDate').value||today(),p_memo:$('jMemo').value,p_kind:$('jOpen').checked?'opening':'manual',
+      p_lines:JL.filter(l=>l.debit||l.credit).map(l=>({account_code:l.code,debit:l.debit||0,credit:l.credit||0,memo:l.memo||null}))}));
+    msg('Posted.');setTimeout(()=>msg(''),2000);JL=[{code:'1020'},{code:'3000'}];$('jMemo').value='';$('jTpl').value='';$('jOpen').checked=false;renderJnl()}catch(e){msg(friendly(e))}});
+async function renderJnl(){
+  if(!JL.length){JL=[{code:'1020'},{code:'3000'}];}drawJ();
+  const js=await q(sb.from('journals').select('*, journal_lines(*)').gte('entry_date',F()).lte('entry_date',T()).order('entry_date',{ascending:false}));
+  $('jList').replaceChildren(...(js.length?js.map(j=>h('div',{style:'border-bottom:1px solid var(--border);padding:10px 0'},
+    h('div',{style:'display:flex;justify-content:space-between;gap:8px'},h('b',null,j.entry_date+' · '+j.memo.replace(' (sample)','')+(j.kind==='opening'?' (opening balances)':'')),
+      h('button',{class:'x',title:'Delete journal',on:{click:async ev=>{const b=ev.currentTarget;if(!b.dataset.arm){b.dataset.arm=1;b.textContent='delete?';b.style.fontSize='12px';return}await q(sb.from('journals').delete().eq('id',j.id));renderJnl()}}},'×')),
+    h('table',{class:'small',style:'max-width:620px;margin-top:4px'},h('tbody',null,(j.journal_lines||[]).map(l=>h('tr',null,h('td',null,l.account_code+' · '+acc(l.account_code).name),h('td',{class:'n'},Number(l.debit)?amt(l.debit):''),h('td',{class:'n'},Number(l.credit)?amt(l.credit):''),h('td',{class:'muted'},l.memo||'')))))))
+    :[h('p',{class:'muted small'},'No journals in this period.')]));
+}
+
+// ---------- CHART OF ACCOUNTS ----------
+async function renderCoa(){
+  await loadBase();
+  $('cList').replaceChildren(...ACC.map(a=>{const name=h('input',{value:a.name,size:30,on:{change:async e=>{try{await q(sb.from('accounts').update({name:e.target.value.trim()||a.name}).eq('code',a.code));a.name=e.target.value.trim()||a.name;status('Saved')}catch(err){status('Error: '+friendly(err))}}}});
+    const act=h('input',{type:'checkbox',checked:a.active,disabled:a.is_system,on:{change:async e=>{try{await q(sb.from('accounts').update({active:e.target.checked}).eq('code',a.code));a.active=e.target.checked;status('Saved')}catch(err){status('Error: '+friendly(err))}}}});
+    return h('tr',null,h('td',null,a.code),h('td',null,name,a.is_system?h('span',{class:'pill',style:'margin-left:6px'},'auto'):''),h('td',null,TYPES[a.type]),h('td',{class:'small muted'},a.category||''),h('td',null,act))}));
+}
+$('cAdd').addEventListener('click',async()=>{const msg=t=>$('cMsg').textContent=t;const code=$('cCode').value.trim(),name=$('cName').value.trim();
+  if(!/^\d{4}$/.test(code))return msg('Use a 4-digit code (1xxx assets, 2xxx liabilities, 3xxx equity, 4xxx income, 5xxx–6xxx expenses).');if(!name)return msg('Give it a name.');
+  try{await q(sb.from('accounts').insert({code,name,type:$('cType').value}));$('cCode').value='';$('cName').value='';msg('Added.');renderCoa()}catch(e){msg(friendly(e))}});
+
+// ---------- SAMPLE ----------
+$('loadSample').addEventListener('click',async()=>{const btn=$('loadSample');btn.disabled=true;btn.textContent='Loading…';
+  try{
+    await q(sb.rpc('post_journal',{p_date:'2026-05-31',p_memo:'Opening balances (sample)',p_kind:'opening',p_lines:[{account_code:'1000',debit:14000},{account_code:'1020',debit:6000},{account_code:'1500',debit:15000},{account_code:'3000',credit:35000}]}));
+    const ex=[];
+    ['09','10'].forEach(m=>{const d='2026-'+m+'-';
+      ex.push({expense_date:d+'01',account_code:'6100',amount:600,paid_from:'bank',payee:'Landlord (sample)',description:'Shop and factory rent'});
+      ex.push({expense_date:d+'28',account_code:'6000',amount:1500,paid_from:'bank',payee:'Staff (sample)',description:'Monthly salaries'});
+      ex.push({expense_date:d+'10',account_code:'6200',amount:250,paid_from:'momo',payee:'ECG (sample)',description:'Electricity'});
+      ex.push({expense_date:d+'12',account_code:'6500',amount:150,paid_from:'momo',payee:'Internet provider (sample)',description:'Internet and phones'});
+      ex.push({expense_date:d+'15',account_code:'6300',amount:120,paid_from:'cash',payee:'Dispatch riders (sample)',description:'Deliveries'});});
+    ex.push({expense_date:'2026-10-05',account_code:'6400',amount:300,paid_from:'momo',payee:'Social media ads (sample)',description:'October promotion'});
+    for(const e of ex)await q(sb.from('expenses').insert(e));
+    await q(sb.rpc('post_journal',{p_date:'2026-10-31',p_memo:'Depreciation October (sample)',p_kind:'manual',p_lines:[{account_code:'6900',debit:150},{account_code:'1510',credit:150}]}));
+    $('sampleBanner').classList.add('hidden');$('pPreset').value='custom';$('pFrom').value='2026-10-01';$('pTo').value='2026-10-31';location.hash='pl';show('pl');
+  }catch(e){status('Error: '+friendly(e))}
+  btn.disabled=false;btn.textContent='Load sample accounting data';});
+
+boot();
+})();
+</script>
+</body>
+</html>

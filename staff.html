@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Royal Glow — Staff & account</title>
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#111111">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f7f5f2; --surface:#fcfcfb; --surface-2:#f1eee9; --border:#e2ddd5;
+  --text:#1b1a18; --text-2:#55524c; --muted:#8a867e;
+  --accent:#9a6b00; --accent-ink:#fff; --gold:#d9a21b;
+  --series-1:#2a78d6; --grid:#e8e4dd;
+  --good:#1f7a3a; --bad:#b3261e;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --bg:#121211; --surface:#1a1a19; --surface-2:#232321; --border:#34332f;
+    --text:#f0efec; --text-2:#c3c2b7; --muted:#8f8c84;
+    --accent:#f0b429; --accent-ink:#1a1a19; --gold:#f0b429;
+    --series-1:#3987e5; --grid:#2c2b28;
+    --good:#5cc27a; --bad:#ef7a72;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+header{padding:20px 24px 0;max-width:1100px;margin:0 auto}
+h1{font-size:22px;margin:0;letter-spacing:.2px}
+h1 span{color:var(--accent)}
+.sub{color:var(--text-2);margin:4px 0 14px;font-size:14px}
+nav{display:flex;gap:4px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+nav button{background:none;border:0;padding:10px 14px;font:inherit;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+nav button.on{color:var(--text);border-bottom-color:var(--accent);font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:20px 24px 60px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.card h2{font-size:16px;margin:0 0 12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+label.f{display:flex;flex-direction:column;font-size:12px;color:var(--text-2);gap:4px}
+input,select,textarea{font:inherit;padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);min-width:0}
+textarea{width:100%;min-height:120px;font:12px/1.4 ui-monospace,Menlo,monospace}
+button.b{font:inherit;padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer}
+button.b:hover{border-color:var(--muted)}
+button.p{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px}
+button.x:hover{color:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:12px;color:var(--text-2);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--surface-2);color:var(--text-2);border:1px solid var(--border)}
+.pill.product{color:var(--accent);border-color:var(--accent)}
+.muted{color:var(--muted)} .small{font-size:12px}
+.tot{font-size:14px;margin-top:10px;color:var(--text-2)} .tot b{color:var(--text)}
+.tiles{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.tile{flex:1 1 160px;background:var(--surface-2);border-radius:8px;padding:10px 14px}
+.tile .k{font-size:12px;color:var(--text-2)} .tile .v{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.up{color:var(--bad)} .down{color:var(--good)}
+.chart{position:relative}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.12);display:none;white-space:nowrap}
+.tip b{font-size:14px;display:block}
+.banner{background:var(--surface-2);border-left:3px solid var(--gold);padding:8px 12px;border-radius:4px;font-size:13px;color:var(--text-2);margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.hidden{display:none}
+.applink{color:var(--accent);font-weight:600;text-decoration:none}
+.apps a{color:var(--text-2);font-weight:600;text-decoration:none;margin-right:12px}
+.apps a:hover{color:var(--text)}
+.apps a[aria-current]{color:var(--accent)}
+.pill.partner,.pill.wholesale{color:var(--accent);border-color:var(--accent)}
+.pill.goods{color:var(--gold);border-color:var(--gold)}
+.brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{height:44px;width:auto}
+.applabel{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);border-left:1px solid var(--border);padding-left:14px}
+#gate .applabel{border:0;padding:0}
+details summary{cursor:pointer;color:var(--text-2)}
+.msg{font-size:13px;margin-left:8px}
+.lnk{color:var(--accent)}
+</style>
+</head>
+<body>
+<!-- Supabase connection values live in config.js (same folder). -->
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<section id="gate" class="hidden" style="max-width:440px;margin:60px auto;padding:0 20px">
+  <div class="card">
+    <img src="assets/logo.png" alt="Royal Glow" class="logo" style="width:220px;height:auto;display:block;margin:4px 0 6px"><div class="applabel" style="margin-bottom:10px">Staff account</div>
+    <div id="gSetup" class="hidden small"><p>This page is not connected to Supabase yet.</p><p>Create <code>apps/production/config.js</code> (copy <code>config.example.js</code>) and paste in your Project URL and publishable key.</p></div>
+
+    <form id="gLogin" class="hidden">
+      <p class="small muted">Staff sign-in</p>
+      <label class="f" style="margin-bottom:10px">Email<input type="email" id="gEmail" autocomplete="username" required></label>
+      <label class="f" style="margin-bottom:14px">Password<input type="password" id="gPass" autocomplete="current-password" required></label>
+      <button class="b p" type="submit" id="gBtn">Sign in</button><span class="msg" id="gMsg"></span>
+      <p class="small" style="margin:14px 0 0"><a href="#reset" class="lnk">Forgot password?</a> · <a href="#signup" class="lnk">New staff? Create an account</a></p>
+    </form>
+
+    <form id="gSignup" class="hidden">
+      <p class="small muted">Create a staff account. An admin will approve it and give you access.</p>
+      <label class="f" style="margin-bottom:10px">Full name<input id="suName" autocomplete="name" required></label>
+      <label class="f" style="margin-bottom:10px">Email<input type="email" id="suEmail" autocomplete="username" required></label>
+      <label class="f" style="margin-bottom:14px">Password (at least 8 characters)<input type="password" id="suPass" autocomplete="new-password" minlength="8" required></label>
+      <button class="b p" type="submit" id="suBtn">Create account</button><span class="msg" id="suMsg"></span>
+      <p class="small" style="margin:14px 0 0"><a href="#" class="lnk">← Back to sign-in</a></p>
+    </form>
+
+    <form id="gReset" class="hidden">
+      <p class="small muted">Enter your email and we'll send you a link to set a new password.</p>
+      <label class="f" style="margin-bottom:14px">Email<input type="email" id="rsEmail" autocomplete="username" required></label>
+      <button class="b p" type="submit" id="rsBtn">Send reset link</button><span class="msg" id="rsMsg"></span>
+      <p class="small" style="margin:14px 0 0"><a href="#" class="lnk">← Back to sign-in</a></p>
+    </form>
+
+    <form id="gNewPass" class="hidden">
+      <p class="small muted">Choose a new password.</p>
+      <label class="f" style="margin-bottom:14px">New password (at least 8 characters)<input type="password" id="npPass" autocomplete="new-password" minlength="8" required></label>
+      <button class="b p" type="submit" id="npBtn">Save new password</button><span class="msg" id="npMsg"></span>
+    </form>
+
+    <div id="gPending" class="hidden small">
+      <p>Signed in as <b id="gWho"></b>.</p>
+      <p>Your account is <b>waiting for approval</b>. Once an admin approves it and gives you a role, sign in again to get access.</p>
+      <button class="b" id="gOut">Sign out</button>
+    </div>
+  </div>
+</section>
+
+<div id="app" class="hidden">
+<header>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+    <h1 class="brand"><img src="assets/logo.png" alt="Royal Glow" class="logo"><span class="applabel">Staff &amp; account</span></h1>
+    <div class="small muted"><span class="apps"><a href="index.html">Production</a><a href="inventory.html">Inventory</a><a href="sales.html">Sales</a><a href="shop-admin.html">Online shop</a><a href="spa.html">Spa</a><a href="blog-admin.html">Blog</a><a href="accounts.html">Accounts</a><a href="staff.html" aria-current="page">Account</a></span> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
+  </div>
+  <p class="sub">Your account, and (for admins) who has access to the Royal Glow staff apps.</p>
+</header>
+<main>
+  <div class="card">
+    <h2>My account</h2>
+    <table style="max-width:560px"><tbody>
+      <tr><th style="width:140px">Name</th><td id="meName"></td></tr>
+      <tr><th>Email</th><td id="meEmail"></td></tr>
+      <tr><th>Roles</th><td id="meRole"></td></tr>
+    </tbody></table>
+    <div class="row" style="margin-top:14px">
+      <label class="f">New password<input type="password" id="mePass" autocomplete="new-password" minlength="8" size="20"></label>
+      <button class="b" id="mePassBtn">Change password</button><span class="msg" id="mePassMsg"></span>
+    </div>
+  </div>
+
+  <div id="adminArea" class="hidden">
+    <div class="card">
+      <h2>Waiting for approval</h2>
+      <p class="small muted" style="margin-top:0">People who created an account on the sign-in page. Approve staff and tick the roles they need. Leave anyone you don't recognise unapproved: they can't see anything.</p>
+      <table><thead><tr><th>Email</th><th>Signed up</th><th>Email confirmed</th><th>Name</th><th>Roles</th><th></th></tr></thead><tbody id="pendList"></tbody></table>
+    </div>
+    <div class="card">
+      <h2>Staff with access</h2>
+      <table><thead><tr><th>Name</th><th>Email</th><th>Roles</th><th>Last sign-in</th><th></th></tr></thead><tbody id="staffList"></tbody></table>
+      <details style="margin-top:14px"><summary>What each role can do (tick several to combine them)</summary>
+        <table class="small" style="margin-top:8px"><tbody>
+          <tr><th>Admin</th><td>Everything, including approving staff and changing roles.</td></tr>
+          <tr><th>Production</th><td>Record production batches and items. View inventory and sales.</td></tr>
+          <tr><th>Inventory</th><td>Purchases, transfers, adjustments, locations, suppliers, reorder levels. View the rest.</td></tr>
+          <tr><th>Sales</th><td>Sales, customers, payments, returns, selling prices and online shop orders. View the rest.</td></tr>
+          <tr><th>Spa</th><td>Spa bookings, treatments, therapists, opening hours and spa reports. View the rest.</td></tr>
+          <tr><th>Blog</th><td>Write, publish and delete blog articles; see blog subscribers. View the rest.</td></tr>
+          <tr><th>Accounts</th><td>Profit and loss, balance sheet, cash flow, expenses, supplier payments, journals and the chart of accounts.</td></tr>
+        </tbody></table>
+      </details>
+    </div>
+  </div>
+</main>
+</div>
+
+<script>
+(function(){
+const ROLES={admin:'Admin',production:'Production',inventory:'Inventory',sales:'Sales',spa:'Spa',content:'Blog',accounts:'Accounts'};
+const $=id=>document.getElementById(id);
+function h(tag,attrs,...kids){const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==='on')for(const ev in attrs.on)e.addEventListener(ev,attrs.on[ev]);else if(k==='class')e.className=attrs[k];else if(k in e&&k!=='list')e[k]=attrs[k];else e.setAttribute(k,attrs[k]);}for(const c of kids.flat()){if(c==null||c===false)continue;e.appendChild(typeof c==='object'?c:document.createTextNode(String(c)));}return e;}
+const when=t=>t?new Date(t).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'never';
+// a set of role tick-boxes; .get() returns the ticked roles
+function roleChecks(vals,onChange){const boxes=Object.entries(ROLES).map(([k,v])=>{const c=h('input',{type:'checkbox',value:k,checked:vals.includes(k)});if(onChange)c.addEventListener('change',onChange);return [k,c,h('label',{style:'margin-right:10px;white-space:nowrap;font-size:13px'},c,' '+v)]});
+  const el=h('span',null,boxes.map(b=>b[2]));el.get=()=>boxes.filter(b=>b[1].checked).map(b=>b[0]);el.set=vs=>boxes.forEach(b=>b[1].checked=vs.includes(b[0]));return el;}
+
+const CFG=window.RG_CONFIG||{};
+const cfgOk=!!CFG.SUPABASE_URL&&!/PASTE_/.test(CFG.SUPABASE_URL+CFG.SUPABASE_KEY);
+const sb=cfgOk&&window.supabase?window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_KEY):null;
+const here=location.origin+location.pathname;
+let ME=null,recovering=/type=recovery/.test(location.hash);
+const status=t=>{$('status').textContent=t};
+function friendly(err){
+  if(!err)return 'Unknown error';
+  if(err.code==='42501'||/row-level security/i.test(err.message||''))return 'Only admins can do this.';
+  if(/at least one admin/i.test(err.message||''))return 'At least one admin must remain.';
+  if(err.code==='23505')return 'This person is already on the staff list.';
+  return err.message||String(err);
+}
+async function q(promise){const r=await promise;if(r.error)throw r.error;return r.data;}
+
+// ---------- gate ----------
+const FORMS=['gSetup','gLogin','gSignup','gReset','gNewPass','gPending'];
+function showGate(which,email){
+  $('app').classList.add('hidden');$('gate').classList.remove('hidden');
+  FORMS.forEach(id=>$(id).classList.toggle('hidden',id!==which));
+  if(email)$('gWho').textContent=email;
+}
+const gateFromHash=()=>({signup:'gSignup',reset:'gReset'})[location.hash.slice(1)]||'gLogin';
+async function boot(){
+  if(!sb)return showGate('gSetup');
+  if(recovering)return showGate('gNewPass');
+  const {data:{session}}=await sb.auth.getSession();
+  if(recovering)return showGate('gNewPass');
+  if(!session)return showGate(gateFromHash());
+  const {data:me,error}=await sb.from('staff').select('full_name,roles').eq('user_id',session.user.id).maybeSingle();
+  if(error||!me)return showGate('gPending',session.user.email);
+  ME={...me,email:session.user.email};
+  $('whoami').textContent=ME.full_name+' ('+ME.roles.join(', ')+')';
+  $('meName').textContent=ME.full_name;$('meEmail').textContent=ME.email;$('meRole').textContent=ME.roles.map(r=>ROLES[r]||r).join(', ');
+  $('gate').classList.add('hidden');$('app').classList.remove('hidden');
+  const isAdmin=ME.roles.includes('admin');
+  $('adminArea').classList.toggle('hidden',!isAdmin);
+  if(isAdmin)await renderAdmin();
+}
+window.addEventListener('hashchange',()=>{const vis=FORMS.find(id=>!$(id).classList.contains('hidden'));if(['gLogin','gSignup','gReset'].includes(vis))showGate(gateFromHash())});
+if(sb)sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){recovering=true;setTimeout(()=>showGate('gNewPass'),0)}});
+
+$('gLogin').addEventListener('submit',async e=>{
+  e.preventDefault();$('gBtn').disabled=true;$('gMsg').textContent='Signing in…';
+  const {error}=await sb.auth.signInWithPassword({email:$('gEmail').value.trim(),password:$('gPass').value});
+  $('gBtn').disabled=false;
+  if(error){$('gMsg').textContent=error.message;return}
+  $('gMsg').textContent='';$('gPass').value='';boot();
+});
+$('gSignup').addEventListener('submit',async e=>{
+  e.preventDefault();const msg=t=>{$('suMsg').textContent=t};$('suBtn').disabled=true;msg('Creating…');
+  const {data,error}=await sb.auth.signUp({email:$('suEmail').value.trim(),password:$('suPass').value,
+    options:{data:{full_name:$('suName').value.trim()},emailRedirectTo:here}});
+  $('suBtn').disabled=false;
+  if(error)return msg(error.message);
+  $('suPass').value='';
+  if(data.session){msg('');boot()}
+  else msg('Check your email and click the confirmation link. Then ask an admin to approve your account.');
+});
+$('gReset').addEventListener('submit',async e=>{
+  e.preventDefault();const msg=t=>{$('rsMsg').textContent=t};$('rsBtn').disabled=true;msg('Sending…');
+  const {error}=await sb.auth.resetPasswordForEmail($('rsEmail').value.trim(),{redirectTo:here});
+  $('rsBtn').disabled=false;
+  msg(error?error.message:'If that email has an account, a reset link is on its way. Open it on this device.');
+});
+$('gNewPass').addEventListener('submit',async e=>{
+  e.preventDefault();const msg=t=>{$('npMsg').textContent=t};$('npBtn').disabled=true;msg('Saving…');
+  const {error}=await sb.auth.updateUser({password:$('npPass').value});
+  $('npBtn').disabled=false;
+  if(error)return msg(error.message);
+  recovering=false;$('npPass').value='';history.replaceState(null,'',here);msg('');boot();
+});
+async function signOut(e){if(e)e.preventDefault();await sb.auth.signOut();ME=null;location.hash='';boot();}
+$('gOut').addEventListener('click',signOut);$('signOut').addEventListener('click',signOut);
+
+$('mePassBtn').addEventListener('click',async()=>{
+  const msg=t=>{$('mePassMsg').textContent=t};const p=$('mePass').value;
+  if(p.length<8)return msg('Use at least 8 characters.');
+  const {error}=await sb.auth.updateUser({password:p});
+  if(error)return msg(error.message);
+  $('mePass').value='';msg('Password changed.');setTimeout(()=>msg(''),3000);
+});
+
+// ---------- admin ----------
+async function renderAdmin(){
+  let pend,staff;
+  try{[pend,staff]=await Promise.all([q(sb.rpc('list_unassigned_users')),q(sb.rpc('staff_directory'))])}
+  catch(e){status('Error: '+friendly(e));return}
+  status('Connected');
+  const pb=$('pendList');pb.replaceChildren();
+  pend.forEach(u=>{
+    const name=h('input',{value:u.suggested_name||'',placeholder:'Full name',size:18});
+    const role=roleChecks([]);const msg=h('span',{class:'msg'});
+    pb.appendChild(h('tr',null,h('td',null,u.email),h('td',null,when(u.signed_up_at)),
+      h('td',{class:u.email_confirmed?'':'up'},u.email_confirmed?'✓ Yes':'Not yet'),
+      h('td',null,name),h('td',null,role),
+      h('td',null,h('button',{class:'b p',style:'padding:4px 12px',on:{click:async e=>{
+        if(!name.value.trim()){msg.textContent='Enter their name.';return}
+        if(!role.get().length){msg.textContent='Tick at least one role.';return}
+        e.currentTarget.disabled=true;
+        try{await q(sb.from('staff').insert({user_id:u.user_id,full_name:name.value.trim(),roles:role.get()}));await renderAdmin()}
+        catch(err){msg.textContent=friendly(err);e.currentTarget.disabled=false}}}},'Approve'),msg)));
+  });
+  if(!pend.length)pb.appendChild(h('tr',null,h('td',{colspan:6,class:'muted small'},'Nobody is waiting. New staff create an account from the sign-in page ("New staff? Create an account").')));
+
+  const tb=$('staffList');tb.replaceChildren();
+  staff.forEach(s=>{
+    const isMe=s.email===ME.email;
+    const name=h('input',{value:s.full_name,size:18});
+    const msg=h('span',{class:'msg'});
+    const saveRow=async()=>{const rs=role.get();
+      if(!rs.length){msg.textContent='Keep at least one role (or use Remove access).';role.set(s.roles);return}
+      try{await q(sb.from('staff').update({full_name:name.value.trim()||s.full_name,roles:rs}).eq('user_id',s.user_id));s.roles=rs;
+      msg.textContent='Saved';setTimeout(()=>msg.textContent='',2000);if(isMe)await boot()}
+      catch(err){msg.textContent=friendly(err);role.set(s.roles)}};
+    const role=roleChecks(s.roles,saveRow);
+    name.addEventListener('change',saveRow);
+    const remove=h('button',{class:'b',style:'padding:3px 10px;font-size:13px',on:{click:async e=>{const b=e.currentTarget;
+      if(!b.dataset.arm){b.dataset.arm=1;b.textContent='Confirm remove';setTimeout(()=>{b.removeAttribute('data-arm');b.textContent='Remove access'},3000);return}
+      try{await q(sb.from('staff').delete().eq('user_id',s.user_id));await renderAdmin()}catch(err){msg.textContent=friendly(err)}}}},'Remove access');
+    tb.appendChild(h('tr',null,h('td',null,name,isMe?h('span',{class:'small muted'},' (you)'):''),h('td',null,s.email),h('td',null,role),
+      h('td',{class:'small'},when(s.last_sign_in_at)),h('td',null,remove,msg)));
+  });
+}
+
+boot();
+})();
+</script>
+</body>
+</html>
