@@ -2,13 +2,15 @@
 
 ## Where things live
 - GitHub: Royal-Glow-Gh/royal-glow-platform (private monorepo)
-  - apps/staff/index.html: production batch costing
+  - apps/staff/index.html: staff home (sign-in, then the apps this person's roles allow)
+  - apps/staff/production.html: production batch costing
   - apps/staff/inventory.html: inventory (stock on hand, purchases, transfers, adjustments, movements, setup)
   - apps/staff/sales.html: sales (new sale, history, customers & credit, returns, price list, reports)
   - apps/staff/staff.html: staff & account (sign-up, forgot password, change password; admins approve staff and set roles)
   - apps/staff/shop-admin.html: online shop management (orders, products shown on the website with photos, delivery/MoMo settings, ship-from and pickup locations)
   - apps/staff/spa.html: spa (day calendar per therapist, phone bookings, confirm/complete/no-show/cancel, treatments, therapists & time off, opening hours & booking rules, spa reports)
   - apps/staff/blog-admin.html: blog (article list, editor with live preview, cover and inline photos, publish/unpublish, copy announcement, subscriber list)
+  - apps/staff/website.html: website (design style, home-page text and photos, hero slides, announcement bar, testimonials, feedback links, About & contact, history with restore, Publish website now)
   - apps/staff/accounts.html: accounts (profit and loss, balance sheet, cash flow, trial balance, account ledger, expenses, supplier balances and payments, journals incl. opening balances, chart of accounts); admin + accounts roles only
   - apps/staff/config.js: Supabase URL + publishable key (never the secret key). config.example.js is the template.
   - apps/staff/assets/: logo and favicons
@@ -18,16 +20,18 @@
   - supabase/migrations/004_staff.sql: admin-only functions list_unassigned_users, staff_directory; trigger keeping at least one admin
   - supabase/migrations/005_multi_roles.sql: staff.roles (a list) replaces staff.role, so one person can hold several roles
   - apps/shop/: the shop website: shop + spa booking + customer accounts (index.html), assets/, config.js with the same Supabase values
-  - apps/site/: the main website royalglowgh.com, generated as static HTML by build.mjs (no packages; Node 20). Company text in site.json; articles, products and spa treatments come from the database. Output (dist/) is not committed.
+  - apps/site/: the main website royalglowgh.com, generated as static HTML by build.mjs (no packages; Node 20). All content comes from the database: website settings, slides and testimonials (Website page), articles, products, spa treatments. site.json only holds the two web addresses. site.js runs the slides/quotes rotation and the live announcement bar. Output (dist/) is not committed.
     Pages: / (home), /about/, /contact/, /blog/, /blog/<web address>/, /blog/unsubscribe/, 404, sitemap.xml, robots.txt, feed.xml (RSS). Each article has its own title, description, preview image and Google article markup in the page.
-    Design styles (site.json -> design): home "classic" | "editorial" | "showcase"; blog "magazine" | "minimal". All styles are always built at /preview/ (hidden from Google) with labelled placeholders for missing images.
-    Banner/section images: files in apps/site/assets/banners/, named in site.json -> images (hero_wide, hero_mobile, hero_portrait, making, spa, stockists, about). Home text blocks: site.json -> badges, highlights.
-  - docs/design-guide/design-guide.tex (+ .pdf): design guide for designers: styles, sections, image sizes and safe areas, text limits, delivery checklist. Rebuild the PDF with pdflatex after editing.
+    Pages also: /feedback/?t=<token> ("How was your visit?" form, hidden from Google).
+    Design styles (Website page -> Design): home "classic" | "editorial" | "showcase"; blog "magazine" | "minimal". All styles are always built at /preview/ (hidden from Google) with labelled placeholders for missing images and clearly marked sample quotes (never on the live site).
+  - docs/design-guide/design-guide.tex (+ .pdf): design guide for designers and editors: Website page tabs, styles and sections, slides/announcements/testimonials, image sizes and safe areas, text limits, checklist. Rebuild the PDF with pdflatex after editing.
   - supabase/migrations/006_shop.sql: shop fields on items/locations, shop_settings, shop_profiles (auto-created for customer sign-ups), shop_orders + lines, public functions shop_catalog/shop_info/place_order, staff functions set_shop_product/fulfil_order, product-images storage bucket
   - supabase/migrations/007_delivery_zones.sql: delivery_zones (fee, who delivers, fee paid to Royal Glow or rider); orders store zone, fee_confirmed, fee_to_rider; place_order takes a zone (none = "somewhere else", fee confirmed by staff)
   - supabase/migrations/008_spa.sql: spa_services, spa_therapists (+ which treatments each does), spa_hours, spa_time_off, spa_settings, spa_bookings (database blocks double-booking); public functions spa_info/spa_slots/book_spa, cancel_my_spa_booking; new staff role 'spa'
   - supabase/migrations/009_blog.sql: blog_posts (draft/published, simple Markdown body), blog_subscribers; subscribe_blog / unsubscribe_blog (public), list_blog_subscribers (admin/blog staff); blog-images storage bucket; new staff role 'content' (shown as "Blog")
   - supabase/migrations/010_accounting.sql: accounts (chart), gl_lines (ledger derived from all operational records + expenses + supplier payments + journals), gl_summary / cash_flow / account_ledger functions, supplier_balances view, expenses, supplier_payments, journals (+ post_journal, which enforces balance), purchase payment method, cost snapshots on adjustments and returns, new role 'accounts'
+  - supabase/migrations/011_website.sql: site_settings (one JSON document: design, home text, section photos, about, contact, social) + site_settings_history (last 30, restore), site_slides, site_announcements (public only within their dates), testimonials (publish only with consent), feedback_links + public feedback_info/submit_feedback, site_publish_log, site-images storage bucket
+  - supabase/functions/publish-site/index.ts: Edge Function behind "Publish website now": checks admin/Blog role, one-minute cooldown, asks GitHub to run publish-site.yml (GITHUB_TOKEN secret)
   - .github/workflows/publish-staff.yml: on push to main, copies apps/staff to the deploy-staff branch
   - .github/workflows/publish-shop.yml: on push to main, copies apps/shop to the deploy-shop branch
   - .github/workflows/publish-site.yml: builds apps/site and publishes to the deploy-site branch: on push, every 30 minutes, or manually (Actions -> Publish main website -> Run workflow). Publishes only when the site actually changed; if the database can't be reached, nothing is published.
@@ -43,13 +47,22 @@
 Edit in Codespace -> commit -> Sync -> GitHub Action updates deploy-staff -> Hostinger redeploys.
 Make edits in the Codespace, not on GitHub.com (avoids merge conflicts). If you do edit on the website, Sync the Codespace first.
 
+## Publish now setup (one time)
+1. GitHub -> your profile picture -> Settings -> Developer settings -> Personal access tokens -> Fine-grained tokens -> Generate new token.
+   Resource owner: Royal-Glow-Gh. Repository access: Only select repositories -> royal-glow-platform. Permissions -> Repository -> Actions: Read and write. Expiry: up to 1 year (renew before it ends). Copy the token.
+   (If the organization requires approval for tokens, approve it under the organization's Settings -> Personal access tokens.)
+2. Supabase -> Edge Functions -> Secrets -> Add: name GITHUB_TOKEN, value the token.
+3. Supabase -> Edge Functions -> Deploy a new function -> Via editor. Name: publish-site. Replace the code with supabase/functions/publish-site/index.ts. Deploy. Leave "Verify JWT" on.
+4. Website page -> Publish website now. GitHub -> Actions shows "Publish main website" running.
+
 ## Roles (a person can hold several, e.g. production + sales)
 - admin: everything, including approving staff and changing roles
 - production: batches and items; can view inventory and sales
 - inventory: purchases, transfers, adjustments, locations, suppliers, reorder levels
 - sales: sales, customers, payments, returns, selling prices, online shop orders
 - spa: spa bookings, treatments, therapists, opening hours, spa reports
-- content ("Blog"): write, publish and delete articles; see subscribers
+- content ("Blog"): write, publish and delete articles; see subscribers; website slides, announcements, testimonials, feedback links, Publish website now
+- Website page: design, home text, About & contact and history are admin only. Spa and Sales staff can create feedback links.
 - accounts: all accounting reports, expenses, supplier payments, journals, chart of accounts (expenses and journals are hidden from other roles because they include salaries)
 
 ## Adding a staff member
@@ -68,7 +81,8 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - Delivery: customers pick a delivery area and see its fee. Rider-paid fees are shown but not added to what the customer pays Royal Glow. "Somewhere else" orders get their fee set by staff on the order; an order can't be confirmed or fulfilled until its fee is set.
 - Online payment phase 1: MoMo to the Royal Glow number (order number as reference) or cash on delivery/pickup; staff mark orders paid. Phase 2: Paystack.
 - Spa: customers book online (treatment, day, therapist or "any", free time); pay at the spa. Staff can book by phone, ignoring the online notice period. A therapist with no treatments ticked does all treatments. Times are Ghana time (GMT, no daylight saving). Spa revenue is recorded on completed bookings (paid amount + method) and reported on the Spa page, separate from product sales.
-- Main website text (about, intro, contact details, social links) is edited in apps/site/site.json; blank values are hidden.
+- Main website text, design, photos, contact details and social links are edited on the staff Website page (blank values are hidden). Changes go live at the next rebuild (every 30 min) or straight away with Publish website now; announcements go live at once.
+- Testimonials: real customer words only; a testimonial can only be published if the customer agreed (database rule). Feedback links are one-time, valid 60 days; replies arrive as drafts for review.
 - Blog: articles live at royalglowgh.com/blog/<web address>/. They are drafts until published; only published ones are visible to the public. Published changes reach the website at the next rebuild (within ~30 minutes, or run the workflow by hand). Subscribers = blog sign-ups + customers who ticked "Send me new skincare articles". Phase 1: copy the subscriber emails / a ready announcement and send from your email tool or WhatsApp. Phase 2 (later): automatic emails through an email service.
 - Accounting (assumptions: not VAT-registered; financial year Jan–Dec; standard chart, renameable):
   - The ledger is derived, not copied: sales (money/receivable vs product sales, discounts; cost of goods sold vs stock), returns (reduce revenue and receivable/cash; restocked goods back to stock at their cost), customer payments, purchases (stock vs cash/MoMo/bank or supplier credit), supplier payments, production (labour/energy 'other costs' moved into stock value), stock adjustments (write-offs; opening stock vs opening balances), completed spa bookings (spa revenue), expenses, journals.
@@ -125,8 +139,9 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - [x] Blog: editor, publishing, public blog page, subscribe/unsubscribe, subscriber list (009)
 - [ ] Automatic new-article emails via an email service (later)
 - [x] Main website royalglowgh.com: home, about, contact, SEO-ready blog, sitemap, RSS (static, rebuilt automatically)
-- [ ] Fill in real contact details, address and social links in apps/site/site.json
-- [ ] Instant website rebuild when an article is published (later; now every 30 min or manual)
+- [ ] Fill in real contact details, address and social links (Website page -> About & contact)
+- [x] Website page in the staff app: all website content editable without GitHub, slides, announcement bar, testimonials and feedback links, history (011)
+- [ ] Publish website now: deploy the publish-site function and set its GITHUB_TOKEN secret (steps under "Publish now setup")
 - [ ] Submit sitemap to Google Search Console
 - [x] Accounting release 1: ledger, chart of accounts, expenses, supplier credit and payments, journals and opening balances, P&L, balance sheet, cash flow, trial balance, account ledger (010)
 - [ ] Accounting release 2: month-end close (lock past periods), receivables/payables ageing, VAT if registered, depreciation schedule, delivery fees into the books, budgets
@@ -134,10 +149,10 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - [ ] Go-live: clear all sample data, enter real data
 
 ## Next up
-- [ ] Move the staff apps to staff.royalglowgh.com: files done (folder apps/production -> apps/staff, workflow publish-staff.yml -> branch deploy-staff). Remaining: Hostinger subdomain staff.royalglowgh.com on deploy-staff, Supabase Site URL + Redirect URLs, delete production subdomain and deploy-production branch. No redirect.
+- [x] Staff apps live at staff.royalglowgh.com (deploy-staff, auto-deployment on). Remaining clean-up: remove the production.royalglowgh.com redirect URL in Supabase, the production subdomain in Hostinger and the deploy-production branch.
+- [ ] Design templates, online shop: 2 styles (grid, lookbook), using the same announcements and testimonials (treatment quotes in spa booking); add to the design guide
 
 ## Later (backlog)
-- [x] Design templates, main website: 3 home-page styles (Classic, Light editorial, Showcase) and 2 blog styles (Magazine, Minimal), switchable in site.json, previews at /preview/, design guide (docs/design-guide/design-guide.pdf)
-- [ ] Design templates, online shop: 2 styles (grid, lookbook), switchable by a shop setting; add to the design guide
+- [x] Design templates, main website: 3 home-page styles (Classic, Light editorial, Showcase) and 2 blog styles (Magazine, Minimal), switchable on the Website page, previews at /preview/, design guide (docs/design-guide/design-guide.pdf)
 - [ ] Excel/CSV import and export for accounts (expenses, opening balances, journals, chart of accounts; report exports to .xlsx)
 - [ ] Other items as they come up

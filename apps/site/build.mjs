@@ -1,10 +1,10 @@
 // Builds the main website (royalglowgh.com) as plain HTML files in apps/site/dist.
 // Run: node apps/site/build.mjs        (no packages to install; needs Node 20+)
-// Content comes from site.json (company text, design choice, banner images) and Supabase
-// (articles, products, spa treatments). If Supabase can't be reached the build stops,
-// so a broken site is never published.
-// Design: site.json -> design.home ("classic" | "editorial" | "showcase") and design.blog
-// ("magazine" | "minimal"). Every style is also built under /preview/ so it can be seen before switching.
+// Content comes from Supabase: website settings, slides and testimonials (staff app -> Website page),
+// articles, products and spa treatments. site.json only holds the two web addresses.
+// If Supabase can't be reached the build stops, so a broken site is never published.
+// Design: settings.design.home ("classic" | "editorial" | "showcase") and .blog ("magazine" | "minimal").
+// Every style is also built under /preview/ so it can be seen before switching.
 
 import { readFileSync, writeFileSync, mkdirSync, rmSync, cpSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -13,41 +13,40 @@ import { md } from './lib/md.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = join(HERE, 'dist');
-const SITE = JSON.parse(readFileSync(join(HERE, 'site.json'), 'utf8'));
-const BASE = SITE.site_url.replace(/\/$/, '');
-const SHOP = SITE.shop_url.replace(/\/$/, '');
+const URLS = JSON.parse(readFileSync(join(HERE, 'site.json'), 'utf8'));
+const BASE = URLS.site_url.replace(/\/$/, '');
+const SHOP = URLS.shop_url.replace(/\/$/, '');
 
 export const HOME_STYLES = ['classic', 'editorial', 'showcase'];
 export const BLOG_STYLES = ['magazine', 'minimal'];
-const D = SITE.design || {};
-const HOME_STYLE = HOME_STYLES.includes(D.home) ? D.home : 'classic';
-const BLOG_STYLE = BLOG_STYLES.includes(D.blog) ? D.blog : 'magazine';
-if (D.home && D.home !== HOME_STYLE) console.warn(`warning: design.home "${D.home}" is not one of ${HOME_STYLES.join(', ')}; using classic.`);
-if (D.blog && D.blog !== BLOG_STYLE) console.warn(`warning: design.blog "${D.blog}" is not one of ${BLOG_STYLES.join(', ')}; using magazine.`);
-
-// Banner and section images (see docs/DESIGN-GUIDE.md for sizes). Files live in apps/site/assets/.
+// Image slots (sizes in the design guide). Section photos are uploaded on the Website page (site-images bucket).
 export const SLOTS = {
-  hero_wide:     { w: 2400, h: 1200, label: 'Wide hero banner', used: 'Showcase home (full-width), Classic home (behind the headline)' },
-  hero_mobile:   { w: 1080, h: 1620, label: 'Phone hero banner', used: 'Showcase and Classic home on phones (optional; else the wide banner is cropped)' },
-  hero_portrait: { w: 1200, h: 1500, label: 'Portrait hero image', used: 'Editorial home' },
+  slide:         { w: 2400, h: 1200, label: 'Slide (computer)', used: 'Classic and Showcase home' },
+  slide_m:       { w: 1080, h: 1620, label: 'Slide (phone)', used: 'Classic and Showcase home on phones' },
+  hero_portrait: { w: 1200, h: 1500, label: 'Editorial hero (arch)', used: 'Editorial home' },
   making:        { w: 1200, h: 900,  label: 'Our products / making', used: 'Editorial and Showcase home' },
   spa:           { w: 1200, h: 900,  label: 'Spa', used: 'Editorial and Showcase home' },
   stockists:     { w: 1200, h: 900,  label: 'Stockists / partners', used: 'Editorial and Showcase home' },
   about:         { w: 1600, h: 900,  label: 'About page banner', used: 'About page (all styles)' }
 };
-const IMAGES = SITE.images || {};
-for (const [k, v] of Object.entries(IMAGES)) {
-  if (k.startsWith('_') || !v) continue;
-  if (!SLOTS[k]) console.warn(`warning: images.${k} is not a known image slot (${Object.keys(SLOTS).join(', ')}).`);
-  else if (!existsSync(join(HERE, 'assets', v))) console.warn(`warning: images.${k} = "${v}" but apps/site/assets/${v} does not exist; the image is left out.`);
+// Filled from the database in main().
+let SITE = {}, HOME_STYLE = 'classic', BLOG_STYLE = 'magazine', IMAGES = {}, C = {}, HIGHLIGHTS = [], BADGES = [], SLIDES = [], TESTI = [];
+function applySettings(data) {
+  SITE = { ...data, site_url: BASE, shop_url: SHOP };
+  const d = SITE.design || {};
+  HOME_STYLE = HOME_STYLES.includes(d.home) ? d.home : 'classic';
+  BLOG_STYLE = BLOG_STYLES.includes(d.blog) ? d.blog : 'magazine';
+  IMAGES = SITE.images || {};
+  C = SITE.contact || {};
+  HIGHLIGHTS = (SITE.highlights || []).filter(h => h && h.title);
+  BADGES = (SITE.badges || []).filter(Boolean);
+  SITE.brand = SITE.brand || 'Royal Glow'; SITE.company = SITE.company || 'Royal Glow Company Limited';
+  SITE.tagline = SITE.tagline || SITE.brand; SITE.intro = SITE.intro || '';
 }
-// URL of a slot's image: the real file if set; on preview pages a labelled placeholder; otherwise ''.
+// URL of a slot's image: the uploaded photo if set; on preview pages a labelled placeholder; otherwise ''.
 let PREVIEW = false;
-function slot(key) {
-  const v = IMAGES[key];
-  if (v && existsSync(join(HERE, 'assets', v))) return '/assets/' + v.split('/').map(encodeURIComponent).join('/');
-  return PREVIEW ? `/preview/slots/${key}.svg` : '';
-}
+const slotUrl = (key, path) => path ? img('site-images', path) : PREVIEW ? `/preview/slots/${key}.svg` : '';
+const slot = key => slotUrl(key, IMAGES[key]);
 
 // ---------- Supabase connection: env vars, or the staff app's config.js ----------
 function readConfig() {
@@ -83,7 +82,6 @@ const clean = s => String(s || '').replace(/\s*\(sample\)/g, '');
 const img = (bucket, p) => p ? `${CFG.url}/storage/v1/object/public/${bucket}/${String(p).split('/').map(encodeURIComponent).join('/')}` : '';
 const write = (rel, html) => { const f = join(OUT, rel); mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, html); };
 const plain = s => String(s || '').replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/[#*>`_-]+/g, ' ').replace(/\s+/g, ' ').trim();
-const C = SITE.contact || {};
 const waLink = n => 'https://wa.me/' + String(n).replace(/[^0-9]/g, '').replace(/^0/, '233');
 const bg = u => u ? ` style="background-image:url('${esc(u)}')"` : '';
 // Hero background: wide image, plus an optional phone image (used by CSS below 700px wide).
@@ -91,8 +89,6 @@ const heroBg = (w, m) => w || m ? ` style="${w ? `--hero:url('${esc(w)}');` : ''
 // Links in site.json may be a keyword (shop, spa, blog, about, contact) or a full address.
 const LINKS = { shop: SHOP + '/', spa: SHOP + '/#spa', blog: '/blog/', about: '/about/', contact: '/contact/' };
 const linkTo = l => LINKS[l] || l || '/';
-const HIGHLIGHTS = (SITE.highlights || []).filter(h => h && h.title);
-const BADGES = (SITE.badges || []).filter(Boolean);
 
 // ---------- layout ----------
 function page({ path, title, description, image, type = 'website', body, jsonld, nav, home = HOME_STYLE, blog = BLOG_STYLE, noindex = false }) {
@@ -129,6 +125,7 @@ ${noindex ? '<meta name="robots" content="noindex">\n' : ''}<meta name="descript
 ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, '\\u003c')}</script>` : ''}
 </head>
 <body class="t-${home} b-${blog}${nav === 'home' ? ' is-home' : ''}">
+<div class="annbar" id="annbar" hidden></div>
 <header class="top"><div class="wrap">
   <a href="/" aria-label="${esc(SITE.brand)} home"><img class="logo" src="/assets/logo.png" alt="${esc(SITE.brand)}" width="160" height="51"></a>
   <nav>${link('/about/', 'About', 'about')}${link(SHOP + '/', 'Shop', 'shop')}${link(SHOP + '/#spa', 'Spa', 'spa')}${link('/blog/', 'Blog', 'blog')}${link('/contact/', 'Contact', 'contact')}</nav>
@@ -141,6 +138,8 @@ ${body}
   <div><b>Visit</b><a href="${SHOP}/">Online shop</a><a href="${SHOP}/#spa">Book the spa</a><a href="/blog/">Blog</a></div>
   <div><b>Contact</b>${C.email ? `<a href="mailto:${esc(C.email)}">${esc(C.email)}</a>` : ''}${C.phone ? `<span>${esc(C.phone)}</span>` : ''}${C.whatsapp ? `<a href="${waLink(C.whatsapp)}" rel="noopener">WhatsApp ${esc(C.whatsapp)}</a>` : ''}${social ? `<span>${social}</span>` : ''}</div>
 </div></footer>
+<script>window.RG={url:${JSON.stringify(CFG.url)},key:${JSON.stringify(CFG.key)},shop:${JSON.stringify(SHOP)}};</script>
+<script src="/assets/site.js" defer></script>
 </body>
 </html>
 `;
@@ -183,20 +182,58 @@ const ctaButtons = (dark) => `<div class="cta"><a class="btn gold" href="${SHOP}
 const head = (title, href, label) => `<div class="bhead"><h2>${esc(title)}</h2><a href="${href}">${label}</a></div>`;
 const HL_SLOTS = ['making', 'spa', 'stockists'];
 
+// ---------- hero slides (Classic and Showcase) ----------
+// Slides come from the Website page. With none, one slide is made from the tagline and introduction.
+// Several slides stack in the same place and fade; site.js rotates them (pauses on hover/touch,
+// still for visitors who prefer reduced motion). Only the first headline is the page's <h1>.
+function heroSlides(kind) {
+  let list = SLIDES.slice(0, 3);
+  if (!list.length) list = [{}];
+  if (PREVIEW && !SLIDES.length) list = [{ image_path: '', image_mobile_path: '' }];
+  const slides = list.map((s, i) => {
+    const w = slotUrl('slide', s.image_path), m = slotUrl('slide_m', s.image_mobile_path);
+    const H = i ? 'h2' : 'h1';
+    const btn = s.button_label ? `<div class="cta"><a class="btn gold" href="${esc(linkTo(s.button_link))}">${esc(s.button_label)}</a>${s.button_link !== 'spa' ? `<a class="btn outline" href="${SHOP}/#spa">Book a spa treatment</a>` : ''}</div>` : ctaButtons(true);
+    const cls = kind === 'classic' ? `hero${w || m ? ' has-img' : ''}` : `shero${w || m ? '' : ' ph'}`;
+    return `<div class="${cls} slide${i ? '' : ' on'}"${heroBg(w, m)}${i ? ' aria-hidden="true"' : ''}><div class="wrap">
+  <${H} class="hl">${esc(s.headline || SITE.tagline)}</${H}>
+  <p>${esc(s.text || SITE.intro)}</p>
+  ${btn}
+</div></div>`;
+  });
+  const dots = slides.length > 1 ? `<div class="dots wrap">${slides.map((_, i) => `<button type="button" aria-label="Slide ${i + 1}"${i ? '' : ' class="on"'}></button>`).join('')}</div>` : '';
+  return `<section class="slider ${kind}-slider" data-rotate="7000" aria-roledescription="carousel">${slides.join('\n')}${dots}</section>`;
+}
+
+// ---------- testimonials ----------
+// Real, published quotes only. Preview pages show clearly labelled samples when there are none.
+const SAMPLE_TESTI = [
+  { quote: 'Sample quote: this is where a customer’s own words about a facial or a product will appear.', name: 'Sample', town: 'Kumasi', about: 'Not shown on the live site' },
+  { quote: 'Sample quote: add real testimonials on the Website page to replace these.', name: 'Sample', town: 'Accra', about: 'Not shown on the live site' },
+  { quote: 'Sample quote: only words customers agreed to share are published.', name: 'Sample', town: '', about: 'Not shown on the live site' }];
+const testiList = () => TESTI.length ? TESTI : PREVIEW ? SAMPLE_TESTI : [];
+const who = t => `<b>${esc(t.name)}</b>${t.town ? `, ${esc(t.town)}` : ''}${t.about ? `<small>${esc(t.about)}</small>` : ''}`;
+function testimonials(style, title = 'What customers say') {
+  const list = testiList();
+  if (!list.length) return '';
+  if (style === 'cards') return `<section class="wrap block">${`<div class="bhead"><h2>${esc(title)}</h2></div>`}<div class="tcards">${list.slice(0, 3).map(t =>
+    `<figure class="tcard"><blockquote>${esc(t.quote)}</blockquote><figcaption>${who(t)}</figcaption></figure>`).join('')}</div></section>`;
+  // 'single' (Editorial) and 'band' (Showcase): one quote at a time, rotating.
+  const items = list.slice(0, 6).map((t, i) => `<figure class="tq slide${i ? '' : ' on'}"${i ? ' aria-hidden="true"' : ''}><blockquote>${esc(t.quote)}</blockquote><figcaption>${who(t)}</figcaption></figure>`).join('');
+  const dots = list.length > 1 ? `<div class="dots">${list.slice(0, 6).map((_, i) => `<button type="button" aria-label="Quote ${i + 1}"${i ? '' : ' class="on"'}></button>`).join('')}</div>` : '';
+  return `<section class="${style === 'band' ? 'tband' : 'wrap tsingle'}"><div class="${style === 'band' ? 'wrap' : ''}"><div class="kicker">${esc(title)}</div><div class="slider" data-rotate="9000">${items}${dots}</div></div></section>`;
+}
+
 // ---------- home page styles ----------
 const HOMES = {
-  // Classic: dark gold-glow hero, three cards overlapping it, then shop, spa and blog.
+  // Classic: dark gold-glow hero, three cards overlapping it, then shop, spa, testimonials and blog.
   classic({ products, services, posts }) {
-    const hero = slot('hero_wide'), heroM = slot('hero_mobile');
     return `
-<section class="hero${hero || heroM ? ' has-img' : ''}"${heroBg(hero, heroM)}><div class="wrap">
-  <h1>${esc(SITE.tagline)}</h1>
-  <p>${esc(SITE.intro)}</p>
-  ${ctaButtons(true)}
-</div></section>
+${heroSlides('classic')}
 ${HIGHLIGHTS.length ? `<section class="wrap pillars">${HIGHLIGHTS.slice(0, 3).map(h => `<div><h2>${esc(h.title)}</h2><p>${esc(h.text)}</p>${h.link_label ? `<a href="${esc(linkTo(h.link))}">${esc(h.link_label)} →</a>` : ''}</div>`).join('')}</section>` : ''}
 ${products.length ? `<section class="wrap block">${head('From the shop', SHOP + '/', 'All products →')}<div class="grid">${products.slice(0, 4).map(productCard).join('')}</div></section>` : ''}
 ${services.length ? `<section class="wrap block">${head('Spa treatments', SHOP + '/#spa', 'Book online →')}<div class="slist">${services.slice(0, 5).map(spaRow).join('')}</div></section>` : ''}
+${testimonials('cards')}
 ${posts.length ? `<section class="wrap block">${head('From the blog', '/blog/', 'All articles →')}<div class="grid">${posts.slice(0, 3).map(postCard).join('')}</div></section>` : ''}
 <div class="wrap">${subscribeBox()}</div>`;
   },
@@ -218,16 +255,16 @@ ${posts.length ? `<section class="wrap block">${head('From the blog', '/blog/', 
 </div></section>
 ${BADGES.length ? `<div class="wrap"><ul class="eline">${BADGES.map(b => `<li>${esc(b)}</li>`).join('')}</ul></div>` : ''}
 ${rows ? `<section class="wrap erows">${rows}</section>` : ''}
+${testimonials('single', 'Kind words')}
 ${products.length ? `<section class="wrap block">${head('From the shop', SHOP + '/', 'All products →')}<div class="grid four">${products.slice(0, 4).map(productCard).join('')}</div></section>` : ''}
 ${services.length ? `<section class="wrap block espa"><div><h2>Spa treatments</h2><p class="lead">Book online in a minute and pay at the spa.</p><a class="btn" href="${SHOP}/#spa">Book a treatment</a></div><div class="slist">${services.slice(0, 5).map(spaRow).join('')}</div></section>` : ''}
 ${posts.length ? `<section class="wrap block">${head('From the journal', '/blog/', 'All articles →')}<div class="plist">${posts.slice(0, 3).map(postRow).join('')}</div></section>` : ''}
 <div class="wrap">${subscribeBox()}</div>`;
   },
 
-  // Showcase: full-width photo hero, a gold strip of short promises, photo tiles,
-  // large product cards, a spa block with a photo, and a stockist call-to-action band.
+  // Showcase: full-width photo slides, a gold strip of short promises, photo tiles,
+  // large product cards, a spa block with a photo, testimonials band, stockist band.
   showcase({ products, services, posts }) {
-    const hero = slot('hero_wide'), heroM = slot('hero_mobile');
     const spaImg = slot('spa');
     const tiles = HIGHLIGHTS.slice(0, 3).map((h, i) => {
       const u = slot(HL_SLOTS[i]);
@@ -235,13 +272,12 @@ ${posts.length ? `<section class="wrap block">${head('From the journal', '/blog/
     }).join('');
     const stock = HIGHLIGHTS[2];
     return `
-<section class="shero${hero || heroM ? '' : ' ph'}"${heroBg(hero, heroM)}><div class="wrap">
-  <h1>${esc(SITE.tagline)}</h1><p>${esc(SITE.intro)}</p>${ctaButtons(true)}
-</div></section>
+${heroSlides('showcase')}
 ${BADGES.length ? `<div class="strip"><div class="wrap">${BADGES.map(b => `<span>${esc(b)}</span>`).join('')}</div></div>` : ''}
 ${tiles ? `<section class="wrap tiles">${tiles}</section>` : ''}
 ${products.length ? `<section class="wrap block">${head('Bestsellers', SHOP + '/', 'Shop all →')}<div class="grid big">${products.slice(0, 3).map(productCard).join('')}</div></section>` : ''}
 ${services.length ? `<section class="sspa"><div class="simg${spaImg ? '' : ' ph'}"${bg(spaImg)}>${spaImg ? '' : crownPh}</div><div class="stext"><h2>The ${esc(SITE.brand)} spa</h2><div class="slist">${services.slice(0, 4).map(spaRow).join('')}</div><a class="btn gold" href="${SHOP}/#spa">Book a treatment</a></div></section>` : ''}
+${testimonials('band')}
 ${posts.length ? `<section class="wrap block">${head('From the blog', '/blog/', 'All articles →')}<div class="grid">${posts.slice(0, 3).map(postCard).join('')}</div></section>` : ''}
 ${stock ? `<section class="band"><div class="wrap"><div><h2>${esc(stock.title)}</h2><p>${esc(stock.text)}</p></div><a class="btn" href="${esc(linkTo(stock.link))}">${esc(stock.link_label || 'Contact us')}</a></div></section>` : ''}
 <div class="wrap">${subscribeBox()}</div>`;
@@ -297,8 +333,8 @@ ${more.length ? `<section class="wrap block"><h2 class="h2">More from the blog</
 function slotSvg(key) {
   const s = SLOTS[key];
   const fs = Math.round(Math.min(s.w, s.h) / 14);
-  const x = key === 'hero_wide' ? '74%' : '50%'; // the left of the wide banner sits under the headline
-  const cy = key.startsWith('hero_') && key !== 'hero_portrait' ? s.h * 0.2 : s.h / 2; // hero text sits lower down
+  const x = key === 'slide' ? '74%' : '50%'; // the left of the wide banner sits under the headline
+  const cy = key === 'slide' || key === 'slide_m' ? s.h * 0.2 : s.h / 2; // hero text sits lower down
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${s.w}" height="${s.h}" viewBox="0 0 ${s.w} ${s.h}">
 <defs><pattern id="p" width="60" height="60" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="60" height="60" fill="#2a2416"/><rect width="30" height="60" fill="#30291a"/></pattern></defs>
 <rect width="100%" height="100%" fill="url(#p)"/>
@@ -311,15 +347,22 @@ function slotSvg(key) {
 
 // ---------- build ----------
 async function main() {
-  const [posts, products, spa] = await Promise.all([
+  const [settings, posts, products, spa, slides, testi] = await Promise.all([
+    api('site_settings?select=data&id=eq.1').catch(e => { throw new Error('website settings could not be read (has 011_website.sql been run?): ' + e.message); }),
     api('blog_posts?select=slug,title,excerpt,body,category,cover_path,author_name,published_at,updated_at&status=eq.published&order=published_at.desc'),
     optional(api('rpc/shop_catalog', {}), []),
-    optional(api('rpc/spa_info', {}), null)
+    optional(api('rpc/spa_info', {}), null),
+    optional(api('site_slides?select=headline,text,button_label,button_link,image_path,image_mobile_path&active=eq.true&order=sort,created_at'), []),
+    optional(api('testimonials?select=quote,name,town,about,service_id&order=sort,created_at.desc&limit=12'), [])
   ]);
+  if (!settings.length) throw new Error('website settings are empty (run 011_website.sql).');
+  applySettings(settings[0].data || {});
+  SLIDES = slides; TESTI = testi;
   rmSync(OUT, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });
   cpSync(join(HERE, 'assets'), join(OUT, 'assets'), { recursive: true });
   writeFileSync(join(OUT, 'assets', 'site.css'), readFileSync(join(HERE, 'site.css')));
+  writeFileSync(join(OUT, 'assets', 'site.js'), readFileSync(join(HERE, 'site.js')));
 
   const services = spa && Array.isArray(spa.services) ? spa.services : [];
   const data = { posts, products, services };
@@ -337,7 +380,8 @@ async function main() {
     body: `${aboutImg ? `<div class="abanner"${bg(aboutImg)}></div>` : ''}<section class="wrap narrow"><h1 class="ptitle">${esc(SITE.about_title)}</h1>
 ${(SITE.about || []).map(p => `<p class="lead">${esc(p)}</p>`).join('\n')}
 <h2 class="h2">${esc(SITE.partners_title)}</h2><p class="lead">${esc(SITE.partners)}</p>
-<div class="cta"><a class="btn" href="${SHOP}/">Visit the shop</a><a class="btn ghost" href="/contact/">Contact us</a></div></section>`
+<div class="cta"><a class="btn" href="${SHOP}/">Visit the shop</a><a class="btn ghost" href="/contact/">Contact us</a></div></section>
+${testimonials('cards')}`
   }));
   urls.push({ loc: '/about/' });
 
@@ -383,6 +427,35 @@ ${(SITE.about || []).map(p => `<p class="lead">${esc(p)}</p>`).join('\n')}
 <form class="subform" onsubmit="return rgUnsub(this)"><input name="email" type="email" placeholder="Your email" required><button class="btn">Unsubscribe</button></form><p class="submsg" role="status"></p></section>
 <script>function rgUnsub(f){var m=f.parentNode.querySelector('.submsg');fetch(${JSON.stringify(CFG.url + '/rest/v1/rpc/unsubscribe_blog')},{method:'POST',headers:{apikey:${JSON.stringify(CFG.key)},'Content-Type':'application/json'},
  body:JSON.stringify({p_email:f.email.value})}).then(function(r){m.textContent=r.ok?'Done. You won\\u2019t receive new-article emails from the blog list.':'Something went wrong.'});return false}</script>`
+  }));
+
+  // "How was your visit?" form, opened from a one-time link staff send (feedback/?t=...)
+  write('feedback/index.html', page({
+    path: '/feedback/', title: 'How was your visit?', description: `Tell ${SITE.brand} how it went.`, noindex: true,
+    body: `<section class="wrap narrow fb"><h1 class="ptitle">How was your visit?</h1>
+<p class="lead" id="fbAbout">Thank you for choosing ${esc(SITE.brand)}. We read every reply.</p>
+<form id="fbForm" class="hidden" onsubmit="return rgFeedback(this)">
+  <label>Your words<textarea name="quote" rows="5" maxlength="600" required placeholder="What did you enjoy? Anything we could do better?"></textarea></label>
+  <div class="fbrow"><label>Your first name<input name="name" maxlength="60" required autocomplete="given-name"></label><label>Town (optional)<input name="town" maxlength="60"></label></div>
+  <label class="chk"><input type="checkbox" name="consent"> ${esc(SITE.brand)} may show my words, first name and town on its website.</label>
+  <button class="btn gold">Send</button><p class="submsg" role="status"></p>
+</form>
+<p class="lead hidden" id="fbDone"></p></section>
+<script>
+(function(){var t=new URLSearchParams(location.search).get('t'),f=document.getElementById('fbForm'),done=document.getElementById('fbDone');
+ var H={apikey:${JSON.stringify(CFG.key)},'Content-Type':'application/json'},U=${JSON.stringify(CFG.url + '/rest/v1/rpc/')};
+ function end(m){f.classList.add('hidden');done.textContent=m;done.classList.remove('hidden')}
+ if(!/^[0-9a-f-]{36}$/i.test(t||''))return end('This link is not complete. Please open the link you were sent.');
+ fetch(U+'feedback_info',{method:'POST',headers:H,body:JSON.stringify({p_token:t})}).then(function(r){return r.json()}).then(function(i){
+  if(!i||!i.ok)return end((i&&i.message)||'This link is not valid.');
+  if(i.about)document.getElementById('fbAbout').textContent='Thank you for choosing ${esc(SITE.brand)}. How was your '+i.about+'?';
+  f.classList.remove('hidden')}).catch(function(){end('Something went wrong. Please try again later.')});
+ window.rgFeedback=function(f){var m=f.querySelector('.submsg');m.textContent='Sending…';
+  fetch(U+'submit_feedback',{method:'POST',headers:H,body:JSON.stringify({p_token:t,p_quote:f.quote.value,p_name:f.name.value,p_town:f.town.value,p_consent:f.consent.checked})})
+  .then(function(r){return r.ok?null:r.json()}).then(function(e){if(e)m.textContent=e.message||'Something went wrong.';else end('Thank you! We have received your feedback.')})
+  .catch(function(){m.textContent='Something went wrong. Please try again.'});return false};
+})();
+</script>`
   }));
 
   // 404
