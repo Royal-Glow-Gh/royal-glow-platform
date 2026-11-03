@@ -1,4 +1,4 @@
-// Copy this file to config.js and fill in your values (same values as apps/production/config.js).
+// Copy this file to config.js and fill in your values (same values as apps/staff/config.js).
 // Use the Project URL and the PUBLISHABLE key. NEVER the secret / service_role key.
 window.RG_CONFIG = {
   SUPABASE_URL: 'https://oluzgkanxwddonxampli.supabase.co',
