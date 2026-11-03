@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Royal Glow — Website</title>
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#111111">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f7f5f2; --surface:#fcfcfb; --surface-2:#f1eee9; --border:#e2ddd5;
+  --text:#1b1a18; --text-2:#55524c; --muted:#8a867e;
+  --accent:#9a6b00; --accent-ink:#fff; --gold:#d9a21b;
+  --series-1:#2a78d6; --grid:#e8e4dd;
+  --good:#1f7a3a; --bad:#b3261e;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --bg:#121211; --surface:#1a1a19; --surface-2:#232321; --border:#34332f;
+    --text:#f0efec; --text-2:#c3c2b7; --muted:#8f8c84;
+    --accent:#f0b429; --accent-ink:#1a1a19; --gold:#f0b429;
+    --series-1:#3987e5; --grid:#2c2b28;
+    --good:#5cc27a; --bad:#ef7a72;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+header{padding:20px 24px 0;max-width:1100px;margin:0 auto}
+h1{font-size:22px;margin:0;letter-spacing:.2px}
+h1 span{color:var(--accent)}
+.sub{color:var(--text-2);margin:4px 0 14px;font-size:14px}
+nav{display:flex;gap:4px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+nav button{background:none;border:0;padding:10px 14px;font:inherit;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+nav button.on{color:var(--text);border-bottom-color:var(--accent);font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:20px 24px 60px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.card h2{font-size:16px;margin:0 0 12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+label.f{display:flex;flex-direction:column;font-size:12px;color:var(--text-2);gap:4px}
+input,select,textarea{font:inherit;padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);min-width:0}
+textarea{width:100%;min-height:120px;font:12px/1.4 ui-monospace,Menlo,monospace}
+button.b{font:inherit;padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer}
+button.b:hover{border-color:var(--muted)}
+button.p{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px}
+button.x:hover{color:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:12px;color:var(--text-2);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--surface-2);color:var(--text-2);border:1px solid var(--border)}
+.pill.product{color:var(--accent);border-color:var(--accent)}
+.muted{color:var(--muted)} .small{font-size:12px}
+.tot{font-size:14px;margin-top:10px;color:var(--text-2)} .tot b{color:var(--text)}
+.tiles{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.tile{flex:1 1 160px;background:var(--surface-2);border-radius:8px;padding:10px 14px}
+.tile .k{font-size:12px;color:var(--text-2)} .tile .v{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.up{color:var(--bad)} .down{color:var(--good)}
+.chart{position:relative}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.12);display:none;white-space:nowrap}
+.tip b{font-size:14px;display:block}
+.banner{background:var(--surface-2);border-left:3px solid var(--gold);padding:8px 12px;border-radius:4px;font-size:13px;color:var(--text-2);margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.hidden{display:none}
+.applink{color:var(--accent);font-weight:600;text-decoration:none}
+.apps a{color:var(--text-2);font-weight:600;text-decoration:none;margin-right:12px}
+.apps a:hover{color:var(--text)}
+.apps a[aria-current]{color:var(--accent)}
+.pill.partner,.pill.wholesale{color:var(--accent);border-color:var(--accent)}
+.pill.goods{color:var(--gold);border-color:var(--gold)}
+.brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{height:44px;width:auto}
+.applabel{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);border-left:1px solid var(--border);padding-left:14px}
+#gate .applabel{border:0;padding:0}
+details summary{cursor:pointer;color:var(--text-2)}
+.msg{font-size:13px;margin-left:8px}
+.lnk{color:var(--accent)}
+</style>
+</head>
+<body>
+<!-- Supabase connection values live in config.js (same folder). -->
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+.help{font-size:12px;color:var(--muted);margin:4px 0 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:820px){.grid2{grid-template-columns:1fr}}
+label.f input,label.f textarea,label.f select{width:100%}
+textarea.t{font:inherit;min-height:70px}
+.cnt{font-size:11px;color:var(--muted);text-align:right}
+.cnt.over{color:var(--bad);font-weight:600}
+.styles{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.style{border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;background:var(--surface)}
+.style.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.style b{display:block;margin-bottom:4px}
+.style p{margin:0 0 6px;font-size:13px;color:var(--text-2)}
+.imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.slot .pic{aspect-ratio:var(--r,4/3);border-radius:8px;background:var(--surface-2) center/cover no-repeat;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;text-align:center;padding:6px}
+.slot .pic.set{border-style:solid}
+.slot b{display:block;font-size:13px;margin:6px 0 0}
+.slot .help{margin:2px 0 6px}
+.slot .warn{font-size:12px;color:var(--bad);margin:4px 0}
+.item{border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:12px;background:var(--surface)}
+.item.off{opacity:.65}
+.item .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.pill.pub{color:var(--good);border-color:var(--good)}
+.pill.draft{color:var(--accent);border-color:var(--accent)}
+.quote{font-size:15px;line-height:1.5;margin:0 0 6px}
+.pubbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.hidden{display:none!important}
+.linkbox{font:12px ui-monospace,Menlo,monospace;background:var(--surface-2);padding:6px 8px;border-radius:6px;word-break:break-all}
+</style>
+
+<section id="gate" class="hidden" style="max-width:420px;margin:60px auto;padding:0 20px">
+  <div class="card">
+    <img src="assets/logo.png" alt="Royal Glow" class="logo" style="width:220px;height:auto;display:block;margin:4px 0 6px"><div class="applabel" style="margin-bottom:10px">Website</div>
+    <div id="gSetup" class="hidden small"><p>This page is not connected to Supabase yet.</p><p>Create <code>apps/staff/config.js</code> (copy <code>config.example.js</code>) and paste in your Project URL and publishable key.</p></div>
+    <form id="gLogin" class="hidden">
+      <p class="small muted">Staff sign-in</p>
+      <label class="f" style="margin-bottom:10px">Email<input type="email" id="gEmail" autocomplete="username" required></label>
+      <label class="f" style="margin-bottom:14px">Password<input type="password" id="gPass" autocomplete="current-password" required></label>
+      <button class="b p" type="submit" id="gBtn">Sign in</button><span class="msg" id="gMsg"></span>
+      <p class="small" style="margin:14px 0 0"><a href="staff.html#reset" class="lnk">Forgot password?</a> · <a href="staff.html#signup" class="lnk">New staff? Create an account</a></p>
+    </form>
+    <div id="gNoStaff" class="hidden small"><p>Signed in as <b id="gWho"></b>. This account is waiting for an admin to approve it.</p><button class="b" id="gOut">Sign out</button></div>
+  </div>
+</section>
+
+<div id="app" class="hidden">
+<header>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+    <h1 class="brand"><a href="index.html"><img src="assets/logo.png" alt="Royal Glow" class="logo"></a><span class="applabel">Website</span></h1>
+    <div class="small muted"><span class="apps"><a href="index.html">Home</a><a href="production.html">Production</a><a href="inventory.html">Inventory</a><a href="sales.html">Sales</a><a href="shop-admin.html">Online shop</a><a href="spa.html">Spa</a><a href="blog-admin.html">Blog</a><a href="website.html" aria-current="page">Website</a><a href="accounts.html">Accounts</a><a href="staff.html">Account</a></span> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
+  </div>
+  <p class="sub">Everything on royalglowgh.com that isn't a product, treatment or article: design style, home-page text and photos, slides, announcements, testimonials, About and contact. <a id="siteLink" class="lnk" href="#" target="_blank" rel="noopener">Open the website ↗</a> · <a id="prevLink" class="lnk" href="#" target="_blank" rel="noopener">Style previews ↗</a></p>
+  <div class="card pubbar" id="pubCard">
+    <button class="b p" id="pubBtn">Publish website now</button>
+    <span class="small" id="pubMsg">Saved changes go live at the next automatic update (about every 30 minutes), or straight away with this button. Announcements show at once.</span>
+  </div>
+  <nav id="tabs">
+    <button data-v="design" class="on">Design</button>
+    <button data-v="home">Home page</button>
+    <button data-v="slides">Slides</button>
+    <button data-v="ann">Announcements</button>
+    <button data-v="testi">Testimonials</button>
+    <button data-v="feedback">Feedback links</button>
+    <button data-v="about">About &amp; contact</button>
+    <button data-v="hist">History</button>
+  </nav>
+</header>
+<main>
+  <div class="banner hidden" id="roBanner"></div>
+  <div class="banner hidden" id="noTable">The website tables are not set up yet. Run <b>011_website.sql</b> in the Supabase SQL Editor, then reload this page.</div>
+
+  <!-- Design -->
+  <section id="v-design">
+    <div class="card"><h2>Home-page style</h2><p class="help" style="margin:-6px 0 12px">Also sets the header and footer look on every page. Open a preview to see it with your current content.</p><div class="styles" id="homeStyles"></div></div>
+    <div class="card"><h2>Blog style</h2><div class="styles" id="blogStyles"></div></div>
+    <div class="row"><button class="b p" data-save>Save design</button><span class="msg" data-msg></span></div>
+  </section>
+
+  <!-- Home page -->
+  <section id="v-home" class="hidden">
+    <div class="card"><h2>Headline and introduction</h2>
+      <div class="grid2">
+        <div><label class="f">Tagline (main headline)<input data-k="tagline" data-max="40"></label></div>
+        <div><label class="f">Brand name<input data-k="brand" data-max="30"></label></div>
+      </div>
+      <label class="f" style="margin-top:10px">Introduction (also the description Google shows)<textarea class="t" data-k="intro" data-max="220"></textarea></label>
+      <p class="help">On the Classic and Showcase styles, the first slide's own headline and text are used instead, if it has them.</p>
+    </div>
+    <div class="card"><h2>Promise badges</h2><p class="help" style="margin:-6px 0 10px">Short promises shown as a line (Editorial) or a gold strip (Showcase). Up to 4; leave blank to hide.</p>
+      <div class="grid2" id="badges"></div></div>
+    <div class="card"><h2>Three highlights</h2><p class="help" style="margin:-6px 0 10px">Cards (Classic), numbered rows with photos (Editorial) or photo tiles (Showcase). Showcase also uses the third as the stockist band.</p>
+      <div id="highlights"></div></div>
+    <div class="card"><h2>Section photos</h2><div class="imgs" id="homeImgs"></div></div>
+    <div class="row"><button class="b p" data-save>Save home page</button><span class="msg" data-msg></span></div>
+  </section>
+
+  <!-- Slides -->
+  <section id="v-slides" class="hidden">
+    <div class="card"><div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Hero slides</h2><button class="b p" id="addSlide">Add a slide</button></div>
+      <p class="help">The big banner at the top of the Classic and Showcase home pages. With one slide it's a still banner; with two or three, they change every 7 seconds (paused while someone hovers or touches, and never moving for visitors who switch off animations). Up to 3 active slides are shown, in order. Blank headline or text means the tagline and introduction are used.</p>
+    </div>
+    <div id="slideList"></div>
+  </section>
+
+  <!-- Announcements -->
+  <section id="v-ann" class="hidden">
+    <div class="card"><h2>New announcement</h2>
+      <div class="row">
+        <label class="f" style="flex:2;min-width:260px">Message<input id="aMsg" maxlength="120" placeholder="Free delivery in Kumasi this weekend"></label>
+        <label class="f" style="flex:1;min-width:160px">Link (optional)<select id="aLinkSel"></select></label>
+        <label class="f" style="flex:1;min-width:160px" id="aLinkCustomWrap">Address<input id="aLinkCustom" placeholder="https://"></label>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label class="f">Show from<input type="date" id="aFrom"></label>
+        <label class="f">Until (last day)<input type="date" id="aTo"></label>
+        <button class="b p" id="aAdd">Add</button><span class="msg" id="aMsgOut"></span>
+      </div>
+      <p class="help">A slim gold bar above the header on every page. Up to 3 current messages rotate. It loads live, so changes show at once, no publishing needed. Dates are optional.</p>
+    </div>
+    <div class="card"><h2>Announcements</h2><table><thead><tr><th>Message</th><th>Link</th><th>Dates</th><th>Showing</th><th></th></tr></thead><tbody id="aList"></tbody></table></div>
+  </section>
+
+  <!-- Testimonials -->
+  <section id="v-testi" class="hidden">
+    <div class="banner">Only real words from real customers, published only when the customer has agreed. Invented or reworded reviews mislead customers. Light edits for spelling are fine; changing the meaning is not.</div>
+    <div class="card"><div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Testimonials</h2><button class="b p" id="addTesti">Add one a customer gave you</button></div>
+      <p class="help">Customer replies from feedback links arrive here as drafts. Published ones appear on the home page, the About page and, if linked to a treatment, in spa booking.</p>
+      <div class="row" style="margin-top:10px"><label class="f">Show<select id="tFilter"><option value="">All</option><option value="draft">Waiting for review</option><option value="published">Published</option><option value="hidden">Hidden</option></select></label></div>
+    </div>
+    <div id="tList"></div>
+  </section>
+
+  <!-- Feedback links -->
+  <section id="v-feedback" class="hidden">
+    <div class="card"><h2>Ask a customer "How was your visit?"</h2>
+      <p class="help" style="margin:-6px 0 10px">Creates a one-time link to a short form on the website. Send it after a completed spa visit or a delivered order. The reply comes in as a draft testimonial for review. Links work for 60 days.</p>
+      <div class="row">
+        <label class="f">Booking or order number<input id="fRef" size="14" placeholder="SPA-0012"></label>
+        <label class="f" style="min-width:200px">Treatment (optional)<select id="fSvc"><option value="">—</option></select></label>
+        <label class="f" style="flex:1;min-width:180px">Or product / about<input id="fAbout" placeholder="Glow Body Butter"></label>
+        <button class="b p" id="fMake">Create link</button>
+      </div>
+      <div id="fOut" class="hidden" style="margin-top:12px"><div class="linkbox" id="fUrl"></div>
+        <div class="row" style="margin-top:8px"><button class="b" id="fCopy">Copy link</button><button class="b" id="fCopyMsg">Copy WhatsApp message</button><span class="msg" id="fMsg"></span></div></div>
+    </div>
+    <div class="card"><h2>Recent links</h2><table><thead><tr><th>Created</th><th>Reference</th><th>About</th><th>Status</th><th></th></tr></thead><tbody id="fList"></tbody></table></div>
+  </section>
+
+  <!-- About & contact -->
+  <section id="v-about" class="hidden">
+    <div class="card"><h2>About page</h2>
+      <div class="grid2"><label class="f">Company name (legal)<input data-k="company"></label><label class="f">Page title<input data-k="about_title" data-max="50"></label></div>
+      <label class="f" style="margin-top:10px">About text (leave an empty line between paragraphs)<textarea class="t" style="min-height:160px" data-k="about" data-paras></textarea></label>
+      <div class="grid2" style="margin-top:10px"><label class="f">Stockists heading<input data-k="partners_title" data-max="60"></label></div>
+      <label class="f" style="margin-top:10px">Stockists text (About and Contact pages)<textarea class="t" data-k="partners" data-max="260"></textarea></label>
+      <div class="imgs" id="aboutImgs" style="margin-top:12px"></div>
+    </div>
+    <div class="card"><h2>Contact details</h2><p class="help" style="margin:-6px 0 10px">Blank ones are hidden on the website.</p>
+      <div class="grid2">
+        <label class="f">Email<input data-k="contact.email" type="email"></label>
+        <label class="f">Phone<input data-k="contact.phone" placeholder="024 000 0000"></label>
+        <label class="f">WhatsApp number<input data-k="contact.whatsapp" placeholder="024 000 0000"></label>
+        <label class="f">Opening hours<input data-k="contact.hours" placeholder="Mon–Sat 9am–7pm"></label>
+      </div>
+      <label class="f" style="margin-top:10px">Address<textarea class="t" data-k="contact.address" style="min-height:50px"></textarea></label>
+    </div>
+    <div class="card"><h2>Social media</h2><div class="grid2">
+      <label class="f">Facebook page address<input data-k="social.facebook" placeholder="https://facebook.com/…"></label>
+      <label class="f">Instagram address<input data-k="social.instagram" placeholder="https://instagram.com/…"></label>
+      <label class="f">TikTok address<input data-k="social.tiktok" placeholder="https://tiktok.com/@…"></label></div></div>
+    <div class="row"><button class="b p" data-save>Save About &amp; contact</button><span class="msg" data-msg></span></div>
+  </section>
+
+  <!-- History -->
+  <section id="v-hist" class="hidden">
+    <div class="card"><h2>Earlier versions</h2><p class="help" style="margin:-6px 0 10px">Each save of Design, Home page or About &amp; contact keeps the version before it (the last 30). Restoring puts that version back; the current one is kept in the history too.</p>
+      <table><thead><tr><th>Saved</th><th>What was different from now</th><th></th></tr></thead><tbody id="hList"></tbody></table></div>
+  </section>
+</main>
+</div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+function h(tag,attrs,...kids){const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==='on')for(const ev in attrs.on)e.addEventListener(ev,attrs.on[ev]);else if(k==='class')e.className=attrs[k];else if(k==='style')e.setAttribute('style',attrs[k]);else if(k in e&&k!=='list')e[k]=attrs[k];else e.setAttribute(k,attrs[k]);}for(const c of kids.flat()){if(c==null||c===false)continue;e.appendChild(typeof c==='object'?c:document.createTextNode(String(c)));}return e;}
+const dt=t=>t?new Date(t).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Africa/Accra'}):'—';
+const dd=t=>t?new Date(t+'T00:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:'UTC'}):'';
+const today=()=>new Date().toISOString().slice(0,10); // Ghana is on GMT all year
+
+const CFG=window.RG_CONFIG||{};
+const cfgOk=!!CFG.SUPABASE_URL&&!/PASTE_/.test(CFG.SUPABASE_URL+CFG.SUPABASE_KEY);
+const sb=cfgOk&&window.supabase?window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_KEY):null;
+const SITE=(CFG.SITE_URL||'https://royalglowgh.com').replace(/\/$/,'');
+const imgUrl=p=>p?CFG.SUPABASE_URL+'/storage/v1/object/public/site-images/'+p.split('/').map(encodeURIComponent).join('/'):'';
+$('siteLink').href=SITE+'/';$('prevLink').href=SITE+'/preview/';
+
+const HOME_STYLES=[
+  {k:'classic',n:'Classic',d:'Dark with a gold glow; three cards overlap the hero. Works well with few photos.'},
+  {k:'editorial',n:'Light editorial',d:'Light and calm: big serif headline beside a tall arched photo, then numbered story rows.'},
+  {k:'showcase',n:'Showcase',d:'Bold and photo-led: full-screen hero, gold strip, photo tiles, spa block, stockist band.'}];
+const BLOG_STYLES=[
+  {k:'magazine',n:'Magazine',d:'Latest article shown large with its cover; the rest as cards with covers.'},
+  {k:'minimal',n:'Minimal',d:'A clean text list of titles and summaries; covers only inside articles.'}];
+// Image slots: recommended size (see the design guide); cropped to the shape shown.
+const SLOTS={
+  hero_portrait:{n:'Editorial hero (arch)',w:1200,h:1500,r:'4/5',use:'Editorial home'},
+  making:{n:'Our products / making',w:1200,h:900,r:'4/3',use:'Editorial row 1, Showcase tile 1'},
+  spa:{n:'Spa',w:1200,h:900,r:'4/3',use:'Editorial row 2, Showcase tile 2 and spa block'},
+  stockists:{n:'Stockists / partners',w:1200,h:900,r:'4/3',use:'Editorial row 3, Showcase tile 3'},
+  about:{n:'About page banner',w:1600,h:900,r:'16/9',use:'Top of the About page'},
+  slide:{n:'Slide (computer)',w:2400,h:1200,r:'2/1',use:'Keep the subject in the right half'},
+  slide_m:{n:'Slide (phone, optional)',w:1080,h:1620,r:'2/3',use:'Keep the subject in the top half'}};
+const LINKS=[['shop','Online shop'],['spa','Spa booking'],['blog','Blog'],['about','About page'],['contact','Contact page'],['custom','Other address…']];
+const linkLabel=l=>!l?'—':(LINKS.find(x=>x[0]===l)||[0,l])[1];
+
+let ME=null,DATA=null,SVC=[];
+const has=(...r)=>ME&&ME.roles.some(x=>r.includes(x));
+const isAdmin=()=>has('admin');const canContent=()=>has('admin','content');const canFeedback=()=>has('admin','content','spa','sales');
+const status=t=>{$('status').textContent=t};
+function friendly(err){
+  if(!err)return 'Unknown error';
+  if(err.code==='42501'||/row-level security|not allowed/i.test(err.message||''))return 'Your role is not allowed to do this.';
+  if(err.code==='42P01'||/relation .* does not exist|Could not find the table/i.test(err.message||''))return 'Run 011_website.sql in Supabase first.';
+  if(/testimonials_consent_to_publish/.test(err.message||''))return 'Tick "The customer agreed to be quoted" before publishing.';
+  if(err.code==='23514')return 'One of the entries is too long or not allowed. Check the limits.';
+  return err.message||String(err);
+}
+async function q(promise){const r=await promise;if(r.error)throw r.error;return r.data;}
+async function copy(text,msgEl){try{await navigator.clipboard.writeText(text);msgEl.textContent='Copied.'}catch(e){msgEl.textContent='Copy blocked by the browser.'}setTimeout(()=>msgEl.textContent='',2500)}
+const flash=(el,t)=>{el.textContent=t;clearTimeout(el._t);el._t=setTimeout(()=>el.textContent='',6000)};
+// Two clicks to confirm a destructive action.
+function armed(btn,label){if(btn.dataset.arm)return true;const was=btn.textContent;btn.dataset.arm=1;btn.textContent=label||'Click again';setTimeout(()=>{btn.removeAttribute('data-arm');btn.textContent=was},3000);return false}
+
+// ---------- sign-in ----------
+function showGate(which,email){
+  $('app').classList.add('hidden');$('gate').classList.remove('hidden');
+  ['gSetup','gLogin','gNoStaff'].forEach(id=>$(id).classList.add('hidden'));
+  $({setup:'gSetup',login:'gLogin',nostaff:'gNoStaff'}[which]).classList.remove('hidden');
+  if(email)$('gWho').textContent=email;
+}
+async function boot(){
+  if(!sb)return showGate('setup');
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)return showGate('login');
+  const {data:me,error}=await sb.from('staff').select('full_name,roles').eq('user_id',session.user.id).maybeSingle();
+  if(error||!me)return showGate('nostaff',session.user.email);
+  ME={...me,email:session.user.email};
+  $('whoami').textContent=ME.full_name+' ('+ME.roles.join(', ')+')';
+  $('gate').classList.add('hidden');$('app').classList.remove('hidden');
+  try{status('Loading…');await loadSettings();SVC=await q(sb.from('spa_services').select('id,name').order('name'));status('Connected');$('noTable').classList.add('hidden')}
+  catch(e){status('Error: '+friendly(e));$('noTable').classList.toggle('hidden',!/011_website/.test(friendly(e)))}
+  const ro=!isAdmin()?(canContent()?'Your role can edit slides, announcements and testimonials. Design, home-page text and contact details are for admins.':
+    canFeedback()?'Your role can create feedback links for customers. Other tabs are view only.':'Your role can view this page but not change it.'):'';
+  $('roBanner').textContent=ro;$('roBanner').classList.toggle('hidden',!ro);
+  $('pubCard').classList.toggle('hidden',!canContent());
+  $('addSlide').disabled=!canContent();$('addTesti').disabled=!canContent();['fRef','fSvc','fAbout','fMake'].forEach(id=>$(id).disabled=!canFeedback());['aMsg','aLinkSel','aLinkCustom','aFrom','aTo','aAdd'].forEach(id=>$(id).disabled=!canContent());
+  show(location.hash.slice(1)||(isAdmin()?'design':canContent()?'slides':canFeedback()?'feedback':'design'));
+}
+$('gLogin').addEventListener('submit',async e=>{
+  e.preventDefault();$('gBtn').disabled=true;$('gMsg').textContent='Signing in…';
+  const {error}=await sb.auth.signInWithPassword({email:$('gEmail').value.trim(),password:$('gPass').value});
+  $('gBtn').disabled=false;if(error){$('gMsg').textContent=error.message;return}
+  $('gMsg').textContent='';$('gPass').value='';boot();
+});
+async function signOut(e){if(e)e.preventDefault();await sb.auth.signOut();ME=null;boot();}
+$('gOut').addEventListener('click',signOut);$('signOut').addEventListener('click',signOut);
+
+const views=['design','home','slides','ann','testi','feedback','about','hist'];
+const R={design:renderDesign,home:renderHome,slides:renderSlides,ann:renderAnn,testi:renderTesti,feedback:renderFeedback,about:renderAbout,hist:renderHist};
+function show(v){if(!views.includes(v))v='design';views.forEach(x=>$('v-'+x).classList.toggle('hidden',x!==v));document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  if(!DATA&&['design','home','about','hist'].includes(v))return;R[v]();}
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.v){location.hash=b.dataset.v;show(b.dataset.v)}});
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+
+// ---------- settings (one JSON document) ----------
+async function loadSettings(){const row=await q(sb.from('site_settings').select('data,updated_at').eq('id',1).single());DATA=row.data||{};DATA.images=DATA.images||{};}
+const getK=(o,k)=>k.split('.').reduce((a,p)=>a==null?a:a[p],o);
+const setK=(o,k,v)=>{const ps=k.split('.');let a=o;ps.slice(0,-1).forEach(p=>{a[p]=a[p]&&typeof a[p]==='object'?a[p]:{};a=a[p]});a[ps[ps.length-1]]=v};
+function counter(el){const max=+el.dataset.max;if(!max)return;let c=el.parentNode.querySelector('.cnt');if(!c){c=h('div',{class:'cnt'});el.after(c)}
+  const up=()=>{const n=el.value.length;c.textContent=n+' / '+max+(n>max?' — longer than the layout is designed for':'');c.classList.toggle('over',n>max)};el.addEventListener('input',up);up()}
+function bindFields(section){
+  section.querySelectorAll('[data-k]').forEach(el=>{const v=getK(DATA,el.dataset.k);
+    el.value=el.hasAttribute('data-paras')?(v||[]).join('\n\n'):(v==null?'':v);el.disabled=!isAdmin();counter(el)});
+  section.querySelectorAll('[data-save]').forEach(b=>b.disabled=!isAdmin());
+}
+function readFields(section,d){
+  section.querySelectorAll('[data-k]').forEach(el=>{const v=el.hasAttribute('data-paras')?el.value.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean):el.value.trim();setK(d,el.dataset.k,v)});
+}
+// Each tab saves the whole document with its own changes applied, after re-reading the latest
+// version (so two people editing different tabs don't overwrite each other).
+async function saveSettings(apply,msgEl){
+  try{const latest=(await q(sb.from('site_settings').select('data').eq('id',1).single())).data||{};
+    apply(latest);const rows=await q(sb.from('site_settings').update({data:latest}).eq('id',1).select('data'));
+    if(!rows.length)throw {code:'42501'};DATA=rows[0].data;DATA.images=DATA.images||{};flash(msgEl,'Saved. Click "Publish website now" to put it live, or wait for the next automatic update.')}
+  catch(e){flash(msgEl,friendly(e))}
+}
+
+// ---------- image uploads with size check ----------
+function imageSize(file){return new Promise(res=>{const u=URL.createObjectURL(file);const i=new Image();i.onload=()=>{res({w:i.naturalWidth,h:i.naturalHeight});URL.revokeObjectURL(u)};i.onerror=()=>res(null);i.src=u})}
+async function checkAndUpload(file,slotKey,folder){
+  const s=SLOTS[slotKey];if(file.size>5*1024*1024)throw new Error('This photo is over 5 MB. Please export a smaller version (under 700 KB is ideal).');
+  const dim=await imageSize(file);const warns=[];
+  if(dim){if(dim.w<s.w*0.75||dim.h<s.h*0.75)warns.push('It is '+dim.w+' × '+dim.h+' px; '+s.w+' × '+s.h+' is recommended, so it may look soft.');
+    const want=s.w/s.h,got=dim.w/dim.h;if(Math.abs(got-want)/want>0.08)warns.push('It is a different shape from '+s.w+' × '+s.h+', so the edges will be cropped.')}
+  if(file.size>1024*1024)warns.push('It is '+(file.size/1048576).toFixed(1)+' MB; under 700 KB keeps the website fast.');
+  const ext=(file.name.split('.').pop()||'jpg').toLowerCase();const path=folder+'/'+Date.now()+'-'+Math.random().toString(36).slice(2,7)+'.'+ext;
+  const {error}=await sb.storage.from('site-images').upload(path,file,{contentType:file.type});if(error)throw error;
+  return {path,warns};
+}
+// A picture slot: preview, upload, remove. onChange(path) stores the new value.
+function slotBox(slotKey,path,onChange,canEdit,label){
+  const s=SLOTS[slotKey];const pic=h('div',{class:'pic'+(path?' set':''),style:'--r:'+s.r+(s.h>s.w?';max-width:170px':'')+(path?';background-image:url("'+imgUrl(path)+'")':'')},path?'':s.w+' × '+s.h+' px');
+  const warn=h('div',{class:'warn'});const file=h('input',{type:'file',accept:'image/jpeg,image/png,image/webp',disabled:!canEdit});
+  file.addEventListener('change',async()=>{const f=file.files[0];if(!f)return;warn.textContent='Uploading…';
+    try{const r=await checkAndUpload(f,slotKey,slotKey);warn.textContent=r.warns.join(' ');pic.style.backgroundImage='url("'+imgUrl(r.path)+'")';pic.textContent='';pic.classList.add('set');onChange(r.path)}
+    catch(e){warn.textContent=friendly(e)}file.value=''});
+  const del=h('button',{class:'b',style:'font-size:12px;padding:3px 9px',disabled:!canEdit,on:{click:()=>{pic.style.backgroundImage='';pic.textContent=s.w+' × '+s.h+' px';pic.classList.remove('set');warn.textContent='';onChange('')}}},'Remove');
+  return h('div',{class:'slot'},pic,h('b',null,label||s.n),h('div',{class:'help'},s.w+' × '+s.h+' px · '+s.use),warn,h('div',{class:'row'},file,path||canEdit?del:''));
+}
+
+// ---------- Design ----------
+let pickHome,pickBlog;
+function styleCards(el,list,cur,kind){el.replaceChildren(...list.map(s=>{const c=h('div',{class:'style'+(s.k===cur?' on':''),tabindex:0},
+  h('b',null,s.n+(s.k===cur?' ✓':'')),h('p',null,s.d),h('a',{class:'lnk small',href:SITE+'/preview/'+kind+'-'+s.k+'/',target:'_blank',rel:'noopener',on:{click:e=>e.stopPropagation()}},'See preview ↗'));
+  const pick=()=>{if(!isAdmin())return;el.querySelectorAll('.style').forEach(x=>x.classList.remove('on'));c.classList.add('on');if(kind==='home')pickHome=s.k;else pickBlog=s.k};
+  c.addEventListener('click',pick);c.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick()}});return c}))}
+function renderDesign(){const d=DATA.design||{};pickHome=d.home||'classic';pickBlog=d.blog||'magazine';
+  styleCards($('homeStyles'),HOME_STYLES,pickHome,'home');styleCards($('blogStyles'),BLOG_STYLES,pickBlog,'blog');bindFields($('v-design'))}
+$('v-design').querySelector('[data-save]').addEventListener('click',()=>saveSettings(d=>{d.design={home:pickHome,blog:pickBlog}},$('v-design').querySelector('[data-msg]')).then(renderDesign));
+
+// ---------- Home page ----------
+let homeImgs={};
+function renderHome(){const sec=$('v-home');bindFields(sec);const ed=isAdmin();
+  const b=DATA.badges||[];$('badges').replaceChildren(...[0,1,2,3].map(i=>h('label',{class:'f'},'Badge '+(i+1),h('input',{'data-b':i,'data-max':36,value:b[i]||'',disabled:!ed}))));
+  $('badges').querySelectorAll('input').forEach(counter);
+  const hl=DATA.highlights||[];
+  $('highlights').replaceChildren(...[0,1,2].map(i=>{const x=hl[i]||{};const sel=h('select',{'data-h':i,'data-f':'link',disabled:!ed},...LINKS.map(([k,n])=>h('option',{value:k},n)));
+    const known=LINKS.some(l=>l[0]===x.link&&l[0]!=='custom');sel.value=x.link?(known?x.link:'custom'):'shop';
+    const custom=h('input',{'data-h':i,'data-f':'custom',placeholder:'https://',value:known?'':(x.link||''),disabled:!ed});
+    const cw=h('label',{class:'f'},'Address',custom);cw.classList.toggle('hidden',sel.value!=='custom');sel.addEventListener('change',()=>cw.classList.toggle('hidden',sel.value!=='custom'));
+    return h('div',{class:'item'},h('b',{class:'small muted'},'Highlight '+(i+1)),
+      h('div',{class:'grid2',style:'margin-top:6px'},h('label',{class:'f'},'Title',h('input',{'data-h':i,'data-f':'title','data-max':28,value:x.title||'',disabled:!ed})),
+        h('label',{class:'f'},'Link text',h('input',{'data-h':i,'data-f':'link_label','data-max':20,value:x.link_label||'',disabled:!ed}))),
+      h('label',{class:'f',style:'margin-top:8px'},'Text',h('textarea',{class:'t','data-h':i,'data-f':'text','data-max':140,disabled:!ed},x.text||'')),
+      h('div',{class:'grid2',style:'margin-top:8px'},h('label',{class:'f'},'Links to',sel),cw))}));
+  $('highlights').querySelectorAll('[data-max]').forEach(counter);
+  homeImgs={...DATA.images};
+  $('homeImgs').replaceChildren(...['hero_portrait','making','spa','stockists'].map(k=>slotBox(k,homeImgs[k],p=>{homeImgs[k]=p},ed)));
+}
+$('v-home').querySelector('[data-save]').addEventListener('click',()=>{const sec=$('v-home');
+  const badges=[...sec.querySelectorAll('[data-b]')].map(e=>e.value.trim()).filter(Boolean);
+  const hl=[0,1,2].map(i=>{const g=f=>{const e=sec.querySelector('[data-h="'+i+'"][data-f="'+f+'"]');return e?e.value.trim():''};
+    const link=g('link')==='custom'?g('custom'):g('link');return {title:g('title'),text:g('text'),link_label:g('link_label'),link}}).filter(x=>x.title);
+  const imgs={...homeImgs};
+  saveSettings(d=>{readFields(sec,d);d.badges=badges;d.highlights=hl;d.images={...(d.images||{}),hero_portrait:imgs.hero_portrait||'',making:imgs.making||'',spa:imgs.spa||'',stockists:imgs.stockists||''}},sec.querySelector('[data-msg]'));
+});
+
+// ---------- About & contact ----------
+let aboutImg='';
+function renderAbout(){const sec=$('v-about');bindFields(sec);aboutImg=DATA.images.about||'';
+  $('aboutImgs').replaceChildren(slotBox('about',aboutImg,p=>{aboutImg=p},isAdmin()));}
+$('v-about').querySelector('[data-save]').addEventListener('click',()=>{const sec=$('v-about');const img=aboutImg;
+  saveSettings(d=>{readFields(sec,d);d.images={...(d.images||{}),about:img||''}},sec.querySelector('[data-msg]'))});
+
+// ---------- History ----------
+const LABELS={design:'Design style',tagline:'Tagline',brand:'Brand name',intro:'Introduction',badges:'Badges',highlights:'Highlights',images:'Photos',company:'Company name',about_title:'About title',about:'About text',partners_title:'Stockists heading',partners:'Stockists text',contact:'Contact details',social:'Social media'};
+async function renderHist(){const tb=$('hList');
+  if(!isAdmin()){tb.replaceChildren(h('tr',null,h('td',{colspan:3,class:'muted small'},'Only admins can see and restore earlier versions.')));return}
+  let rows;try{rows=await q(sb.from('site_settings_history').select('id,data,saved_at').order('id',{ascending:false}).limit(30))}catch(e){tb.replaceChildren(h('tr',null,h('td',{colspan:3,class:'muted small'},friendly(e))));return}
+  tb.replaceChildren(...(rows.length?rows.map(r=>{const diff=Object.keys({...r.data,...DATA}).filter(k=>JSON.stringify(r.data[k])!==JSON.stringify(DATA[k])).map(k=>LABELS[k]||k);
+    const btn=h('button',{class:'b',style:'font-size:13px;padding:3px 10px',on:{click:async e=>{if(!armed(e.currentTarget,'Click again to restore'))return;
+      try{const rr=await q(sb.from('site_settings').update({data:r.data}).eq('id',1).select('data'));DATA=rr[0].data;DATA.images=DATA.images||{};status('Restored the version from '+dt(r.saved_at)+'. Publish to put it live.');renderHist()}catch(err){status('Error: '+friendly(err))}}}},'Restore');
+    return h('tr',null,h('td',{class:'small',style:'white-space:nowrap'},dt(r.saved_at)),h('td',{class:'small'},diff.length?diff.join(', '):'Same as now'),h('td',null,diff.length?btn:''))}):
+    [h('tr',null,h('td',{colspan:3,class:'muted small'},'No earlier versions yet. They appear after the first save.'))]));
+}
+
+// ---------- Slides ----------
+let SLIDES=[];
+async function renderSlides(){const list=$('slideList');$('addSlide').disabled=!canContent();
+  try{SLIDES=await q(sb.from('site_slides').select('*').order('sort').order('created_at'))}catch(e){list.replaceChildren(h('div',{class:'card muted small'},friendly(e)));return}
+  const ed=canContent();let activeN=0;
+  list.replaceChildren(...(SLIDES.length?SLIDES.map((s,i)=>{if(s.active)activeN++;const shown=s.active&&activeN<=3;const st={...s};
+    const linkSel=h('select',{disabled:!ed},h('option',{value:''},'No button'),...LINKS.map(([k,n])=>h('option',{value:k},n)));
+    const known=LINKS.some(l=>l[0]===s.button_link&&l[0]!=='custom');linkSel.value=s.button_link?(known?s.button_link:'custom'):'';
+    const custom=h('input',{placeholder:'https://',value:known?'':(s.button_link||''),disabled:!ed});const cw=h('label',{class:'f'},'Address',custom);cw.classList.toggle('hidden',linkSel.value!=='custom');
+    linkSel.addEventListener('change',()=>cw.classList.toggle('hidden',linkSel.value!=='custom'));
+    const hd=h('input',{value:s.headline||'',maxLength:80,'data-max':50,disabled:!ed,placeholder:'(uses the tagline)'}),tx=h('textarea',{class:'t',maxLength:260,'data-max':220,disabled:!ed,placeholder:'(uses the introduction)'},s.text||''),
+      bl=h('input',{value:s.button_label||'',maxLength:30,'data-max':24,disabled:!ed,placeholder:'Shop now'}),act=h('input',{type:'checkbox',checked:s.active,disabled:!ed});
+    const msg=h('span',{class:'msg'});
+    const save=async(extra)=>{try{const link=linkSel.value==='custom'?custom.value.trim():linkSel.value;
+      await q(sb.from('site_slides').update({headline:hd.value.trim()||null,text:tx.value.trim()||null,button_label:bl.value.trim()||null,button_link:link||null,active:act.checked,image_path:st.image_path||null,image_mobile_path:st.image_mobile_path||null,...(extra||{})}).eq('id',s.id));
+      flash(msg,'Saved. Publish to put it live.')}catch(e){flash(msg,friendly(e))}};
+    const move=async d=>{const j=i+d;if(j<0||j>=SLIDES.length)return;const o=SLIDES[j];
+      try{await q(sb.from('site_slides').update({sort:j}).eq('id',s.id));await q(sb.from('site_slides').update({sort:i}).eq('id',o.id));renderSlides()}catch(e){flash(msg,friendly(e))}};
+    const el=h('div',{class:'item'+(shown?'':' off')},
+      h('div',{class:'row',style:'justify-content:space-between;align-items:center'},h('b',null,'Slide '+(i+1)+' ',h('span',{class:'pill'+(shown?' pub':'')},shown?'Showing':s.active?'Not shown (only 3)':'Off')),
+        h('span',null,h('button',{class:'b',style:'padding:2px 9px',disabled:!ed||i===0,title:'Move up',on:{click:()=>move(-1)}},'↑'),' ',h('button',{class:'b',style:'padding:2px 9px',disabled:!ed||i===SLIDES.length-1,title:'Move down',on:{click:()=>move(1)}},'↓'))),
+      h('div',{class:'grid2',style:'margin-top:10px'},
+        h('div',{class:'imgs',style:'grid-template-columns:1.5fr 1fr'},slotBox('slide',s.image_path,p=>{st.image_path=p},ed,'Computer'),slotBox('slide_m',s.image_mobile_path,p=>{st.image_mobile_path=p},ed,'Phone (optional)')),
+        h('div',null,h('label',{class:'f'},'Headline',hd),h('label',{class:'f',style:'margin-top:8px'},'Text',tx),
+          h('div',{class:'grid2',style:'margin-top:8px'},h('label',{class:'f'},'Button text',bl),h('label',{class:'f'},'Button goes to',linkSel)),cw)),
+      h('div',{class:'bar'},h('label',{class:'small'},act,' Active'),h('button',{class:'b p',disabled:!ed,on:{click:()=>save().then(renderSlides)}},'Save slide'),
+        h('button',{class:'b',style:'margin-left:auto',disabled:!ed,on:{click:async e=>{if(!armed(e.currentTarget,'Click again to delete'))return;try{await q(sb.from('site_slides').delete().eq('id',s.id));renderSlides()}catch(err){flash(msg,friendly(err))}}}},'Delete slide'),msg));
+    el.querySelectorAll('[data-max]').forEach(counter);return el}):
+    [h('div',{class:'card muted small'},'No slides yet. Without slides, the home page shows the tagline and introduction on the style\'s own background.')]));
+}
+$('addSlide').addEventListener('click',async()=>{try{await q(sb.from('site_slides').insert({sort:SLIDES.length,button_label:'Shop now',button_link:'shop'}));renderSlides()}catch(e){status('Error: '+friendly(e))}});
+
+// ---------- Announcements ----------
+function fillLinkSel(sel,withNone){sel.replaceChildren(...(withNone?[h('option',{value:''},'No link')]:[]),...LINKS.map(([k,n])=>h('option',{value:k},n)))}
+fillLinkSel($('aLinkSel'),true);$('aLinkCustomWrap').classList.add('hidden');
+$('aLinkSel').addEventListener('change',()=>$('aLinkCustomWrap').classList.toggle('hidden',$('aLinkSel').value!=='custom'));
+async function renderAnn(){const ed=canContent();['aMsg','aLinkSel','aLinkCustom','aFrom','aTo','aAdd'].forEach(id=>$(id).disabled=!ed);
+  let rows;try{rows=await q(sb.from('site_announcements').select('*').order('sort').order('created_at',{ascending:false}))}catch(e){$('aList').replaceChildren(h('tr',null,h('td',{colspan:5,class:'muted small'},friendly(e))));return}
+  const t=today();let n=0;
+  $('aList').replaceChildren(...(rows.length?rows.map(a=>{const cur=a.active&&(!a.starts_on||a.starts_on<=t)&&(!a.ends_on||a.ends_on>=t);const shown=cur&&++n<=3;
+    const state=!a.active?'Off':a.ends_on&&a.ends_on<t?'Ended':a.starts_on&&a.starts_on>t?'From '+dd(a.starts_on):shown?'Showing':'Waiting (only 3 at a time)';
+    return h('tr',null,h('td',null,a.message),h('td',{class:'small'},linkLabel(a.link)),h('td',{class:'small'},a.starts_on||a.ends_on?(dd(a.starts_on)||'now')+' – '+(dd(a.ends_on)||'no end'):'Always'),
+      h('td',null,h('span',{class:'pill'+(shown?' pub':'')},state)),
+      h('td',{style:'white-space:nowrap'},h('button',{class:'b',style:'font-size:12px;padding:3px 9px',disabled:!ed,on:{click:async()=>{try{await q(sb.from('site_announcements').update({active:!a.active}).eq('id',a.id));renderAnn()}catch(e){flash($('aMsgOut'),friendly(e))}}}},a.active?'Turn off':'Turn on'),' ',
+        h('button',{class:'x',title:'Delete',disabled:!ed,on:{click:async e=>{if(!armed(e.currentTarget,'×?'))return;try{await q(sb.from('site_announcements').delete().eq('id',a.id));renderAnn()}catch(err){flash($('aMsgOut'),friendly(err))}}}},'×')))}):
+    [h('tr',null,h('td',{colspan:5,class:'muted small'},'No announcements. The bar is hidden when there are none.'))]));
+}
+$('aAdd').addEventListener('click',async()=>{const m=$('aMsg').value.trim();if(m.length<3)return flash($('aMsgOut'),'Write the message first.');
+  const link=$('aLinkSel').value==='custom'?$('aLinkCustom').value.trim():$('aLinkSel').value;
+  if($('aFrom').value&&$('aTo').value&&$('aTo').value<$('aFrom').value)return flash($('aMsgOut'),'The end date is before the start date.');
+  try{await q(sb.from('site_announcements').insert({message:m,link:link||null,starts_on:$('aFrom').value||null,ends_on:$('aTo').value||null}));
+    $('aMsg').value='';$('aFrom').value='';$('aTo').value='';flash($('aMsgOut'),'Added. It shows on the website straight away (if its dates have started).');renderAnn()}catch(e){flash($('aMsgOut'),friendly(e))}});
+
+// ---------- Testimonials ----------
+let TESTI=[];
+async function renderTesti(){const list=$('tList');const ed=canContent();$('addTesti').disabled=!ed;
+  if(!ed){list.replaceChildren(h('div',{class:'card muted small'},'Testimonials are managed by admins and the Blog role.'));return}
+  try{TESTI=await q(sb.from('testimonials').select('*').order('created_at',{ascending:false}))}catch(e){list.replaceChildren(h('div',{class:'card muted small'},friendly(e)));return}
+  const f=$('tFilter').value;const rows=TESTI.filter(t=>!f||t.status===f);
+  list.replaceChildren(...(rows.length?rows.map(testiCard):[h('div',{class:'card muted small'},TESTI.length?'None in this group.':'No testimonials yet. Create a feedback link for a happy customer, or add words a customer gave you (with their agreement).')]));
+}
+$('tFilter').addEventListener('change',renderTesti);
+function testiCard(t){const st={...t};const isNew=!t.id;
+  const quote=h('textarea',{class:'t',maxLength:600,'data-max':300},t.quote||''),name=h('input',{value:t.name||'',maxLength:60,placeholder:'Ama'}),town=h('input',{value:t.town||'',maxLength:60,placeholder:'Kumasi'}),
+    about=h('input',{value:t.about||'',maxLength:80,placeholder:'Signature Glow Facial'}),svc=h('select',null,h('option',{value:''},'—'),...SVC.map(s=>h('option',{value:s.id},s.name.replace(/\s*\(sample\)/,'')))),
+    consent=h('input',{type:'checkbox',checked:!!t.consent}),msg=h('span',{class:'msg'});
+  svc.value=t.service_id||'';
+  const save=async status=>{const row={quote:quote.value.trim(),name:name.value.trim(),town:town.value.trim()||null,about:about.value.trim()||null,service_id:svc.value||null,consent:consent.checked,status:status||st.status||'draft'};
+    if(row.quote.length<10)return flash(msg,'The quote needs at least 10 characters.');if(!row.name)return flash(msg,'Add the customer\'s first name.');
+    if(row.status==='published'&&!row.consent)return flash(msg,'Tick "The customer agreed to be quoted" before publishing.');
+    try{if(isNew)await q(sb.from('testimonials').insert({...row,source:'staff'}));else await q(sb.from('testimonials').update(row).eq('id',t.id));renderTesti()}catch(e){flash(msg,friendly(e))}};
+  const pill=isNew?h('span',{class:'pill draft'},'New'):h('span',{class:'pill '+(t.status==='published'?'pub':t.status==='draft'?'draft':'')},t.status==='published'?'Published':t.status==='draft'?'Waiting for review':'Hidden');
+  const el=h('div',{class:'item'+(t.status==='hidden'?' off':'')},
+    h('div',{class:'row',style:'justify-content:space-between;align-items:center'},h('span',null,pill,' ',h('span',{class:'small muted'},isNew?'Added by staff':(t.source==='customer'?'From the customer':'Added by staff')+' · '+dt(t.created_at)+(t.reference?' · '+t.reference:''))),''),
+    h('label',{class:'f',style:'margin-top:8px'},'Their words',quote),
+    h('div',{class:'grid2',style:'margin-top:8px'},h('label',{class:'f'},'Name (first name or initials)',name),h('label',{class:'f'},'Town (optional)',town),
+      h('label',{class:'f'},'Treatment (shows it with that treatment)',svc),h('label',{class:'f'},'Or what it is about',about)),
+    h('label',{class:'small',style:'display:block;margin-top:10px'},consent,' The customer agreed to be quoted on the website'),
+    h('div',{class:'bar'},
+      isNew?h('button',{class:'b',on:{click:()=>save('draft')}},'Save as draft'):h('button',{class:'b',on:{click:()=>save()}},'Save'),
+      (st.status!=='published')?h('button',{class:'b p',on:{click:()=>save('published')}},'Publish'):h('button',{class:'b',on:{click:()=>save('hidden')}},'Hide'),
+      isNew?h('button',{class:'b',on:{click:renderTesti}},'Cancel'):h('button',{class:'b',style:'margin-left:auto',on:{click:async e=>{if(!armed(e.currentTarget,'Click again to delete'))return;try{await q(sb.from('testimonials').delete().eq('id',t.id));renderTesti()}catch(err){flash(msg,friendly(err))}}}},'Delete'),msg));
+  el.querySelectorAll('[data-max]').forEach(counter);return el}
+$('addTesti').addEventListener('click',()=>{$('tList').prepend(testiCard({status:'draft'}))});
+
+// ---------- Feedback links ----------
+const fbUrl=token=>SITE+'/feedback/?t='+token;
+let lastLink=null;
+async function renderFeedback(){const ed=canFeedback();['fRef','fSvc','fAbout','fMake'].forEach(id=>$(id).disabled=!ed);
+  $('fSvc').replaceChildren(h('option',{value:''},'—'),...SVC.map(s=>h('option',{value:s.id},s.name.replace(/\s*\(sample\)/,''))));
+  if(!ed){$('fList').replaceChildren(h('tr',null,h('td',{colspan:5,class:'muted small'},'Feedback links are for admin, Blog, Spa and Sales staff.')));return}
+  let rows;try{rows=await q(sb.from('feedback_links').select('*').order('created_at',{ascending:false}).limit(50))}catch(e){$('fList').replaceChildren(h('tr',null,h('td',{colspan:5,class:'muted small'},friendly(e))));return}
+  const now=new Date().toISOString();
+  $('fList').replaceChildren(...(rows.length?rows.map(f=>h('tr',null,h('td',{class:'small'},dt(f.created_at)),h('td',null,f.reference||'—'),h('td',{class:'small'},f.about||''),
+    h('td',null,h('span',{class:'pill'+(f.used_at?' pub':'')},f.used_at?'Replied '+dt(f.used_at):f.expires_at<now?'Expired':'Waiting')),
+    h('td',null,!f.used_at&&f.expires_at>=now?h('button',{class:'b',style:'font-size:12px;padding:3px 9px',on:{click:e=>copy(fbUrl(f.token),$('fMsg'))}},'Copy link'):''))):
+    [h('tr',null,h('td',{colspan:5,class:'muted small'},'No links yet.'))]));
+}
+$('fMake').addEventListener('click',async()=>{const svc=SVC.find(s=>s.id===$('fSvc').value);
+  const about=$('fAbout').value.trim()||(svc?svc.name.replace(/\s*\(sample\)/,''):null);
+  try{const row=await q(sb.from('feedback_links').insert({reference:$('fRef').value.trim()||null,about,service_id:svc?svc.id:null}).select().single());
+    lastLink=row;$('fUrl').textContent=fbUrl(row.token);$('fOut').classList.remove('hidden');$('fRef').value='';$('fAbout').value='';$('fSvc').value='';renderFeedback()}
+  catch(e){flash($('fMsg'),friendly(e))}});
+$('fCopy').addEventListener('click',()=>lastLink&&copy(fbUrl(lastLink.token),$('fMsg')));
+$('fCopyMsg').addEventListener('click',()=>lastLink&&copy('Thank you for choosing Royal Glow! We\'d love to hear how '+(lastLink.about?'your '+lastLink.about:'it')+' went. It takes a minute: '+fbUrl(lastLink.token),$('fMsg')));
+
+// ---------- Publish now (Supabase function publish-site asks GitHub to rebuild the website) ----------
+$('pubBtn').addEventListener('click',async()=>{const b=$('pubBtn');b.disabled=true;$('pubMsg').textContent='Asking for a rebuild…';
+  try{const {data,error}=await sb.functions.invoke('publish-site',{body:{}});
+    if(error){let m=error.message;try{const j=await error.context.json();m=j.message||m}catch(_){}
+      if(/Failed to send|not found|404/i.test(m))m='The publish button is not set up yet (see "Publish now" in the build log). Saved changes still go live at the next automatic update.';throw new Error(m)}
+    $('pubMsg').textContent=(data&&data.message)||'Rebuild started. The website updates in about a minute.'}
+  catch(e){$('pubMsg').textContent=friendly(e)}
+  setTimeout(()=>b.disabled=false,15000)});
+
+boot();
+})();
+</script>
+</body>
+</html>
