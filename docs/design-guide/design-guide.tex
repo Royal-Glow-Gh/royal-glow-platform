@@ -1,0 +1,189 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\IfFileExists{lmodern.sty}{\usepackage{lmodern}}{}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{graphicx,booktabs,tabularx,array,xcolor,enumitem,multicol}
+\usepackage[hidelinks]{hyperref}
+\usepackage{titlesec}
+\definecolor{gold}{HTML}{C8961E}
+\definecolor{golddeep}{HTML}{8F6A0F}
+\definecolor{goldsoft}{HTML}{F6ECD2}
+\definecolor{night}{HTML}{0D0D0C}
+\definecolor{cream}{HTML}{FAF7F1}
+\definecolor{ink}{HTML}{1A1814}
+\titleformat{\section}{\Large\bfseries\color{golddeep}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.6em}{}
+\setlist{itemsep=2pt,topsep=4pt}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcommand{\key}[1]{\texttt{#1}}
+\newcommand{\swatch}[1]{\textcolor[HTML]{#1}{\rule{1.1em}{1.1em}}}
+\setlength{\parindent}{0pt}\setlength{\parskip}{6pt}
+
+\title{\vspace{-1.5cm}\includegraphics[width=5cm]{../../apps/site/assets/logo.png}\\[10pt]
+\textbf{Website design guide}\\[2pt]\large royalglowgh.com: home-page and blog styles, sections, image sizes}
+\author{Royal Glow Company Limited}
+\date{November 2026}
+
+\begin{document}
+\maketitle
+
+\section*{Who this is for}
+This guide is for anyone designing banners, photos or text for the Royal Glow main website. It covers which design styles exist, which sections each one has, and what goes in each section. It also gives the size, shape and safe area of every image. A designer only needs to supply image files and text. Nobody needs to touch code.
+
+\textbf{See it live.} Every style is always built at \url{https://royalglowgh.com/preview/} using the real current content. A missing image shows as a dashed gold box labelled with its name and size, so you can see exactly where each picture goes. Preview pages are hidden from Google.
+
+\section{How the website is set up}
+All the editable settings live in one file, \key{apps/site/site.json}:
+\begin{itemize}
+  \item \key{design.home}: the home-page style, one of \key{classic}, \key{editorial} or \key{showcase}. The style also sets the look of the header and footer on every page.
+  \item \key{design.blog}: the blog style, \key{magazine} or \key{minimal}.
+  \item \key{images}: the banner and section images (section~\ref{sec:images}).
+  \item The text: \key{tagline}, \key{intro}, \key{badges}, \key{highlights}, the About page, contact details and social links.
+\end{itemize}
+After a change is committed and synced, the website rebuilds within a few minutes. Products, spa treatments and blog articles come from the staff apps, not from this file.
+
+\section{Brand basics}
+\begin{tabularx}{\textwidth}{@{}l l L@{}}
+\toprule
+\textbf{Colour} & \textbf{Hex} & \textbf{Use} \\ \midrule
+\swatch{0D0D0C} Night & \#0D0D0C & Dark header, footer and hero backgrounds \\
+\swatch{C8961E} Gold & \#C8961E & Main buttons, accents, the badge strip \\
+\swatch{8F6A0F} Deep gold & \#8F6A0F & Links and small labels on light backgrounds \\
+\swatch{F7E7BF} Pale gold & \#F7E7BF & Headlines on dark backgrounds \\
+\swatch{F6ECD2} Gold tint & \#F6ECD2 & Soft panels (Editorial subscribe box, Showcase stockist band) \\
+\swatch{FAF7F1} Cream & \#FAF7F1 & Page background \\
+\swatch{1A1814} Ink & \#1A1814 & Body text \\ \bottomrule
+\end{tabularx}
+
+\textbf{Fonts} (free, Google Fonts): \emph{Cormorant Garamond} (600) for headings, \emph{DM Sans} (400--600) for text and buttons. Text placed inside images should use the same fonts. On the whole, avoid putting text inside images: the website writes headlines as real text, which reads better on phones and helps Google.
+
+\textbf{Logo.} Gold logo (\key{logo.png}), used on both dark and cream backgrounds, at least 40\,px tall on screen. Crown on its own: \key{crown.png}. Don't recolour, stretch or add effects to either.
+
+\section{Home-page styles}
+All three styles use the same content; only the layout changes. Sections with no content are hidden automatically: for example, no spa section appears if no treatments are published.
+
+\begin{center}
+\begin{tabular}{ccc}
+\includegraphics[height=8.2cm]{img/home-classic.jpg} &
+\includegraphics[height=8.2cm]{img/home-editorial.jpg} &
+\includegraphics[height=8.2cm]{img/home-showcase.jpg} \\
+\textbf{Classic} & \textbf{Light editorial} & \textbf{Showcase}
+\end{tabular}
+\end{center}
+
+\subsection{Classic (\key{classic}): the current site}
+Dark and rich, with a gold glow. Best when there are few photos.
+\begin{enumerate}
+  \item \textbf{Hero}: tagline, intro, two buttons (Shop, Book the spa). Background: optional \key{hero\_wide} (desktop) and \key{hero\_mobile} (phones), darkened from the left so the text stays readable. With no image, a gold glow is shown.
+  \item \textbf{Three cards} overlapping the hero: \key{highlights} 1--3 (title, text, link).
+  \item \textbf{From the shop}: four products from the online shop.
+  \item \textbf{Spa treatments}: up to five, with prices.
+  \item \textbf{From the blog}: the three latest articles.
+  \item \textbf{Subscribe} box.
+\end{enumerate}
+
+\subsection{Light editorial (\key{editorial})}
+Light, calm and magazine-like: a big serif headline next to a tall arched photo. Best with good lifestyle photography.
+\begin{enumerate}
+  \item \textbf{Hero}: small brand label, tagline, intro, buttons; \key{hero\_portrait} on the right in an arch shape.
+  \item \textbf{Promise line}: the \key{badges}, separated by small gold stars.
+  \item \textbf{Three story rows} (01, 02, 03): photo and text alternating left and right: \key{highlights} 1--3 with images \key{making}, \key{spa}, \key{stockists}.
+  \item \textbf{From the shop}: four products.
+  \item \textbf{Spa treatments}: short text and button beside the list.
+  \item \textbf{From the journal}: the three latest articles as a text list.
+  \item \textbf{Subscribe} box (light gold).
+\end{enumerate}
+
+\subsection{Showcase (\key{showcase})}
+Bold and image-led: a full-screen photo hero. Best for campaigns and launches, with strong photography.
+\begin{enumerate}
+  \item \textbf{Full-screen hero}: \key{hero\_wide} / \key{hero\_mobile}, darkened from the bottom; the tagline, intro and buttons sit in the bottom-left. The header floats on top of the photo.
+  \item \textbf{Gold strip}: the \key{badges}.
+  \item \textbf{Three photo tiles}: \key{highlights} titles over images \key{making}, \key{spa}, \key{stockists}; each tile links to its section.
+  \item \textbf{Bestsellers}: three large product cards.
+  \item \textbf{Spa block}: \key{spa} image on the left, treatments and a booking button on a dark panel.
+  \item \textbf{From the blog}: three article cards.
+  \item \textbf{Stockist band}: \key{highlights}[3] title and text with a button, on gold tint.
+  \item \textbf{Subscribe} box.
+\end{enumerate}
+
+\section{Banner and section images}\label{sec:images}
+Put the files in \key{apps/site/assets/banners/} and write the file name in \key{site.json} under \key{images}, for example \key{"hero\_wide": "banners/hero-wide.jpg"}. A blank value means ``no image yet''. If a named file is missing, the build warns and leaves it out.
+
+\begin{tabularx}{\textwidth}{@{}l r c L@{}}
+\toprule
+\textbf{Slot} & \textbf{Size (px)} & \textbf{Shape} & \textbf{Used in} \\ \midrule
+\key{hero\_wide} & 2400 × 1200 & 2:1 & Showcase hero (full width); Classic hero background \\
+\key{hero\_mobile} & 1080 × 1620 & 2:3 & Same heroes, on phones (optional but recommended) \\
+\key{hero\_portrait} & 1200 × 1500 & 4:5 & Editorial hero (arch shape) \\
+\key{making} & 1200 × 900 & 4:3 & Editorial row 01; Showcase tile 1 \\
+\key{spa} & 1200 × 900 & 4:3 & Editorial row 02; Showcase tile 2 and spa block \\
+\key{stockists} & 1200 × 900 & 4:3 & Editorial row 03; Showcase tile 3 \\
+\key{about} & 1600 × 900 & 16:9 & Banner at the top of the About page (all styles) \\ \bottomrule
+\end{tabularx}
+
+\textbf{File format.} JPEG (quality about 80) or WebP, sRGB colour. Keep each file under 500\,KB; hero images under 700\,KB. Use lower-case file names with hyphens, no spaces: \key{hero-wide-dec2026.jpg}.
+
+\subsection*{Safe areas: where to put the important part of the picture}
+Images are cropped to fit different screens and are partly covered by text. Keep faces, products and anything important inside these zones:
+\begin{itemize}
+  \item \key{hero\_wide}: the headline covers the \textbf{left 45\%} (Classic, Showcase), and Showcase darkens the \textbf{bottom third}. Put the subject in the \textbf{right half, upper two-thirds}. Wide screens may trim about 10\% from the top and bottom.
+  \item \key{hero\_mobile}: the text covers the \textbf{lower half}. Put the subject in the \textbf{top 45\%, centred}. Phones may trim up to 15\% from each side.
+  \item \key{hero\_portrait}: the arch cuts off the \textbf{top corners}. Keep the subject in the \textbf{central 70\%} of the width and below the top 15\%.
+  \item \key{making}, \key{spa}, \key{stockists}: in Showcase tiles the title covers the \textbf{bottom 40\%}; keep the subject in the upper part. In the Showcase spa block the image can be cropped to a taller shape, so keep the subject \textbf{centred}.
+  \item \key{about}: shown as a wide strip, 220--420\,px tall; keep the subject in the \textbf{middle band}.
+\end{itemize}
+
+\section{Other images on the site}
+These are uploaded in the staff apps, not in \key{site.json}.
+
+\begin{tabularx}{\textwidth}{@{}l r c L@{}}
+\toprule
+\textbf{Image} & \textbf{Size (px)} & \textbf{Shape} & \textbf{Notes} \\ \midrule
+Product photo & 1200 × 1200 & 1:1 & Staff app → Online shop → Products. Product centred, about 10\% margin, plain or soft background, same background across products. \\
+Blog cover & 1600 × 900 & 16:9 & Staff app → Blog. Under 2\,MB. Magazine style shows it full width above the article, with the text panel overlapping the bottom 90\,px. \\
+Photo inside an article & 1200 wide & any & Staff app → Blog → ``Add a photo into the article''. \\
+Social share image & 1200 × 630 & 1.91:1 & \key{assets/og-default.jpg}: shown when a page without its own photo is shared on WhatsApp or Facebook. \\ \bottomrule
+\end{tabularx}
+
+\section{Text: where it goes and how long it should be}
+Longer text still works, but the layouts look best within these limits.
+
+\begin{tabularx}{\textwidth}{@{}l l L@{}}
+\toprule
+\textbf{site.json field} & \textbf{Limit} & \textbf{Shown as} \\ \midrule
+\key{tagline} & 25--40 characters & Main home-page headline (2 lines on desktop) \\
+\key{intro} & 140--220 characters & Paragraph under the headline; also the Google description \\
+\key{badges} & up to 4, each $\le$ 36 characters & Editorial promise line; Showcase gold strip \\
+\key{highlights}[1--3].\key{title} & $\le$ 28 characters & Card, row or tile headings \\
+\key{highlights}[1--3].\key{text} & 80--140 characters & Card and row text (Showcase uses the 3rd as the stockist band) \\
+\key{highlights}.\key{link\_label} & $\le$ 20 characters & Button or link text \\
+\key{highlights}.\key{link} & keyword or address & \key{shop}, \key{spa}, \key{blog}, \key{about}, \key{contact} or a full https:// address \\
+\key{about} & 2--4 paragraphs & About page \\ \bottomrule
+\end{tabularx}
+
+Product names, descriptions and prices come from the shop; treatment names and prices come from the spa page; article titles and excerpts come from the blog editor. Article titles read best under 70 characters, and excerpts under 160 characters, because Google shows about that much.
+
+\section{Blog styles}
+\begin{center}
+\begin{tabular}{cc}
+\includegraphics[height=6cm]{img/blog-magazine.jpg} & \includegraphics[height=6cm]{img/blog-minimal.jpg} \\
+\textbf{Magazine} & \textbf{Minimal}
+\end{tabular}
+\end{center}
+\begin{itemize}
+  \item \textbf{Magazine} (\key{magazine}): the latest article is shown large with its cover, the rest as cards with covers. An article page opens with the cover full width. Best when every article has a good cover photo.
+  \item \textbf{Minimal} (\key{minimal}): a clean list of titles, dates and excerpts with no pictures, in a narrow reading column. The cover appears inside the article, below the title. Best for text-led articles, or when covers are not always available.
+\end{itemize}
+
+\section{Delivery checklist for designers}
+\begin{enumerate}
+  \item Check the slot sizes and safe areas (section~\ref{sec:images}); export JPEG/WebP under the size limits.
+  \item Name the files in lower case with hyphens, and send them with a note of which slot each is for.
+  \item The person updating the site copies the files into \key{apps/site/assets/banners/}, fills in \key{images} in \key{site.json}, commits and syncs.
+  \item Check \url{https://royalglowgh.com/preview/} on a computer and on a phone: no dashed boxes should remain for the slots you supplied.
+  \item To switch styles, change \key{design.home} or \key{design.blog}; the live site follows at the next rebuild.
+\end{enumerate}
+
+\end{document}

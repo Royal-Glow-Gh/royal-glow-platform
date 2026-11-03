@@ -20,6 +20,9 @@
   - apps/shop/: the shop website: shop + spa booking + customer accounts (index.html), assets/, config.js with the same Supabase values
   - apps/site/: the main website royalglowgh.com, generated as static HTML by build.mjs (no packages; Node 20). Company text in site.json; articles, products and spa treatments come from the database. Output (dist/) is not committed.
     Pages: / (home), /about/, /contact/, /blog/, /blog/<web address>/, /blog/unsubscribe/, 404, sitemap.xml, robots.txt, feed.xml (RSS). Each article has its own title, description, preview image and Google article markup in the page.
+    Design styles (site.json -> design): home "classic" | "editorial" | "showcase"; blog "magazine" | "minimal". All styles are always built at /preview/ (hidden from Google) with labelled placeholders for missing images.
+    Banner/section images: files in apps/site/assets/banners/, named in site.json -> images (hero_wide, hero_mobile, hero_portrait, making, spa, stockists, about). Home text blocks: site.json -> badges, highlights.
+  - docs/design-guide/design-guide.tex (+ .pdf): design guide for designers: styles, sections, image sizes and safe areas, text limits, delivery checklist. Rebuild the PDF with pdflatex after editing.
   - supabase/migrations/006_shop.sql: shop fields on items/locations, shop_settings, shop_profiles (auto-created for customer sign-ups), shop_orders + lines, public functions shop_catalog/shop_info/place_order, staff functions set_shop_product/fulfil_order, product-images storage bucket
   - supabase/migrations/007_delivery_zones.sql: delivery_zones (fee, who delivers, fee paid to Royal Glow or rider); orders store zone, fee_confirmed, fee_to_rider; place_order takes a zone (none = "somewhere else", fee confirmed by staff)
   - supabase/migrations/008_spa.sql: spa_services, spa_therapists (+ which treatments each does), spa_hours, spa_time_off, spa_settings, spa_bookings (database blocks double-booking); public functions spa_info/spa_slots/book_spa, cancel_my_spa_booking; new staff role 'spa'
@@ -134,6 +137,7 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - [ ] Move the staff apps to staff.royalglowgh.com: files done (folder apps/production -> apps/staff, workflow publish-staff.yml -> branch deploy-staff). Remaining: Hostinger subdomain staff.royalglowgh.com on deploy-staff, Supabase Site URL + Redirect URLs, delete production subdomain and deploy-production branch. No redirect.
 
 ## Later (backlog)
-- [ ] Design templates: several per site, switchable by a setting (corporate: 3 home-page styles; shop: 2; blog: 2), plus a design guide for designers (sections, what goes in each, text limits, banner and image sizes, safe areas)
+- [x] Design templates, main website: 3 home-page styles (Classic, Light editorial, Showcase) and 2 blog styles (Magazine, Minimal), switchable in site.json, previews at /preview/, design guide (docs/design-guide/design-guide.pdf)
+- [ ] Design templates, online shop: 2 styles (grid, lookbook), switchable by a shop setting; add to the design guide
 - [ ] Excel/CSV import and export for accounts (expenses, opening balances, journals, chart of accounts; report exports to .xlsx)
 - [ ] Other items as they come up
