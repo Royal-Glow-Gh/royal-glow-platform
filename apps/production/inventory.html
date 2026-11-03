@@ -104,7 +104,7 @@ details summary{cursor:pointer;color:var(--text-2)}
 <header>
   <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
     <h1 class="brand"><img src="assets/logo.png" alt="Royal Glow" class="logo"><span class="applabel">Inventory</span></h1>
-    <div class="small muted"><span class="apps"><a href="index.html">Production</a><a href="inventory.html" aria-current="page">Inventory</a><a href="sales.html">Sales</a><a href="shop-admin.html">Online shop</a><a href="spa.html">Spa</a><a href="blog-admin.html">Blog</a><a href="staff.html">Account</a></span> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
+    <div class="small muted"><span class="apps"><a href="index.html">Production</a><a href="inventory.html" aria-current="page">Inventory</a><a href="sales.html">Sales</a><a href="shop-admin.html">Online shop</a><a href="spa.html">Spa</a><a href="blog-admin.html">Blog</a><a href="accounts.html">Accounts</a><a href="staff.html">Account</a></span> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
   </div>
   <p class="sub">Stock at every location, worked out from purchases, production batches, transfers and adjustments.</p>
   <nav id="tabs">
@@ -143,6 +143,7 @@ details summary{cursor:pointer;color:var(--text-2)}
         <label class="f">Received at<select id="pLoc"></select></label>
         <label class="f">Date<input type="date" id="pDate"></label>
         <label class="f">Invoice / receipt no.<input id="pRef" size="14"></label>
+        <label class="f">Paid by<select id="pPay"><option value="cash">Cash</option><option value="momo">Mobile money</option><option value="bank">Bank transfer</option><option value="card">Card</option><option value="credit">Not yet paid (supplier credit)</option></select></label>
       </div>
       <h3 class="small muted" style="margin:16px 0 6px">ITEMS RECEIVED</h3>
       <table><thead><tr><th>Item</th><th class="n">Qty</th><th>Unit</th><th class="n">Unit cost GH₵</th><th class="n">Line total</th><th></th></tr></thead><tbody id="pLines"></tbody></table>
@@ -153,7 +154,7 @@ details summary{cursor:pointer;color:var(--text-2)}
     </div>
     <div class="card">
       <h2>Purchase history</h2>
-      <table><thead><tr><th>Date</th><th>Ref</th><th>Supplier</th><th>Received at</th><th>Items</th><th class="n">Total</th><th></th></tr></thead><tbody id="pList"></tbody></table>
+      <table><thead><tr><th>Date</th><th>Ref</th><th>Supplier</th><th>Received at</th><th>Items</th><th>Paid by</th><th class="n">Total</th><th></th></tr></thead><tbody id="pList"></tbody></table>
     </div>
   </section>
 
@@ -415,10 +416,10 @@ function renderPurchases(){
   const lb=$('pList');lb.replaceChildren();
   D.purchases.forEach(p=>{const lines=p.purchase_lines||[];const tot=lines.reduce((s,l)=>s+l.qty*l.unit_cost,0);
     lb.appendChild(h('tr',null,h('td',null,p.purchase_date),h('td',null,p.ref||'—'),h('td',null,(sup(p.supplier_id)||{}).name||'—'),h('td',null,(loc(p.location_id)||{}).name||'?'),
-      h('td',null,linesSummary(lines)),h('td',{class:'n'},money(tot)),
+      h('td',null,linesSummary(lines)),h('td',{class:'small'+(p.payment_method==='credit'?' up':'')},({cash:'Cash',momo:'Mobile money',bank:'Bank',card:'Card',credit:'On credit'})[p.payment_method]||'Cash'),h('td',{class:'n'},money(tot)),
       h('td',null,delBtn(async()=>{await q(sb.from('purchases').delete().eq('id',p.id));await refresh('purchases')}))));
   });
-  if(!D.purchases.length)lb.appendChild(h('tr',null,h('td',{colspan:7,class:'muted small'},'No purchases recorded yet.')));
+  if(!D.purchases.length)lb.appendChild(h('tr',null,h('td',{colspan:8,class:'muted small'},'No purchases recorded yet.')));
 }
 function pTotals(){
   draftP.forEach((d,ix)=>{const c=$('plc'+ix);if(c)c.textContent=money((d.qty||0)*d.unitCost)});
@@ -433,7 +434,8 @@ $('pSave').addEventListener('click',async()=>{
   if(!lines.length)return msg('Add at least one item with a quantity.');
   $('pSave').disabled=true;msg('Saving…');
   try{
-    await savePurchase({supplier_id:$('pSup').value||null,location_id:$('pLoc').value,purchase_date:$('pDate').value,ref:$('pRef').value.trim()||null},lines);
+    if($('pPay').value==='credit'&&!$('pSup').value){msg('Choose the supplier for a purchase on credit.');return}
+    await savePurchase({supplier_id:$('pSup').value||null,location_id:$('pLoc').value,purchase_date:$('pDate').value,ref:$('pRef').value.trim()||null,payment_method:$('pPay').value},lines);
     draftP=[];$('pRef').value='';await refresh('purchases');msg('Saved.');setTimeout(()=>msg(''),2500);
   }catch(e){msg(friendly(e))}finally{$('pSave').disabled=!canWrite()}
 });

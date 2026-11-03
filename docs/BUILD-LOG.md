@@ -9,6 +9,7 @@
   - apps/production/shop-admin.html: online shop management (orders, products shown on the website with photos, delivery/MoMo settings, ship-from and pickup locations)
   - apps/production/spa.html: spa (day calendar per therapist, phone bookings, confirm/complete/no-show/cancel, treatments, therapists & time off, opening hours & booking rules, spa reports)
   - apps/production/blog-admin.html: blog (article list, editor with live preview, cover and inline photos, publish/unpublish, copy announcement, subscriber list)
+  - apps/production/accounts.html: accounts (profit and loss, balance sheet, cash flow, trial balance, account ledger, expenses, supplier balances and payments, journals incl. opening balances, chart of accounts); admin + accounts roles only
   - apps/production/config.js: Supabase URL + publishable key (never the secret key). config.example.js is the template.
   - apps/production/assets/: logo and favicons
   - supabase/migrations/001_production.sql: staff, items, batches, batch_inputs; views batch_costs, item_current_cost
@@ -23,11 +24,12 @@
   - supabase/migrations/007_delivery_zones.sql: delivery_zones (fee, who delivers, fee paid to Royal Glow or rider); orders store zone, fee_confirmed, fee_to_rider; place_order takes a zone (none = "somewhere else", fee confirmed by staff)
   - supabase/migrations/008_spa.sql: spa_services, spa_therapists (+ which treatments each does), spa_hours, spa_time_off, spa_settings, spa_bookings (database blocks double-booking); public functions spa_info/spa_slots/book_spa, cancel_my_spa_booking; new staff role 'spa'
   - supabase/migrations/009_blog.sql: blog_posts (draft/published, simple Markdown body), blog_subscribers; subscribe_blog / unsubscribe_blog (public), list_blog_subscribers (admin/blog staff); blog-images storage bucket; new staff role 'content' (shown as "Blog")
+  - supabase/migrations/010_accounting.sql: accounts (chart), gl_lines (ledger derived from all operational records + expenses + supplier payments + journals), gl_summary / cash_flow / account_ledger functions, supplier_balances view, expenses, supplier_payments, journals (+ post_journal, which enforces balance), purchase payment method, cost snapshots on adjustments and returns, new role 'accounts'
   - .github/workflows/publish-production.yml: on push to main, copies apps/production to the deploy-production branch
   - .github/workflows/publish-shop.yml: on push to main, copies apps/shop to the deploy-shop branch
   - .github/workflows/publish-site.yml: builds apps/site and publishes to the deploy-site branch: on push, every 30 minutes, or manually (Actions -> Publish main website -> Run workflow). Publishes only when the site actually changed; if the database can't be reached, nothing is published.
 - Supabase project: royal-glow (North EU, Stockholm)
-- Hosting: Hostinger deploys branch deploy-production to production.royalglowgh.com (/inventory.html, /sales.html, /shop-admin.html, /spa.html, /blog-admin.html, /staff.html) branch deploy-shop to shop.royalglowgh.com, and branch deploy-site to royalglowgh.com
+- Hosting: Hostinger deploys branch deploy-production to production.royalglowgh.com (/inventory.html, /sales.html, /shop-admin.html, /spa.html, /blog-admin.html, /accounts.html, /staff.html) branch deploy-shop to shop.royalglowgh.com, and branch deploy-site to royalglowgh.com
 
 ## Supabase Auth settings (Authentication -> ...)
 - Sign In / Providers: "Allow new users to sign up" ON; email confirmation ON.
@@ -45,6 +47,7 @@ Make edits in the Codespace, not on GitHub.com (avoids merge conflicts). If you 
 - sales: sales, customers, payments, returns, selling prices, online shop orders
 - spa: spa bookings, treatments, therapists, opening hours, spa reports
 - content ("Blog"): write, publish and delete articles; see subscribers
+- accounts: all accounting reports, expenses, supplier payments, journals, chart of accounts (expenses and journals are hidden from other roles because they include salaries)
 
 ## Adding a staff member
 1. They open the sign-in page, click "New staff? Create an account", and confirm their email.
@@ -64,11 +67,20 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - Spa: customers book online (treatment, day, therapist or "any", free time); pay at the spa. Staff can book by phone, ignoring the online notice period. A therapist with no treatments ticked does all treatments. Times are Ghana time (GMT, no daylight saving). Spa revenue is recorded on completed bookings (paid amount + method) and reported on the Spa page, separate from product sales.
 - Main website text (about, intro, contact details, social links) is edited in apps/site/site.json; blank values are hidden.
 - Blog: articles live at royalglowgh.com/blog/<web address>/. They are drafts until published; only published ones are visible to the public. Published changes reach the website at the next rebuild (within ~30 minutes, or run the workflow by hand). Subscribers = blog sign-ups + customers who ticked "Send me new skincare articles". Phase 1: copy the subscriber emails / a ready announcement and send from your email tool or WhatsApp. Phase 2 (later): automatic emails through an email service.
+- Accounting (assumptions: not VAT-registered; financial year Jan–Dec; standard chart, renameable):
+  - The ledger is derived, not copied: sales (money/receivable vs product sales, discounts; cost of goods sold vs stock), returns (reduce revenue and receivable/cash; restocked goods back to stock at their cost), customer payments, purchases (stock vs cash/MoMo/bank or supplier credit), supplier payments, production (labour/energy 'other costs' moved into stock value), stock adjustments (write-offs; opening stock vs opening balances), completed spa bookings (spa revenue), expenses, journals.
+  - Every amount is rounded to the pesewa identically on both sides, so the books always balance exactly.
+  - Payment method -> account: cash 1000, MoMo 1010, card and bank 1020, credit 1100 (customers) / 2000 (suppliers).
+  - Shop delivery fees are not yet in the books (they sit on the order). Inventory in the ledger is valued at the cost when goods moved; the Inventory page values stock at today's cost, so the two can differ slightly.
+  - These are management accounts. Statutory accounts and GRA/VAT filings should be prepared or checked by an accountant.
 - Customer sign-ups (account_type 'customer') get a shop profile and never appear in the staff approval list.
 
 ## Data status
 - Decision: the database holds SAMPLE data while the apps are being built. Clear all sample data once the build is finished, before entering real data.
 - Clearing sample data (extend this list as new tables are added):
+   delete from public.expenses where payee like '%(sample)%';
+   delete from public.journals where memo like '%(sample)%';
+   delete from public.supplier_payments;
    delete from public.blog_posts where author_name like '%(sample)%';
    delete from public.blog_subscribers;   -- only if they are test sign-ups
    delete from public.spa_bookings;
@@ -113,5 +125,7 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - [ ] Fill in real contact details, address and social links in apps/site/site.json
 - [ ] Instant website rebuild when an article is published (later; now every 30 min or manual)
 - [ ] Submit sitemap to Google Search Console
+- [x] Accounting release 1: ledger, chart of accounts, expenses, supplier credit and payments, journals and opening balances, P&L, balance sheet, cash flow, trial balance, account ledger (010)
+- [ ] Accounting release 2: month-end close (lock past periods), receivables/payables ageing, VAT if registered, depreciation schedule, delivery fees into the books, budgets
 - [ ] Decide how distributors fit in (e.g. pickup points)
 - [ ] Go-live: clear all sample data, enter real data
