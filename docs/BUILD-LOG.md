@@ -2,16 +2,16 @@
 
 ## Where things live
 - GitHub: Royal-Glow-Gh/royal-glow-platform (private monorepo)
-  - apps/production/index.html: production batch costing
-  - apps/production/inventory.html: inventory (stock on hand, purchases, transfers, adjustments, movements, setup)
-  - apps/production/sales.html: sales (new sale, history, customers & credit, returns, price list, reports)
-  - apps/production/staff.html: staff & account (sign-up, forgot password, change password; admins approve staff and set roles)
-  - apps/production/shop-admin.html: online shop management (orders, products shown on the website with photos, delivery/MoMo settings, ship-from and pickup locations)
-  - apps/production/spa.html: spa (day calendar per therapist, phone bookings, confirm/complete/no-show/cancel, treatments, therapists & time off, opening hours & booking rules, spa reports)
-  - apps/production/blog-admin.html: blog (article list, editor with live preview, cover and inline photos, publish/unpublish, copy announcement, subscriber list)
-  - apps/production/accounts.html: accounts (profit and loss, balance sheet, cash flow, trial balance, account ledger, expenses, supplier balances and payments, journals incl. opening balances, chart of accounts); admin + accounts roles only
-  - apps/production/config.js: Supabase URL + publishable key (never the secret key). config.example.js is the template.
-  - apps/production/assets/: logo and favicons
+  - apps/staff/index.html: production batch costing
+  - apps/staff/inventory.html: inventory (stock on hand, purchases, transfers, adjustments, movements, setup)
+  - apps/staff/sales.html: sales (new sale, history, customers & credit, returns, price list, reports)
+  - apps/staff/staff.html: staff & account (sign-up, forgot password, change password; admins approve staff and set roles)
+  - apps/staff/shop-admin.html: online shop management (orders, products shown on the website with photos, delivery/MoMo settings, ship-from and pickup locations)
+  - apps/staff/spa.html: spa (day calendar per therapist, phone bookings, confirm/complete/no-show/cancel, treatments, therapists & time off, opening hours & booking rules, spa reports)
+  - apps/staff/blog-admin.html: blog (article list, editor with live preview, cover and inline photos, publish/unpublish, copy announcement, subscriber list)
+  - apps/staff/accounts.html: accounts (profit and loss, balance sheet, cash flow, trial balance, account ledger, expenses, supplier balances and payments, journals incl. opening balances, chart of accounts); admin + accounts roles only
+  - apps/staff/config.js: Supabase URL + publishable key (never the secret key). config.example.js is the template.
+  - apps/staff/assets/: logo and favicons
   - supabase/migrations/001_production.sql: staff, items, batches, batch_inputs; views batch_costs, item_current_cost
   - supabase/migrations/002_inventory.sql: locations (Factory auto-created), suppliers, purchases, transfers, stock_adjustments; views stock_ledger, stock_on_hand; item kind 'goods'; reorder levels
   - supabase/migrations/003_sales.sql: retail/wholesale prices on items, customers, sales, sale_lines, customer_payments, sale_returns; stock_ledger includes sales and restocked returns; views sale_totals, customer_balances
@@ -25,19 +25,19 @@
   - supabase/migrations/008_spa.sql: spa_services, spa_therapists (+ which treatments each does), spa_hours, spa_time_off, spa_settings, spa_bookings (database blocks double-booking); public functions spa_info/spa_slots/book_spa, cancel_my_spa_booking; new staff role 'spa'
   - supabase/migrations/009_blog.sql: blog_posts (draft/published, simple Markdown body), blog_subscribers; subscribe_blog / unsubscribe_blog (public), list_blog_subscribers (admin/blog staff); blog-images storage bucket; new staff role 'content' (shown as "Blog")
   - supabase/migrations/010_accounting.sql: accounts (chart), gl_lines (ledger derived from all operational records + expenses + supplier payments + journals), gl_summary / cash_flow / account_ledger functions, supplier_balances view, expenses, supplier_payments, journals (+ post_journal, which enforces balance), purchase payment method, cost snapshots on adjustments and returns, new role 'accounts'
-  - .github/workflows/publish-production.yml: on push to main, copies apps/production to the deploy-production branch
+  - .github/workflows/publish-staff.yml: on push to main, copies apps/staff to the deploy-staff branch
   - .github/workflows/publish-shop.yml: on push to main, copies apps/shop to the deploy-shop branch
   - .github/workflows/publish-site.yml: builds apps/site and publishes to the deploy-site branch: on push, every 30 minutes, or manually (Actions -> Publish main website -> Run workflow). Publishes only when the site actually changed; if the database can't be reached, nothing is published.
 - Supabase project: royal-glow (North EU, Stockholm)
-- Hosting: Hostinger deploys branch deploy-production to production.royalglowgh.com (/inventory.html, /sales.html, /shop-admin.html, /spa.html, /blog-admin.html, /accounts.html, /staff.html) branch deploy-shop to shop.royalglowgh.com, and branch deploy-site to royalglowgh.com
+- Hosting: Hostinger deploys branch deploy-staff to staff.royalglowgh.com (/inventory.html, /sales.html, /shop-admin.html, /spa.html, /blog-admin.html, /accounts.html, /staff.html) branch deploy-shop to shop.royalglowgh.com, and branch deploy-site to royalglowgh.com
 
 ## Supabase Auth settings (Authentication -> ...)
 - Sign In / Providers: "Allow new users to sign up" ON; email confirmation ON.
-- URL Configuration: Site URL https://production.royalglowgh.com ; Redirect URLs include https://production.royalglowgh.com/** and https://shop.royalglowgh.com/**
+- URL Configuration: Site URL https://staff.royalglowgh.com ; Redirect URLs include https://staff.royalglowgh.com/** and https://shop.royalglowgh.com/**
 - Supabase's built-in email sender is limited and meant for testing. Before go-live, set up custom SMTP (e.g. a Royal Glow mailbox on Hostinger) so confirmation and reset emails are reliable and come from Royal Glow.
 
 ## How a change goes live
-Edit in Codespace -> commit -> Sync -> GitHub Action updates deploy-production -> Hostinger redeploys.
+Edit in Codespace -> commit -> Sync -> GitHub Action updates deploy-staff -> Hostinger redeploys.
 Make edits in the Codespace, not on GitHub.com (avoids merge conflicts). If you do edit on the website, Sync the Codespace first.
 
 ## Roles (a person can hold several, e.g. production + sales)
@@ -106,7 +106,7 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - [x] Production batch costing prototype
 - [x] Supabase schema 001 (production)
 - [x] Production app connected to Supabase with staff login
-- [x] Deployed to production.royalglowgh.com
+- [x] Deployed to production.royalglowgh.com (since moved to staff.royalglowgh.com)
 - [x] Branding: logo, crown favicons, gold theme
 - [x] Inventory and purchases (002)
 - [x] Sales, customers, credit, payments, returns, price list, reports (003)
@@ -129,3 +129,11 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - [ ] Accounting release 2: month-end close (lock past periods), receivables/payables ageing, VAT if registered, depreciation schedule, delivery fees into the books, budgets
 - [ ] Decide how distributors fit in (e.g. pickup points)
 - [ ] Go-live: clear all sample data, enter real data
+
+## Next up
+- [ ] Move the staff apps to staff.royalglowgh.com: files done (folder apps/production -> apps/staff, workflow publish-staff.yml -> branch deploy-staff). Remaining: Hostinger subdomain staff.royalglowgh.com on deploy-staff, Supabase Site URL + Redirect URLs, delete production subdomain and deploy-production branch. No redirect.
+
+## Later (backlog)
+- [ ] Design templates: several per site, switchable by a setting (corporate: 3 home-page styles; shop: 2; blog: 2), plus a design guide for designers (sections, what goes in each, text limits, banner and image sizes, safe areas)
+- [ ] Excel/CSV import and export for accounts (expenses, opening balances, journals, chart of accounts; report exports to .xlsx)
+- [ ] Other items as they come up

@@ -1,0 +1,23 @@
+name: Publish staff apps
+
+# Copies apps/staff to the deploy-staff branch, which Hostinger serves at staff.royalglowgh.com.
+on:
+  push:
+    branches: [main]
+    paths: ['apps/staff/**', '.github/workflows/publish-staff.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Copy apps/staff to the deploy-staff branch
+        run: |
+          git subtree split --prefix apps/staff -b deploy-staff
+          git push -f origin deploy-staff

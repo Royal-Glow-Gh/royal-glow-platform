@@ -17,13 +17,13 @@ const SHOP = SITE.shop_url.replace(/\/$/, '');
 // ---------- Supabase connection: env vars, or the staff app's config.js ----------
 function readConfig() {
   let url = process.env.SUPABASE_URL, key = process.env.SUPABASE_KEY;
-  const cfgPath = join(HERE, '..', 'production', 'config.js');
+  const cfgPath = join(HERE, '..', 'staff', 'config.js');
   if ((!url || !key) && existsSync(cfgPath)) {
     const txt = readFileSync(cfgPath, 'utf8');
     url = url || (txt.match(/SUPABASE_URL:\s*'([^']+)'/) || [])[1];
     key = key || (txt.match(/SUPABASE_KEY:\s*'([^']+)'/) || [])[1];
   }
-  if (!url || !key || /PASTE_/.test(url + key)) throw new Error('Supabase URL/key not found (set SUPABASE_URL and SUPABASE_KEY, or fill in apps/production/config.js).');
+  if (!url || !key || /PASTE_/.test(url + key)) throw new Error('Supabase URL/key not found (set SUPABASE_URL and SUPABASE_KEY, or fill in apps/staff/config.js).');
   return { url: url.replace(/\/$/, ''), key };
 }
 const CFG = readConfig();
