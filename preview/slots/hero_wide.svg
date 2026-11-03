@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1200" viewBox="0 0 2400 1200">
+<defs><pattern id="p" width="60" height="60" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="60" height="60" fill="#2a2416"/><rect width="30" height="60" fill="#30291a"/></pattern></defs>
+<rect width="100%" height="100%" fill="url(#p)"/>
+<rect x="120" y="60" width="2160" height="1080" fill="none" stroke="#c8961e" stroke-width="4" stroke-dasharray="18 12"/>
+<g font-family="Arial, sans-serif" text-anchor="middle" fill="#f7e7bf">
+<text x="74%" y="205.6" font-size="86" font-weight="700">WIDE HERO BANNER</text>
+<text x="74%" y="317.4" font-size="69">2400 × 1200 px · images.hero_wide</text>
+</g></svg>
