@@ -3,6 +3,6 @@
 <rect width="100%" height="100%" fill="url(#p)"/>
 <rect x="54" y="81" width="972" height="1458" fill="none" stroke="#c8961e" stroke-width="4" stroke-dasharray="18 12"/>
 <g font-family="Arial, sans-serif" text-anchor="middle" fill="#f7e7bf">
-<text x="50%" y="293.2" font-size="77" font-weight="700">PHONE HERO BANNER</text>
-<text x="50%" y="393.3" font-size="62">1080 × 1620 px · images.hero_mobile</text>
+<text x="50%" y="293.2" font-size="77" font-weight="700">SLIDE (PHONE)</text>
+<text x="50%" y="393.3" font-size="62">1080 × 1620 px · images.slide_m</text>
 </g></svg>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How was your visit? — Royal Glow</title>
+<meta name="robots" content="noindex">
+<meta name="description" content="Tell Royal Glow how it went.">
+<link rel="canonical" href="https://royalglowgh.com/feedback/">
+<meta property="og:site_name" content="Royal Glow">
+<meta property="og:type" content="website">
+<meta property="og:title" content="How was your visit?">
+<meta property="og:description" content="Tell Royal Glow how it went.">
+<meta property="og:url" content="https://royalglowgh.com/feedback/">
+<meta property="og:image" content="https://royalglowgh.com/assets/og-default.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="alternate" type="application/rss+xml" title="Royal Glow blog" href="/feed.xml">
+<meta name="theme-color" content="#0d0d0c">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+
+</head>
+<body class="t-classic b-magazine">
+<div class="annbar" id="annbar" hidden></div>
+<header class="top"><div class="wrap">
+  <a href="/" aria-label="Royal Glow home"><img class="logo" src="/assets/logo.png" alt="Royal Glow" width="160" height="51"></a>
+  <nav><a href="/about/">About</a><a href="https://shop.royalglowgh.com/">Shop</a><a href="https://shop.royalglowgh.com/#spa">Spa</a><a href="/blog/">Blog</a><a href="/contact/">Contact</a></nav>
+</div></header>
+<main>
+<section class="wrap narrow fb"><h1 class="ptitle">How was your visit?</h1>
+<p class="lead" id="fbAbout">Thank you for choosing Royal Glow. We read every reply.</p>
+<form id="fbForm" class="hidden" onsubmit="return rgFeedback(this)">
+  <label>Your words<textarea name="quote" rows="5" maxlength="600" required placeholder="What did you enjoy? Anything we could do better?"></textarea></label>
+  <div class="fbrow"><label>Your first name<input name="name" maxlength="60" required autocomplete="given-name"></label><label>Town (optional)<input name="town" maxlength="60"></label></div>
+  <label class="chk"><input type="checkbox" name="consent"> Royal Glow may show my words, first name and town on its website.</label>
+  <button class="btn gold">Send</button><p class="submsg" role="status"></p>
+</form>
+<p class="lead hidden" id="fbDone"></p></section>
+<script>
+(function(){var t=new URLSearchParams(location.search).get('t'),f=document.getElementById('fbForm'),done=document.getElementById('fbDone');
+ var H={apikey:"sb_publishable_WldzEgVU-GsQhxbObxN66A_GDI3C_sZ",'Content-Type':'application/json'},U="https://oluzgkanxwddonxampli.supabase.co/rest/v1/rpc/";
+ function end(m){f.classList.add('hidden');done.textContent=m;done.classList.remove('hidden')}
+ if(!/^[0-9a-f-]{36}$/i.test(t||''))return end('This link is not complete. Please open the link you were sent.');
+ fetch(U+'feedback_info',{method:'POST',headers:H,body:JSON.stringify({p_token:t})}).then(function(r){return r.json()}).then(function(i){
+  if(!i||!i.ok)return end((i&&i.message)||'This link is not valid.');
+  if(i.about)document.getElementById('fbAbout').textContent='Thank you for choosing Royal Glow. How was your '+i.about+'?';
+  f.classList.remove('hidden')}).catch(function(){end('Something went wrong. Please try again later.')});
+ window.rgFeedback=function(f){var m=f.querySelector('.submsg');m.textContent='Sending…';
+  fetch(U+'submit_feedback',{method:'POST',headers:H,body:JSON.stringify({p_token:t,p_quote:f.quote.value,p_name:f.name.value,p_town:f.town.value,p_consent:f.consent.checked})})
+  .then(function(r){return r.ok?null:r.json()}).then(function(e){if(e)m.textContent=e.message||'Something went wrong.';else end('Thank you! We have received your feedback.')})
+  .catch(function(){m.textContent='Something went wrong. Please try again.'});return false};
+})();
+</script>
+</main>
+<footer><div class="wrap fgrid">
+  <div><img src="/assets/logo.png" alt="" width="130" height="41" style="margin-bottom:8px"><div>© 2026 Royal Glow Company Limited</div></div>
+  <div><b>Visit</b><a href="https://shop.royalglowgh.com/">Online shop</a><a href="https://shop.royalglowgh.com/#spa">Book the spa</a><a href="/blog/">Blog</a></div>
+  <div><b>Contact</b><a href="mailto:hello@royalglowgh.com">hello@royalglowgh.com</a></div>
+</div></footer>
+<script>window.RG={url:"https://oluzgkanxwddonxampli.supabase.co",key:"sb_publishable_WldzEgVU-GsQhxbObxN66A_GDI3C_sZ",shop:"https://shop.royalglowgh.com"};</script>
+<script src="/assets/site.js" defer></script>
+</body>
+</html>
