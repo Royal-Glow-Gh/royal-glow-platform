@@ -2,7 +2,7 @@
   "_help": "Edit the text below to change the main website. Leave a value as \"\" to hide it. Save, commit and Sync; the site rebuilds within a few minutes.",
   "design": {
     "_help": "home: classic, editorial or showcase. blog: magazine or minimal. See every style at royalglowgh.com/preview/ before switching.",
-    "home": "classic",
+    "home": "showcase",
     "blog": "magazine"
   },
   "images": {
