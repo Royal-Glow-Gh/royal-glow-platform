@@ -159,6 +159,14 @@ textarea.t{font:inherit;min-height:70px}
   <section id="v-design">
     <div class="card"><h2>Home-page style</h2><p class="help" style="margin:-6px 0 12px">Also sets the header and footer look on every page. Open a preview to see it with your current content.</p><div class="styles" id="homeStyles"></div></div>
     <div class="card"><h2>Blog style</h2><div class="styles" id="blogStyles"></div></div>
+    <div class="card"><h2>Online shop</h2><p class="help" style="margin:-6px 0 12px">The shop (shop.royalglowgh.com) changes as soon as you save; it doesn't need publishing.</p>
+      <div class="styles" id="shopStyles"></div>
+      <div class="grid2" style="margin-top:14px">
+        <div><label class="f">Shop headline<input data-k="shop_title" data-max="40" placeholder="Skincare with a royal glow"></label>
+          <label class="f" style="margin-top:10px">Shop introduction<textarea class="t" data-k="shop_intro" data-max="160" placeholder="Body butters, oils and spa care made by Royal Glow. Order online for delivery or pickup"></textarea></label>
+          <p class="help">"Or book a spa treatment" is added after the introduction.</p></div>
+        <div class="imgs" id="shopImgs"></div>
+      </div></div>
     <div class="row"><button class="b p" data-save>Save design</button><span class="msg" data-msg></span></div>
   </section>
 
@@ -277,6 +285,7 @@ const CFG=window.RG_CONFIG||{};
 const cfgOk=!!CFG.SUPABASE_URL&&!/PASTE_/.test(CFG.SUPABASE_URL+CFG.SUPABASE_KEY);
 const sb=cfgOk&&window.supabase?window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_KEY):null;
 const SITE=(CFG.SITE_URL||'https://royalglowgh.com').replace(/\/$/,'');
+const SHOPU=(CFG.SHOP_URL||'https://shop.royalglowgh.com').replace(/\/$/,'');
 const imgUrl=p=>p?CFG.SUPABASE_URL+'/storage/v1/object/public/site-images/'+p.split('/').map(encodeURIComponent).join('/'):'';
 $('siteLink').href=SITE+'/';$('prevLink').href=SITE+'/preview/';
 
@@ -284,6 +293,9 @@ const HOME_STYLES=[
   {k:'classic',n:'Classic',d:'Dark with a gold glow; three cards overlap the hero. Works well with few photos.'},
   {k:'editorial',n:'Light editorial',d:'Light and calm: big serif headline beside a tall arched photo, then numbered story rows.'},
   {k:'showcase',n:'Showcase',d:'Bold and photo-led: full-screen hero, gold strip, photo tiles, spa block, stockist band.'}];
+const SHOP_STYLES=[
+  {k:'grid',n:'Grid',d:'Products as cards in a grid: quick to scan, best with many products.'},
+  {k:'lookbook',n:'Lookbook',d:'Light and editorial: one product per row with a large photo and its description. Best with a few hero products and good photos.'}];
 const BLOG_STYLES=[
   {k:'magazine',n:'Magazine',d:'Latest article shown large with its cover; the rest as cards with covers.'},
   {k:'minimal',n:'Minimal',d:'A clean text list of titles and summaries; covers only inside articles.'}];
@@ -293,6 +305,7 @@ const SLOTS={
   making:{n:'Our products / making',w:1200,h:900,r:'4/3',use:'Editorial row 1, Showcase tile 1'},
   spa:{n:'Spa',w:1200,h:900,r:'4/3',use:'Editorial row 2, Showcase tile 2 and spa block'},
   stockists:{n:'Stockists / partners',w:1200,h:900,r:'4/3',use:'Editorial row 3, Showcase tile 3'},
+  shop_hero:{n:'Shop banner (optional)',w:2400,h:900,r:'8/3',use:'Top of the shop; keep the subject in the right half'},
   about:{n:'About page banner',w:1600,h:900,r:'16/9',use:'Top of the About page'},
   slide:{n:'Slide (computer)',w:2400,h:1200,r:'2/1',use:'Keep the subject in the right half'},
   slide_m:{n:'Slide (phone, optional)',w:1080,h:1620,r:'2/3',use:'Keep the subject in the top half'}};
@@ -405,14 +418,17 @@ function slotBox(slotKey,path,onChange,canEdit,label){
 }
 
 // ---------- Design ----------
-let pickHome,pickBlog;
+let pickHome,pickBlog,pickShop,shopImg='';
+const previewUrl=(kind,k)=>kind==='shop'?SHOPU+'/?style='+k:SITE+'/preview/'+kind+'-'+k+'/';
 function styleCards(el,list,cur,kind){el.replaceChildren(...list.map(s=>{const c=h('div',{class:'style'+(s.k===cur?' on':''),tabindex:0},
-  h('b',null,s.n+(s.k===cur?' ✓':'')),h('p',null,s.d),h('a',{class:'lnk small',href:SITE+'/preview/'+kind+'-'+s.k+'/',target:'_blank',rel:'noopener',on:{click:e=>e.stopPropagation()}},'See preview ↗'));
-  const pick=()=>{if(!isAdmin())return;el.querySelectorAll('.style').forEach(x=>x.classList.remove('on'));c.classList.add('on');if(kind==='home')pickHome=s.k;else pickBlog=s.k};
+  h('b',null,s.n+(s.k===cur?' ✓':'')),h('p',null,s.d),h('a',{class:'lnk small',href:previewUrl(kind,s.k),target:'_blank',rel:'noopener',on:{click:e=>e.stopPropagation()}},'See preview ↗'));
+  const pick=()=>{if(!isAdmin())return;el.querySelectorAll('.style').forEach(x=>x.classList.remove('on'));c.classList.add('on');if(kind==='home')pickHome=s.k;else if(kind==='shop')pickShop=s.k;else pickBlog=s.k};
   c.addEventListener('click',pick);c.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick()}});return c}))}
-function renderDesign(){const d=DATA.design||{};pickHome=d.home||'classic';pickBlog=d.blog||'magazine';
-  styleCards($('homeStyles'),HOME_STYLES,pickHome,'home');styleCards($('blogStyles'),BLOG_STYLES,pickBlog,'blog');bindFields($('v-design'))}
-$('v-design').querySelector('[data-save]').addEventListener('click',()=>saveSettings(d=>{d.design={home:pickHome,blog:pickBlog}},$('v-design').querySelector('[data-msg]')).then(renderDesign));
+function renderDesign(){const d=DATA.design||{};pickHome=d.home||'classic';pickBlog=d.blog||'magazine';pickShop=d.shop||'grid';shopImg=DATA.images.shop_hero||'';
+  styleCards($('homeStyles'),HOME_STYLES,pickHome,'home');styleCards($('blogStyles'),BLOG_STYLES,pickBlog,'blog');styleCards($('shopStyles'),SHOP_STYLES,pickShop,'shop');
+  $('shopImgs').replaceChildren(slotBox('shop_hero',shopImg,p=>{shopImg=p},isAdmin()));bindFields($('v-design'))}
+$('v-design').querySelector('[data-save]').addEventListener('click',()=>{const sec=$('v-design');const img=shopImg;
+  saveSettings(d=>{readFields(sec,d);d.design={home:pickHome,blog:pickBlog,shop:pickShop};d.images={...(d.images||{}),shop_hero:img||''}},sec.querySelector('[data-msg]')).then(renderDesign)});
 
 // ---------- Home page ----------
 let homeImgs={};
@@ -449,7 +465,7 @@ $('v-about').querySelector('[data-save]').addEventListener('click',()=>{const se
   saveSettings(d=>{readFields(sec,d);d.images={...(d.images||{}),about:img||''}},sec.querySelector('[data-msg]'))});
 
 // ---------- History ----------
-const LABELS={design:'Design style',tagline:'Tagline',brand:'Brand name',intro:'Introduction',badges:'Badges',highlights:'Highlights',images:'Photos',company:'Company name',about_title:'About title',about:'About text',partners_title:'Stockists heading',partners:'Stockists text',contact:'Contact details',social:'Social media'};
+const LABELS={design:'Design style',shop_title:'Shop headline',shop_intro:'Shop introduction',tagline:'Tagline',brand:'Brand name',intro:'Introduction',badges:'Badges',highlights:'Highlights',images:'Photos',company:'Company name',about_title:'About title',about:'About text',partners_title:'Stockists heading',partners:'Stockists text',contact:'Contact details',social:'Social media'};
 async function renderHist(){const tb=$('hList');
   if(!isAdmin()){tb.replaceChildren(h('tr',null,h('td',{colspan:3,class:'muted small'},'Only admins can see and restore earlier versions.')));return}
   let rows;try{rows=await q(sb.from('site_settings_history').select('id,data,saved_at').order('id',{ascending:false}).limit(30))}catch(e){tb.replaceChildren(h('tr',null,h('td',{colspan:3,class:'muted small'},friendly(e))));return}
