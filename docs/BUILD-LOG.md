@@ -19,7 +19,7 @@
   - supabase/migrations/003_sales.sql: retail/wholesale prices on items, customers, sales, sale_lines, customer_payments, sale_returns; stock_ledger includes sales and restocked returns; views sale_totals, customer_balances
   - supabase/migrations/004_staff.sql: admin-only functions list_unassigned_users, staff_directory; trigger keeping at least one admin
   - supabase/migrations/005_multi_roles.sql: staff.roles (a list) replaces staff.role, so one person can hold several roles
-  - apps/shop/: the shop website: shop + spa booking + customer accounts (index.html), assets/, config.js with the same Supabase values
+  - apps/shop/: the shop website: shop + spa booking + customer accounts (index.html), assets/, config.js with the same Supabase values. Two styles, "grid" and "lookbook" (Website page -> Design -> Online shop; preview any style with ?style=grid or ?style=lookbook). Shows the announcement bar and published testimonials (treatment quotes in spa booking). Headline, introduction and optional banner come from the Website page.
   - apps/site/: the main website royalglowgh.com, generated as static HTML by build.mjs (no packages; Node 20). All content comes from the database: website settings, slides and testimonials (Website page), articles, products, spa treatments. site.json only holds the two web addresses. site.js runs the slides/quotes rotation and the live announcement bar. Output (dist/) is not committed.
     Pages: / (home), /about/, /contact/, /blog/, /blog/<web address>/, /blog/unsubscribe/, 404, sitemap.xml, robots.txt, feed.xml (RSS). Each article has its own title, description, preview image and Google article markup in the page.
     Pages also: /feedback/?t=<token> ("How was your visit?" form, hidden from Google).
@@ -52,7 +52,7 @@ Make edits in the Codespace, not on GitHub.com (avoids merge conflicts). If you 
    Resource owner: Royal-Glow-Gh. Repository access: Only select repositories -> royal-glow-platform. Permissions -> Repository -> Actions: Read and write. Expiry: up to 1 year (renew before it ends). Copy the token.
    (If the organization requires approval for tokens, approve it under the organization's Settings -> Personal access tokens.)
 2. Supabase -> Edge Functions -> Secrets -> Add: name GITHUB_TOKEN, value the token.
-3. Supabase -> Edge Functions -> Deploy a new function -> Via editor. Name: publish-site. Replace the code with supabase/functions/publish-site/index.ts. Deploy. Leave "Verify JWT" on.
+3. Supabase -> Edge Functions -> Deploy a new function -> Via editor. Name: publish-site. Replace the code with supabase/functions/publish-site/index.ts. Deploy. Turn "Verify JWT" off (the function checks the sign-in itself).
 4. Website page -> Publish website now. GitHub -> Actions shows "Publish main website" running.
 
 ## Roles (a person can hold several, e.g. production + sales)
@@ -141,7 +141,7 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - [x] Main website royalglowgh.com: home, about, contact, SEO-ready blog, sitemap, RSS (static, rebuilt automatically)
 - [ ] Fill in real contact details, address and social links (Website page -> About & contact)
 - [x] Website page in the staff app: all website content editable without GitHub, slides, announcement bar, testimonials and feedback links, history (011)
-- [ ] Publish website now: deploy the publish-site function and set its GITHUB_TOKEN secret (steps under "Publish now setup")
+- [x] Publish website now: publish-site function deployed with its GITHUB_TOKEN secret
 - [ ] Submit sitemap to Google Search Console
 - [x] Accounting release 1: ledger, chart of accounts, expenses, supplier credit and payments, journals and opening balances, P&L, balance sheet, cash flow, trial balance, account ledger (010)
 - [ ] Accounting release 2: month-end close (lock past periods), receivables/payables ageing, VAT if registered, depreciation schedule, delivery fees into the books, budgets
@@ -150,7 +150,7 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 
 ## Next up
 - [x] Staff apps live at staff.royalglowgh.com (deploy-staff, auto-deployment on). Remaining clean-up: remove the production.royalglowgh.com redirect URL in Supabase, the production subdomain in Hostinger and the deploy-production branch.
-- [ ] Design templates, online shop: 2 styles (grid, lookbook), using the same announcements and testimonials (treatment quotes in spa booking); add to the design guide
+- [x] Design templates, online shop: 2 styles (Grid, Lookbook), switchable on the Website page, announcement bar and testimonials in the shop and spa booking, design guide v3
 
 ## Later (backlog)
 - [x] Design templates, main website: 3 home-page styles (Classic, Light editorial, Showcase) and 2 blog styles (Magazine, Minimal), switchable on the Website page, previews at /preview/, design guide (docs/design-guide/design-guide.pdf)

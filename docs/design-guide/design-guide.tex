@@ -21,7 +21,7 @@
 \title{\vspace{-1.5cm}\includegraphics[width=5cm]{../../apps/site/assets/logo.png}\\[10pt]
 \textbf{Website design guide}\\[2pt]\large royalglowgh.com: styles, sections, slides, announcements, testimonials, image sizes}
 \author{Royal Glow Company Limited}
-\date{November 2026 (version 2)}
+\date{November 2026 (version 3)}
 
 \begin{document}
 \maketitle
@@ -44,7 +44,7 @@ Everything is done on the \tab{Website} page of the staff app (\url{https://staf
 \begin{tabularx}{\textwidth}{@{}l L l@{}}
 \toprule
 \textbf{Website page tab} & \textbf{What it holds} & \textbf{Who can edit} \\ \midrule
-\tab{Design} & Home-page style and blog style, with preview links & Admin \\
+\tab{Design} & Home-page, blog and online shop styles, with preview links; shop headline, introduction and banner & Admin \\
 \tab{Home page} & Tagline, introduction, promise badges, three highlights, section photos & Admin \\
 \tab{Slides} & 1--3 hero slides (photo for computers, photo for phones, headline, text, button) & Admin, Blog \\
 \tab{Announcements} & Messages for the gold bar above the header, with optional dates & Admin, Blog \\
@@ -124,6 +124,22 @@ Bold and photo-led, with full-screen slides. Best for campaigns and launches, wh
   \item \textbf{From the blog}; \textbf{stockist band} (the third highlight, on gold tint); \textbf{Subscribe}.
 \end{enumerate}
 
+\section{Online shop styles}
+The online shop (\url{https://shop.royalglowgh.com}) has two styles, chosen on the \tab{Design} tab. The shop changes as soon as the setting is saved; it doesn't need publishing. To try a style without switching, open the shop with \key{?style=grid} or \key{?style=lookbook} added to its address. The \tab{Design} tab's preview links do exactly this, and a small label shows that you are looking at a preview.
+
+\begin{center}
+\begin{tabular}{cc}
+\includegraphics[height=7.2cm]{img/shop-grid.jpg} & \includegraphics[height=7.2cm]{img/shop-lookbook.jpg} \\
+\textbf{Grid} & \textbf{Lookbook}
+\end{tabular}
+\end{center}
+\begin{itemize}
+  \item \textbf{Grid}: products as cards in a grid, on a dark header. Quick to scan; best when there are many products.
+  \item \textbf{Lookbook}: a light page with one product per row, a large photo, the product description and price, and photos alternating left and right. Best for a smaller range with good photos, because each photo is shown up to about 520\,px wide.
+  \item Both styles show the same \textbf{announcement bar} as the main website, and \textbf{What customers say} under the products. Spa treatments show a short quote from a client, and the booking page for a treatment shows the quotes linked to it.
+  \item The \textbf{shop banner} (optional, 2400 × 900) sits behind the shop headline. In Grid the text is on the left, so keep the subject in the right half. In Lookbook the text sits at the bottom left over a darkened band, so keep the subject in the upper right.
+\end{itemize}
+
 \section{Slides, announcements and testimonials}
 \subsection*{Hero slides (Classic and Showcase)}
 \begin{itemize}
@@ -156,7 +172,8 @@ Editorial hero (\tab{Home page}) & 1200 × 1500 & 4:5 & Editorial hero, inside t
 Our products / making (\tab{Home page}) & 1200 × 900 & 4:3 & Editorial row 01; Showcase tile 1 \\
 Spa (\tab{Home page}) & 1200 × 900 & 4:3 & Editorial row 02; Showcase tile 2 and spa block \\
 Stockists (\tab{Home page}) & 1200 × 900 & 4:3 & Editorial row 03; Showcase tile 3 \\
-About banner (\tab{About \& contact}) & 1600 × 900 & 16:9 & Top of the About page (all styles) \\ \bottomrule
+About banner (\tab{About \& contact}) & 1600 × 900 & 16:9 & Top of the About page (all styles) \\
+Shop banner (\tab{Design}) & 2400 × 900 & 8:3 & Top of the online shop (optional) \\ \bottomrule
 \end{tabularx}
 
 \textbf{File format.} JPEG (quality about 80) or WebP, in sRGB colour. Keep each file under 500\,KB, and slides under 700\,KB; uploads over 5\,MB are refused. Use lower-case file names with hyphens and no spaces, for example \key{slide-launch-dec2026.jpg}.
@@ -175,7 +192,7 @@ Pictures are cropped to fit different screens, and parts of them sit under text.
 \begin{tabularx}{\textwidth}{@{}l r c L@{}}
 \toprule
 \textbf{Image} & \textbf{Size (px)} & \textbf{Shape} & \textbf{Notes} \\ \midrule
-Product photo & 1200 × 1200 & 1:1 & Online shop page → Products. Product centred with about 10\% margin, on the same plain or soft background for every product. \\
+Product photo & 1600 × 1600 & 1:1 & Online shop page → Products (1200 × 1200 at least). Product centred with about 10\% margin, on the same plain or soft background for every product; the Lookbook style shows them large. \\
 Blog cover & 1600 × 900 & 16:9 & Blog page, under 2\,MB. In the Magazine style it is shown full width above the article, and the text panel overlaps its bottom 90\,px. \\
 Photo inside an article & 1200 wide & any & Blog page → ``Add a photo into the article''. \\
 Social share image & 1200 × 630 & 1.91:1 & \key{apps/site/assets/og-default.jpg}: shown when a page without its own photo is shared on WhatsApp or Facebook. \\ \bottomrule
@@ -195,6 +212,7 @@ Badges & up to 4, each $\le$ 36 & Editorial promise line; Showcase gold strip \\
 Highlight title / text & $\le$ 28 / 80--140 & Cards, story rows or tiles \\
 Highlight link text & $\le$ 20 & Button or link \\
 Announcement & $\le$ 70 (limit 120) & Gold bar above the header \\
+Shop headline / introduction & $\le$ 40 / $\le$ 160 & Top of the online shop \\
 Testimonial & 80--300 (limit 600) & Quote cards or a rotating quote \\
 About text & 2--4 paragraphs & About page \\ \bottomrule
 \end{tabularx}
