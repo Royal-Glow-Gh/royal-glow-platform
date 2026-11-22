@@ -2,7 +2,8 @@
 // Called by the staff app's Website page. Checks the caller is admin or Blog staff, then asks
 // GitHub to run the "Publish main website" workflow, which rebuilds royalglowgh.com in about a minute.
 // The GitHub key lives only in this function's secrets (GITHUB_TOKEN), never in a web page.
-// Deploy: Supabase -> Edge Functions -> Deploy a new function -> Via editor -> name "publish-site" -> paste -> Deploy.
+// Deploy: Supabase -> Edge Functions -> Deploy a new function -> Via editor -> replace all the sample code
+//         with this file -> function name "publish-site" -> Verify JWT OFF (this code checks the sign-in itself) -> Deploy.
 // Secret: Edge Functions -> Secrets -> GITHUB_TOKEN = a fine-grained GitHub token for
 //         Royal-Glow-Gh/royal-glow-platform with "Actions: Read and write".
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -24,8 +25,11 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return json(405, { message: 'Use POST.' });
 
   const url = Deno.env.get('SUPABASE_URL')!;
-  const anon = Deno.env.get('SUPABASE_ANON_KEY')!;
-  const service = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  // New-style keys (publishable/secret) if present, else the legacy anon/service_role keys.
+  const pick = (name: string) => { try { return JSON.parse(Deno.env.get(name) ?? '{}').default; } catch { return undefined; } };
+  const anon = pick('SUPABASE_PUBLISHABLE_KEYS') ?? Deno.env.get('SUPABASE_ANON_KEY');
+  const service = pick('SUPABASE_SECRET_KEYS') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!anon || !service) return json(500, { message: 'The function cannot find the project keys.' });
   const token = Deno.env.get('GITHUB_TOKEN');
 
   // 1. Who is asking? Use their own sign-in, so the database's role rules decide.
