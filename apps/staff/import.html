@@ -143,6 +143,7 @@ details summary{cursor:pointer;color:var(--text-2)}
     <p class="small" id="kHelp" style="margin-bottom:0"></p>
     <div class="row" style="margin-top:12px"><button class="b" id="tpl">Download the template</button>
       <label class="f"><span><span class="step">2</span>Choose your file (.xlsx or .csv)</span><input type="file" id="file" accept=".xlsx,.xls,.csv,text/csv"></label></div>
+    <label class="small hidden" id="olderBox" style="display:block;margin-top:10px"><input type="checkbox" id="older"> <b>Older records</b>: these sales come from paper or another system and some purchases may be missing, so let stock go below zero (shown as warnings) instead of refusing the sale. Do a stock count afterwards to put stock right.</label>
   </div>
 
   <div class="card hidden" id="mapCard">
@@ -155,7 +156,7 @@ details summary{cursor:pointer;color:var(--text-2)}
     <h2><span class="step">4</span>Check before importing</h2>
     <div id="pSum" class="small" style="margin-bottom:10px"></div>
     <div style="overflow:auto;max-height:520px"><table class="small" id="pTable"></table></div>
-    <div class="row" style="margin-top:12px;align-items:center"><button class="b p" id="go" style="margin-left:auto">Import</button><button class="b" id="cancel">Cancel</button><span class="msg" id="goMsg"></span></div>
+    <div class="row" style="margin-top:12px;align-items:center"><label class="small hidden" id="skipBox"><input type="checkbox" id="skipDup" checked> Leave out the rows marked as possible duplicates</label><button class="b p" id="go" style="margin-left:auto">Import</button><button class="b" id="cancel">Cancel</button><span class="msg" id="goMsg"></span></div>
   </div>
 
   <div class="card">
@@ -209,6 +210,39 @@ const KINDS={
     help:'How much of each item was at each location on the books start date (for example a stock count). Cost per unit: what it cost you; blank = the item\'s unit cost. Items and locations must already be in the system (import products first; add locations on the Inventory page). Rows with no quantity are skipped.',
     fields:[['item','Item',1,['item','product','name','itemname','productname','description']],['location','Location',1,['location','shop','store','branch','warehouse','site']],
       ['qty','Quantity',1,['quantity','qty','count','stock','onhand','quantityonhand','balance']],['unit_cost','Cost per unit (GH₵)',0,['costperunit','unitcost','cost','costprice']]]}};
+Object.assign(KINDS,{
+  purchases:{label:'Purchases',sub:'Goods and materials bought',roles:['inventory'],tx:true,
+    help:'One row per item bought. Rows with the same invoice number and supplier become one purchase (without invoice numbers, consecutive rows with the same date, supplier and location do). Give the unit cost, or the line total. Paid with: cash, momo, bank, card or unpaid (unpaid needs the supplier). Location blank = Factory. Dates before the books start date are refused.',
+    fields:[['date','Date',1,['date','purchasedate','invoicedate','day']],['ref','Invoice no.',0,['invoiceno','invoice','invoicenumber','ref','reference','receipt','receiptno','billno','grn']],
+      ['supplier','Supplier',0,['supplier','suppliername','vendor','from']],['location','Location',0,['location','shop','store','branch','warehouse','deliveredto']],
+      ['item','Item',1,['item','product','itemname','productname','description','material']],['qty','Quantity',1,['quantity','qty','units','count']],
+      ['unit_cost','Unit cost',0,['unitcost','cost','price','unitprice','rate','costprice']],['total','Line total',0,['linetotal','total','amount','value','totalcost']],
+      ['paid','Paid with',0,['paidwith','paidfrom','payment','paymentmethod','method','paid','terms']]]},
+  sales:{label:'Sales',sub:'Receipt by receipt, or daily totals',roles:['sales'],tx:true,
+    help:'One row per product sold. Rows with the same receipt number become one sale; for daily totals use one receipt number per shop per day (e.g. KS-2026-11-05). Customer blank = walk-in. Price: the unit price, or the line total, or blank for the price list (wholesale customers get wholesale prices). Discount: per receipt (put it on one line). Paid with: cash, momo, card, bank or credit (credit needs the customer); "Amount paid now" records part payment of a credit sale. Receipts already in the system are left out, so overlapping files are safe. Dates before the books start date are refused.',
+    fields:[['date','Date',1,['date','saledate','day','invoicedate']],['receipt','Receipt no.',0,['receiptno','receipt','receiptnumber','invoiceno','invoice','ref','reference','billno','salesno']],
+      ['customer','Customer',0,['customer','customername','client','buyer','soldto']],['location','Location',0,['location','shop','store','branch','outlet']],
+      ['item','Product',1,['product','item','productname','itemname','description']],['qty','Quantity',1,['quantity','qty','units','count','sold','qtysold']],
+      ['unit_price','Unit price',0,['unitprice','price','sellingprice','rate']],['total','Line total',0,['linetotal','total','amount','value','sales']],
+      ['discount','Discount',0,['discount','disc']],['paid','Paid with',0,['paidwith','payment','paymentmethod','method','paid','mode','terms']],
+      ['paid_now','Amount paid now',0,['amountpaidnow','paidnow','amountpaid','deposit','partpayment']],['paid_now_with','Paid now with',0,['paidnowwith','depositmethod']]]},
+  customer_payments:{label:'Customer payments',sub:'Money received from customers',roles:['sales','accounts'],tx:true,
+    help:'One row per payment received from a customer towards what they owe. Paid with: cash, momo, card or bank. Possible duplicates (same date, customer and amount already recorded) are left out unless you untick that box.',
+    fields:[['date','Date',1,['date','paymentdate','day','datepaid']],['party','Customer',1,['customer','customername','client','from','paidby']],['amount','Amount',1,['amount','paid','amountpaid','value']],
+      ['method','Paid with',0,['paidwith','method','paymentmethod','mode','via']],['ref','Reference',0,['ref','reference','receipt','receiptno','transactionid','momoref']],['notes','Notes',0,['notes','note','comments','description']]]},
+  supplier_payments:{label:'Supplier payments',sub:'Money paid to suppliers',roles:['inventory','accounts'],tx:true,
+    help:'One row per payment made to a supplier towards what Royal Glow owes them. Paid with: cash, momo, bank or card. Possible duplicates are left out unless you untick that box.',
+    fields:[['date','Date',1,['date','paymentdate','day','datepaid']],['party','Supplier',1,['supplier','suppliername','vendor','paidto','to']],['amount','Amount',1,['amount','paid','amountpaid','value']],
+      ['method','Paid with',0,['paidwith','method','paymentmethod','mode','via','paidfrom']],['ref','Reference',0,['ref','reference','receipt','chequeno','transactionid']],['notes','Notes',0,['notes','note','comments','description']]]}});
+const PAYMAP={cash:'cash',cashonhand:'cash',momo:'momo',mobilemoney:'momo',mtnmomo:'momo',telecelcash:'momo',airteltigomoney:'momo',bank:'bank',banktransfer:'bank',transfer:'bank',cheque:'bank',check:'bank',card:'card',pos:'card',visa:'card',
+  credit:'credit',unpaid:'credit',oncredit:'credit',owed:'credit',notpaid:'credit',payable:'credit',invoice:'credit'};
+function pDate(v){
+  if(typeof v==='number'&&v>20000&&v<80000){v=v-Math.floor(v)>0.999?Math.ceil(v):Math.floor(v);const d=new Date(Date.UTC(1899,11,30)+v*864e5);return d.toISOString().slice(0,10)}
+  const s=String(v??'').trim();let m;const ok=(y,mo,d)=>{y=+y;if(y<100)y+=2000;const t=new Date(Date.UTC(y,mo-1,d));return t.getUTCMonth()===mo-1&&t.getUTCDate()===+d?t.toISOString().slice(0,10):null};
+  if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)))return ok(m[1],+m[2],+m[3]);
+  if((m=s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/)))return ok(m[3],+m[2],+m[1]); // day first (Ghana)
+  if((m=s.match(/^(\d{1,2})\s+([A-Za-z]{3})[a-z]*\.?,?\s+(\d{4})$/))){const mo='janfebmaraprmayjunjulaugsepoctnovdec'.indexOf(m[2].toLowerCase())/3+1;return mo>0?ok(m[3],mo,+m[1]):null}
+  return null}
 const KLABEL={items:'Products',customers:'Customers',suppliers:'Suppliers',stock:'Opening stock',expenses:'Expenses',opening:'Opening balances',journals:'Journals',accounts:'Chart of accounts',purchases:'Purchases',sales:'Sales',customer_payments:'Customer payments',supplier_payments:'Supplier payments'};
 let KIND='items';
 
@@ -235,7 +269,7 @@ $('gOut').addEventListener('click',signOut);$('signOut').addEventListener('click
 async function loadAll(){
   const [items,customers,suppliers,locations,bs]=await Promise.all([
     q(sb.from('items').select('id,name,kind,unit,unit_cost,retail_price,wholesale_price,active').order('name')),
-    q(sb.from('customers').select('id,name').order('name')),q(sb.from('suppliers').select('id,name').order('name')),
+    q(sb.from('customers').select('id,name,price_tier').order('name')),q(sb.from('suppliers').select('id,name').order('name')),
     q(sb.from('locations').select('id,name,kind,active').order('name')),q(sb.from('books_settings').select('start_date').eq('id',1).maybeSingle())]);
   Object.assign(D,{items,customers,suppliers,locations,start:bs&&bs.start_date});
   $('sDate').value=D.start||'';$('sDate').disabled=$('sSave').disabled=!has('accounts');
@@ -245,7 +279,7 @@ $('sSave').addEventListener('click',async()=>{try{const r=await q(sb.from('books
 
 function drawKinds(){$('kinds').replaceChildren(...Object.entries(KINDS).map(([k,K])=>{const ok=has(...K.roles);
   return h('div',{class:'kind'+(k===KIND?' on':'')+(ok?'':' off'),title:ok?'':'Your role can\'t import '+K.label.toLowerCase(),on:{click:()=>{if(!ok)return;KIND=k;reset();drawKinds()}}},h('b',null,K.label),h('span',null,K.sub))}));
-  $('kHelp').textContent=KINDS[KIND].help}
+  $('kHelp').textContent=KINDS[KIND].help;$('olderBox').classList.toggle('hidden',KIND!=='sales')}
 function reset(){FILE=null;$('file').value='';$('mapCard').classList.add('hidden');$('prevCard').classList.add('hidden')}
 
 // ---------- Excel ----------
@@ -267,7 +301,11 @@ $('tpl').addEventListener('click',async()=>{const K=KINDS[KIND];
     X.utils.book_append_sheet(wb,sheet(X,rows),K.label.slice(0,31));
     const ex={items:[['Shea & Carrot Body Butter','product','jar',22.5,85,65],['Shea butter','raw','kg',40,'',''],['250 ml amber jar','packaging','piece',3.2,'','']],
       customers:[['Adom Pharmacy','partner','wholesale','024 000 0000','','Kumasi','',1250],['Grace Stockist','wholesale','','020 000 0000','','Accra','','']],
-      suppliers:[['ECG','','','','300'],['Kumasi Oils Ltd','020 000 0000','','','']],stock:[['Shea & Carrot Body Butter','Factory',40,22.5]]}[KIND];
+      suppliers:[['ECG','','','','300'],['Kumasi Oils Ltd','020 000 0000','','','']],stock:[['Shea & Carrot Body Butter','Factory',40,22.5]],
+      purchases:[['2026-01-05','INV-1042','Kumasi Oils Ltd','Factory','Shea butter',25,40,'','unpaid'],['2026-01-05','INV-1042','Kumasi Oils Ltd','Factory','Carrot seed oil',5,'',600,'unpaid'],['06/01/2026','','','Factory','250 ml amber jar',200,3.2,'','cash']],
+      sales:[['2026-02-01','R-0001','','Kumasi shop','Shea & Carrot Body Butter',2,85,'','','momo','',''],['2026-02-01','R-0001','','Kumasi shop','Glow Facial Oil',1,'','','10','momo','',''],
+        ['03/02/2026','INV-0101','Adom Pharmacy','Factory','Shea & Carrot Body Butter',40,'','','','credit',500,'momo'],['2026-02-28','KS-2026-02-28','','Kumasi shop','Shea & Carrot Body Butter',14,'',1190,'','cash','','']],
+      customer_payments:[['2026-02-20','Adom Pharmacy',500,'momo','MP26022012345','']],supplier_payments:[['2026-02-10','Kumasi Oils Ltd',1000,'bank','CHQ 004512','INV-1042']]}[KIND];
     X.utils.book_append_sheet(wb,sheet(X,[['How to fill in the '+K.label+' sheet'],[K.help],[],['Example rows (copy the layout, not the names or numbers):'],head,...ex]),'Help');
     if(KIND==='stock')X.utils.book_append_sheet(wb,sheet(X,[['Locations'],...D.locations.map(l=>[clean(l.name)])]),'Lists');
     X.writeFile(wb,'royal-glow-'+KIND+'-template.xlsx')}catch(e){status('Error: '+friendly(e))}});
@@ -334,31 +372,144 @@ async function preview(){const K=KINDS[KIND],M=FILE.map,get=(r,k)=>M[k]>=0?r[M[k
       const cost=uc!=null?uc:it?Number(it.unit_cost||0):0;
       if(o.status!=='err')o.msg='value '+amt(qty*cost)+(uc==null?' (at the item\'s unit cost)':'');
       o.data={row:o.row,item_id:it&&it.id,location_id:loc&&loc.id,qty,unit_cost:uc};o.value=o.status==='ok'?N(qty*cost):0})}
+  if(KINDS[KIND].tx){await previewTx(rows,get,bad,money);return}
   PREV={rows};drawPreview()}
-function drawPreview(){const K=KINDS[KIND],R=PREV.rows,errs=R.filter(o=>o.status==='err'),use=R.filter(o=>o.status==='ok');
-  const head={items:['Name','Kind','Unit','Unit cost','Retail','Wholesale'],customers:['Name','Type','Price list','Phone','Address','Owed'],suppliers:['Name','Phone','Email','Owed'],stock:['Item','Location','Quantity','Cost per unit']}[KIND];
+// Purchases, sales and payments: rows are checked, then grouped into purchases / sales.
+async function previewTx(rows,get,bad,money){
+  const start=D.start,locs=D.locations.filter(l=>l.active),factory=D.locations.find(l=>l.kind==='factory')||locs[0];
+  const dateOf=o=>{const raw=get(o.r,'date'),d=pDate(raw);if(!d)bad(o,raw===''?'no date':'date "'+raw+'" not understood');else if(start&&d<start)bad(o,'before the books start date ('+dLong(start)+'): change the start date, or leave this out');return d};
+  const locOf=(o,fallback)=>{const raw=clean(get(o.r,'location'));if(!raw){if(fallback)return fallback;if(locs.length===1)return locs[0];bad(o,'which location? (fill in Location)');return null}
+    const l=byName(D.locations,raw);if(!l)bad(o,'location "'+raw+'" not found (add it on the Inventory page)');return l};
+  const payOf=(o,raw,allowed,def)=>{const t=String(raw??'').trim();if(!t)return def;const m=PAYMAP[norm(t)];if(!m||!allowed.includes(m)){bad(o,'paid with "'+t+'" must be '+allowed.map(x=>x==='credit'?'unpaid/credit':x).join(', '));return null}return m};
+  const groupRows=(keyOf,fallbackKey)=>{const groups=[];let cur=null;rows.forEach(o=>{if(o.status==='skip')return;const k=keyOf(o);let g=null;
+    if(k)g=groups.find(x=>x.key===k)||null;else if(cur&&!cur.key&&fallbackKey(o)===cur.fk)g=cur;
+    if(!g){g={key:k,fk:fallbackKey(o),rows:[]};groups.push(g)}cur=g;g.rows.push(o)});return groups};
+  const gbad=(g,m)=>g.rows.forEach(o=>bad(o,m));
+  let summary='',payload=null,count=0,total=0;
+
+  if(KIND==='purchases'){
+    rows.forEach(o=>{const d=dateOf(o),sup=clean(get(o.r,'supplier'))?byName(D.suppliers,get(o.r,'supplier')):null,loc=locOf(o,factory),it=byName(D.items,get(o.r,'item')),
+      qty=pNum(get(o.r,'qty')),uc=money(o,'unit_cost','unit cost'),tot=money(o,'total','line total'),pay=payOf(o,get(o.r,'paid'),['cash','momo','bank','card','credit'],'cash');
+      if(clean(get(o.r,'supplier'))&&!sup)bad(o,'supplier "'+clean(get(o.r,'supplier'))+'" not found (import suppliers first)');
+      if(!it)bad(o,clean(get(o.r,'item'))?'item "'+clean(get(o.r,'item'))+'" not found (import products first)':'no item');
+      if(qty==null||isNaN(qty)||qty<=0)bad(o,'quantity must be above 0');
+      const unit=uc!=null?uc:(tot!=null&&qty>0?tot/qty:null);if(unit==null)bad(o,'give the unit cost or the line total');
+      if(pay==='credit'&&!sup)bad(o,'unpaid purchases need the supplier');
+      o.cells=[d||'',clean(get(o.r,'ref')),sup?clean(sup.name):clean(get(o.r,'supplier')),loc?clean(loc.name):'',it?clean(it.name):clean(get(o.r,'item')),qty??'',unit!=null?N(unit):'',unit!=null&&qty?N(unit*qty):'',pay==='credit'?'unpaid':(pay||'')];
+      o.p={d,sup,loc,it,qty,unit,pay,ref:String(get(o.r,'ref')||'').trim()}});
+    const groups=groupRows(o=>o.p.ref?(o.p.ref.toLowerCase()+'|'+(o.p.sup?o.p.sup.id:'')):'',o=>o.p.d+'|'+(o.p.sup?o.p.sup.id:'')+'|'+(o.p.loc?o.p.loc.id:'')+'|'+o.p.pay);
+    // already imported? (same invoice number and supplier)
+    let have=[];try{have=await q(sb.from('purchases').select('ref,supplier_id').not('ref','is',null))}catch(_){}
+    const haveSet=new Set(have.map(x=>String(x.ref).toLowerCase()+'|'+(x.supplier_id||'')));
+    payload=[];groups.forEach((g,i)=>{const f=g.rows[0].p,label='Purchase '+(f.ref||'#'+(i+1));
+      if(g.rows.some(o=>o.p.d!==f.d))gbad(g,label+': lines have different dates');
+      if(g.rows.some(o=>o.p.loc!==f.loc||o.p.pay!==f.pay||o.p.sup!==f.sup))gbad(g,label+': lines have a different supplier, location or payment');
+      if(f.ref&&haveSet.has(f.ref.toLowerCase()+'|'+(f.sup?f.sup.id:''))){g.rows.forEach(o=>{if(o.status==='ok'){o.status='skip';o.msg='invoice already in the system: left out'}});return}
+      const lines=new Map();g.rows.forEach(o=>{if(!o.p.it)return;const x=lines.get(o.p.it.id);if(x){if(N(x.unit_cost)!==N(o.p.unit))bad(o,label+': same item twice at different costs');else x.qty+=o.p.qty}else lines.set(o.p.it.id,{item_id:o.p.it.id,qty:o.p.qty,unit_cost:N(o.p.unit)})});
+      if(g.rows.some(o=>o.status==='err')){g.rows.forEach(o=>{if(o.status==='ok')o.msg=label+': waiting for the other lines of this invoice to be fixed'});return}
+      g.rows.forEach(o=>o.msg=o.msg||label);
+      const tot=[...lines.values()].reduce((s,l)=>s+l.qty*l.unit_cost,0);count++;total+=tot;
+      payload.push({label,purchase_date:f.d,supplier_id:f.sup?f.sup.id:null,location_id:f.loc.id,ref:f.ref||null,payment_method:f.pay,lines:[...lines.values()]})});
+    summary=count+' purchase'+(count===1?'':'s')+', total GH₵ '+amt(total);
+  }
+
+  if(KIND==='sales'){
+    const older=$('older').checked;
+    rows.forEach(o=>{const d=dateOf(o),cRaw=clean(get(o.r,'customer')),cust=cRaw?byName(D.customers,cRaw):null,loc=locOf(o,null),it=byName(D.items,get(o.r,'item')),
+      qty=pNum(get(o.r,'qty')),up=money(o,'unit_price','unit price'),tot=money(o,'total','line total'),disc=money(o,'discount','discount'),
+      pay=payOf(o,get(o.r,'paid'),['cash','momo','card','bank','credit'],'cash'),pn=money(o,'paid_now','amount paid now'),pnw=payOf(o,get(o.r,'paid_now_with'),['cash','momo','card','bank'],'cash');
+      if(cRaw&&!cust)bad(o,'customer "'+cRaw+'" not found (import customers first)');
+      if(!it)bad(o,clean(get(o.r,'item'))?'product "'+clean(get(o.r,'item'))+'" not found (import products first)':'no product');
+      if(qty==null||isNaN(qty)||qty<=0)bad(o,'quantity must be above 0');
+      const tier=cust&&cust.price_tier==='retail'?'retail':cust?'wholesale':'retail';
+      let price=up!=null?up:(tot!=null&&qty>0?tot/qty:null),src='';if(price==null&&it){price=Number(tier==='wholesale'?it.wholesale_price:it.retail_price)||0;src=' ('+tier+' price list)';if(!price)bad(o,'no price given and none on the '+tier+' price list')}
+      if(pay==='credit'&&!cust)bad(o,'credit sales need the customer');
+      if(pn&&pay!=='credit')bad(o,'"amount paid now" is only for credit sales');
+      o.cells=[d||'',clean(get(o.r,'receipt')),cust?clean(cust.name):(cRaw||'walk-in'),loc?clean(loc.name):'',it?clean(it.name):clean(get(o.r,'item')),qty??'',price!=null?N(price):'',price!=null&&qty?N(price*qty):'',disc||'',pay||''];
+      o.p={d,cust,loc,it,qty,price:price!=null?N(price):null,src,disc:disc||0,pay,pn:pn||0,pnw,receipt:String(get(o.r,'receipt')||'').trim()}});
+    const groups=groupRows(o=>o.p.receipt?o.p.receipt.toLowerCase():'',o=>o.p.d+'|'+(o.p.cust?o.p.cust.id:'')+'|'+(o.p.loc?o.p.loc.id:'')+'|'+o.p.pay);
+    let have=[];try{have=await q(sb.from('sales').select('receipt_no').not('receipt_no','is',null))}catch(_){}
+    const haveSet=new Set(have.map(x=>String(x.receipt_no).toLowerCase()));
+    // stock on hand before the file, per item and location, by date
+    const ids=[...new Set(rows.filter(o=>o.p.it).map(o=>o.p.it.id))];let ledger=[];
+    if(ids.length)try{ledger=await q(sb.from('stock_ledger').select('item_id,location_id,move_date,qty_change').in('item_id',ids))}catch(_){}
+    payload=[];const sales=[];
+    groups.forEach((g,i)=>{const f=g.rows[0].p,label='Receipt '+(f.receipt||'#'+(i+1));
+      if(g.rows.some(o=>o.p.d!==f.d))gbad(g,label+': lines have different dates');
+      if(g.rows.some(o=>o.p.loc!==f.loc||o.p.pay!==f.pay||o.p.cust!==f.cust))gbad(g,label+': lines have a different customer, location or payment');
+      if(f.receipt&&haveSet.has(f.receipt.toLowerCase())){g.rows.forEach(o=>{if(o.status==='ok'){o.status='skip';o.msg='receipt already in the system: left out'}});return}
+      const lines=new Map();g.rows.forEach(o=>{if(!o.p.it||o.p.price==null)return;const x=lines.get(o.p.it.id);if(x){if(x.unit_price!==o.p.price)bad(o,label+': same product twice at different prices');else x.qty+=o.p.qty}else lines.set(o.p.it.id,{item_id:o.p.it.id,qty:o.p.qty,unit_price:o.p.price,row:o})});
+      const disc=g.rows.reduce((s,o)=>s+o.p.disc,0),pn=g.rows.reduce((s,o)=>s+o.p.pn,0),gross=[...lines.values()].reduce((s,l)=>s+l.qty*l.unit_price,0);
+      if(disc>gross)gbad(g,label+': discount is more than the sale');
+      if(g.rows.some(o=>o.status==='err')){g.rows.forEach(o=>{if(o.status==='ok')o.msg=label+': waiting for the other lines of this receipt to be fixed'});return}
+      g.rows.forEach(o=>{o.msg=label+o.p.src});
+      sales.push({g,label,f,lines:[...lines.values()],disc,pn,gross})});
+    // stock check, in date order, counting earlier sales in this file
+    const used=new Map();sales.sort((a,b)=>a.f.d<b.f.d?-1:a.f.d>b.f.d?1:0).forEach(s=>s.lines.forEach(l=>{const k=l.item_id+'|'+s.f.loc.id;
+      const before=ledger.filter(x=>x.item_id===l.item_id&&x.location_id===s.f.loc.id&&x.move_date<=s.f.d).reduce((t,x)=>t+Number(x.qty_change),0)-(used.get(k)||0);
+      used.set(k,(used.get(k)||0)+l.qty);
+      if(before<l.qty){const m='only '+(Math.round(before*100)/100)+' '+clean(D.items.find(i=>i.id===l.item_id).name)+' in stock at '+clean(s.f.loc.name)+' on '+s.f.d;
+        if(older){if(l.row.status==='ok'){l.row.status='warn';l.row.msg+=' · stock goes below zero ('+m+')'}}else bad(l.row,m+'. Import purchases and opening stock first, or tick "Older records"')}}));
+    sales.forEach(s=>{if(s.g.rows.some(o=>o.status==='err'))return;count++;total+=s.gross-s.disc;
+      payload.push({label:s.label,sale_date:s.f.d,location_id:s.f.loc.id,customer_id:s.f.cust?s.f.cust.id:null,payment_method:s.f.pay,receipt_no:s.f.receipt||null,discount:N(s.disc),
+        paid_now:s.pn?N(s.pn):null,paid_now_method:s.g.rows.find(o=>o.p.pn)?.p.pnw||'cash',lines:s.lines.map(l=>({item_id:l.item_id,qty:l.qty,unit_price:l.unit_price}))})});
+    summary=count+' sale'+(count===1?'':'s')+', total GH₵ '+amt(total);
+  }
+
+  if(KIND==='customer_payments'||KIND==='supplier_payments'){
+    const isC=KIND==='customer_payments',list=isC?D.customers:D.suppliers,allowed=isC?['cash','momo','card','bank']:['cash','momo','bank','card'];
+    rows.forEach(o=>{const d=dateOf(o),raw=clean(get(o.r,'party')),party=byName(list,raw),a=pNum(get(o.r,'amount')),m=payOf(o,get(o.r,'method'),allowed,'cash');
+      if(!party)bad(o,raw?(isC?'customer':'supplier')+' "'+raw+'" not found':'no '+(isC?'customer':'supplier'));
+      if(a==null||isNaN(a)||a<=0)bad(o,'amount must be above 0');
+      o.cells=[d||'',party?clean(party.name):raw,a!=null&&!isNaN(a)?N(a):'',m||'',String(get(o.r,'ref')||'')];
+      o.data={row:o.row,party_id:party&&party.id,payment_date:d,amount:a!=null?N(a):null,method:m,ref:String(get(o.r,'ref')||'').trim()||null,notes:String(get(o.r,'notes')||'').trim()||null}});
+    const ok=rows.filter(o=>o.status==='ok');
+    if(ok.length){const ds=ok.map(o=>o.data.payment_date).sort();let have=[];
+      try{have=await q(sb.from(KIND).select((isC?'customer_id':'supplier_id')+',payment_date,amount').gte('payment_date',ds[0]).lte('payment_date',ds[ds.length-1]))}catch(_){}
+      const key=(p,d,a)=>p+'|'+d+'|'+N(a).toFixed(2),seen=new Set(have.map(x=>key(x[isC?'customer_id':'supplier_id'],x.payment_date,x.amount))),inFile=new Set();
+      ok.forEach(o=>{const k=key(o.data.party_id,o.data.payment_date,o.data.amount);if(seen.has(k)){o.status='warn';o.msg='possible duplicate: already recorded'}else if(inFile.has(k)){o.status='warn';o.msg='possible duplicate of an earlier row'}inFile.add(k)})}
+    const skip=$('skipDup').checked,use=rows.filter(o=>o.status==='ok'||(o.status==='warn'&&!skip));
+    payload=use.map(o=>o.data);count=use.length;total=use.reduce((s,o)=>s+o.data.amount,0);
+    summary=count+' payment'+(count===1?'':'s')+', total GH₵ '+amt(total);
+  }
+  PREV={rows,payload,summary,count};drawPreview()}
+
+function drawPreview(){const K=KINDS[KIND],R=PREV.rows,errs=R.filter(o=>o.status==='err'),use=R.filter(o=>o.status==='ok'),warns=R.filter(o=>o.status==='warn');
+  const isPay=KIND==='customer_payments'||KIND==='supplier_payments',skipDup=$('skipDup').checked;
+  $('skipBox').classList.toggle('hidden',!(isPay&&warns.length));
+  const head={items:['Name','Kind','Unit','Unit cost','Retail','Wholesale'],customers:['Name','Type','Price list','Phone','Address','Owed'],suppliers:['Name','Phone','Email','Owed'],stock:['Item','Location','Quantity','Cost per unit'],
+    purchases:['Date','Invoice','Supplier','Location','Item','Qty','Unit cost','Line total','Paid with'],sales:['Date','Receipt','Customer','Location','Product','Qty','Price','Line total','Discount','Paid with'],
+    customer_payments:['Date','Customer','Amount','Paid with','Reference'],supplier_payments:['Date','Supplier','Amount','Paid with','Reference']}[KIND];
   const txt=v=>typeof v==='number'?amt(v):String(v??'');
   $('pTable').replaceChildren(h('thead',null,h('tr',null,h('th',null,'Row'),...head.map(c=>h('th',null,c)),h('th',null,'Check'))),
-    h('tbody',null,R.map(o=>h('tr',{class:o.status==='err'?'err':o.status==='skip'?'muted':''},h('td',null,o.row),...o.cells.map(v=>h('td',{class:typeof v==='number'?'n':''},txt(v))),
-      h('td',{class:'st'},o.status==='err'?'✗ '+o.msg:o.status==='skip'?o.msg:'✓ '+o.msg)))));
-  let sum=use.length+' row'+(use.length===1?'':'s')+' ready';
+    h('tbody',null,R.map(o=>h('tr',{class:o.status==='err'?'err':o.status==='warn'?'warn':o.status==='skip'?'muted':''},h('td',null,o.row),...o.cells.map(v=>h('td',{class:typeof v==='number'?'n':''},txt(v))),
+      h('td',{class:'st'},o.status==='err'?'✗ '+o.msg:o.status==='skip'?o.msg:o.status==='warn'?(isPay&&skipDup?'Left out: ':'⚠ ')+o.msg:'✓ '+o.msg)))));
+  let sum=PREV.summary||(use.length+' row'+(use.length===1?'':'s')+' ready');
   if(KIND==='customers'||KIND==='suppliers'){const t=use.reduce((s,o)=>s+(o.data.opening||0),0);if(t)sum+=', owed on '+dLong(D.start)+': GH₵ '+amt(t)}
   if(KIND==='stock')sum+=', stock value GH₵ '+amt(use.reduce((s,o)=>s+o.value,0))+' as at '+dLong(D.start);
   const used=new Set(Object.values(FILE.map)),unused=FILE.cols.filter((c,i)=>!used.has(i)&&FILE.aoa.slice(FILE.hdr+1).some(r=>String(r[i]??'').trim()!==''));
   const hint=unused.length?h('div',{class:'up',style:'margin-top:4px'},'Not used from your file: '+unused.join(', ')+'. If one of these holds information listed above, match it in step 3.'):'';
   $('pSum').replaceChildren(hint);$('pSum').prepend(errs.length?h('span',{class:'bad'},'✗ '+errs.length+' row'+(errs.length===1?' has a problem':'s have problems')+'. Fix '+(errs.length===1?'it':'them')+' in the file (or the column matching), save, and choose the file again. Nothing has been saved.'):h('span',null,sum+'.'));
-  $('go').disabled=!!errs.length||!use.length;$('prevCard').classList.remove('hidden')}
+  if(KIND==='sales'&&warns.length)sum+=' · '+warns.length+' line'+(warns.length===1?' takes':'s take')+' stock below zero (older records)';
+  $('pSum').firstChild.textContent=errs.length?$('pSum').firstChild.textContent:sum+'.';
+  $('go').disabled=!!errs.length||(K.tx?!PREV.count:!use.length);$('prevCard').classList.remove('hidden')}
+$('skipDup').addEventListener('change',()=>{if(FILE)preview()});
 $('cancel').addEventListener('click',reset);
+$('older').addEventListener('change',()=>{if(FILE)preview()});
 $('go').addEventListener('click',async()=>{const b=$('go');b.disabled=true;$('goMsg').textContent='Importing…';
   const fn={items:'import_items',customers:'import_customers',suppliers:'import_suppliers',stock:'import_opening_stock'}[KIND];
-  try{const r=await q(sb.rpc(fn,{p_file:FILE.name,p_rows:PREV.rows.filter(o=>o.status==='ok').map(o=>o.data)}));
-    const msg=KIND==='stock'?r.rows+' opening stock lines imported (value GH₵ '+amt(r.value)+').':r.added+' added, '+r.updated+' updated'+(r.opening?', opening balances GH₵ '+amt(r.opening):'')+'.';
+  try{let r,msg;
+    if(KIND==='purchases'){r=await q(sb.rpc('import_purchases',{p_file:FILE.name,p_purchases:PREV.payload}));msg=r.count+' purchase'+(r.count===1?'':'s')+' imported (GH₵ '+amt(r.total)+').'}
+    else if(KIND==='sales'){r=await q(sb.rpc('import_sales',{p_file:FILE.name,p_older:$('older').checked,p_sales:PREV.payload}));msg=r.count+' sale'+(r.count===1?'':'s')+' imported (GH₵ '+amt(r.total)+').'}
+    else if(KIND.endsWith('_payments')){r=await q(sb.rpc('import_payments',{p_file:FILE.name,p_party:KIND==='customer_payments'?'customer':'supplier',p_rows:PREV.payload}));msg=r.count+' payment'+(r.count===1?'':'s')+' imported (GH₵ '+amt(r.total)+').'}
+    else{r=await q(sb.rpc(fn,{p_file:FILE.name,p_rows:PREV.rows.filter(o=>o.status==='ok').map(o=>o.data)}));
+    msg=KIND==='stock'?r.rows+' opening stock lines imported (value GH₵ '+amt(r.value)+').':r.added+' added, '+r.updated+' updated'+(r.opening?', opening balances GH₵ '+amt(r.opening):'')+'.'}
     $('goMsg').textContent='';reset();status(msg+' You can undo it below.');await loadAll();renderList()}
   catch(e){$('goMsg').textContent=friendly(e);b.disabled=false}});
 
 // ---------- recent imports ----------
 async function renderList(){let rows=[];
-  try{rows=await q(sb.from('account_imports').select('*').in('kind',['items','customers','suppliers','stock']).order('created_at',{ascending:false}).limit(25))}
+  try{rows=await q(sb.from('account_imports').select('*').in('kind',['items','customers','suppliers','stock','purchases','sales','customer_payments','supplier_payments']).order('created_at',{ascending:false}).limit(25))}
   catch(e){$('list').replaceChildren(h('tr',null,h('td',{colspan:6,class:'muted small'},friendly(e))));return}
   $('list').replaceChildren(...(rows.length?rows.map(r=>h('tr',{class:r.undone_at?'muted':''},h('td',{class:'small'},dt(r.created_at)),h('td',null,KLABEL[r.kind]||r.kind),h('td',{class:'small'},r.file_name||''),
     h('td',{class:'n'},r.row_count),h('td',{class:'n'},Number(r.total)?amt(r.total):''),
