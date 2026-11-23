@@ -104,7 +104,7 @@ details summary{cursor:pointer;color:var(--text-2)}
 <header>
   <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
     <h1 class="brand"><a href="index.html"><img src="assets/logo.png" alt="Royal Glow" class="logo"></a><span class="applabel">Sales</span></h1>
-    <div class="small muted"><span class="apps"><a href="index.html">Home</a><a href="production.html">Production</a><a href="inventory.html">Inventory</a><a href="sales.html" aria-current="page">Sales</a><a href="shop-admin.html">Online shop</a><a href="spa.html">Spa</a><a href="blog-admin.html">Blog</a><a href="website.html">Website</a><a href="accounts.html">Accounts</a><a href="staff.html">Account</a></span> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
+    <div class="small muted"><span class="apps"><a href="index.html">Home</a><a href="production.html">Production</a><a href="inventory.html">Inventory</a><a href="sales.html" aria-current="page">Sales</a><a href="shop-admin.html">Online shop</a><a href="spa.html">Spa</a><a href="blog-admin.html">Blog</a><a href="website.html">Website</a><a href="accounts.html">Accounts</a><a href="import.html">Import</a><a href="staff.html">Account</a></span> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
   </div>
   <p class="sub">Shop sales, credit to partner shops and pharmacies, wholesale to distributors, payments and returns.</p>
   <nav id="tabs">
@@ -272,7 +272,7 @@ async function q(promise){const r=await promise;if(r.error)throw r.error;return 
 let D={items:[],cost:{},locs:[],custs:[],sales:[],pays:[],rets:[],soh:[],bal:{}};
 async function loadAll(){
   status('Loading…');
-  const [items,costs,locs,custs,sales,pays,rets,soh,bals]=await Promise.all([
+  const [items,costs,locs,custs,sales,pays,rets,soh,bals,opens]=await Promise.all([
     q(sb.from('items').select('id,name,kind,unit,retail_price,wholesale_price').order('name')),
     q(sb.from('item_current_cost').select('id,current_unit_cost')),
     q(sb.from('locations').select('*').order('created_at')),
@@ -281,11 +281,12 @@ async function loadAll(){
     q(sb.from('customer_payments').select('*').order('payment_date',{ascending:false})),
     q(sb.from('sale_returns').select('*').order('return_date',{ascending:false})),
     q(sb.from('stock_on_hand').select('*')),
-    q(sb.from('customer_balances').select('customer_id,balance'))
+    q(sb.from('customer_balances').select('customer_id,balance')),
+    sb.from('party_openings').select('customer_id,as_of,amount').not('customer_id','is',null).then(r=>r.error?[]:r.data)  // before 013: none
   ]);
   D.items=items.map(i=>({...i,retail_price:Number(i.retail_price)||0,wholesale_price:Number(i.wholesale_price)||0}));
   D.cost=Object.fromEntries(costs.map(c=>[c.id,Number(c.current_unit_cost)]));
-  D.locs=locs;D.custs=custs;D.pays=pays;D.rets=rets;
+  D.locs=locs;D.custs=custs;D.pays=pays;D.rets=rets;D.opens=opens||[];
   D.sales=sales.map(s=>{const lines=(s.sale_lines||[]).map(l=>({...l,qty:Number(l.qty),unit_price:Number(l.unit_price),unit_cost:Number(l.unit_cost)}));
     const gross=lines.reduce((t,l)=>t+l.qty*l.unit_price,0),cost=lines.reduce((t,l)=>t+l.qty*l.unit_cost,0);
     return {...s,lines,gross,cost,total:gross-Number(s.discount||0)}});
@@ -443,6 +444,7 @@ function renderCustomers(){
 }
 function statement(c){
   const rows=[];
+  D.opens.filter(o=>o.customer_id===c.id).forEach(o=>rows.push({d:o.as_of,t:'',label:'Opening balance',ref:'',dr:Number(o.amount),cr:0}));
   D.sales.filter(s=>s.customer_id===c.id&&s.payment_method==='credit').forEach(s=>rows.push({d:s.sale_date,t:s.created_at,label:'Credit sale',ref:s.receipt_no||'',dr:s.total,cr:0}));
   D.rets.filter(r=>r.customer_id===c.id).forEach(r=>rows.push({d:r.return_date,t:r.created_at,label:'Return: '+((item(r.item_id)||{}).name||'')+' × '+num(r.qty),ref:'',dr:0,cr:Number(r.qty)*Number(r.unit_price)}));
   D.pays.filter(p=>p.customer_id===c.id).forEach(p=>rows.push({d:p.payment_date,t:p.created_at,label:'Payment ('+PAY[p.method]+')',ref:p.ref||'',dr:0,cr:Number(p.amount)}));
