@@ -50,6 +50,11 @@ h2.title{font:600 32px/1.1 var(--serif);margin:0 0 20px}
 .pbody{padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px;flex:1}
 .pname{font:600 21px/1.15 var(--serif);cursor:pointer}
 .pprice{font-weight:600;font-size:17px}
+.pprice .was{font-weight:400;color:var(--muted);text-decoration:line-through;margin-right:8px;font-size:.85em}
+.pprice .now{color:var(--bad,#b3261e)}
+.pprice .ends{display:block;font-weight:400;font-size:13px;color:var(--gold-deep)}
+.pimg{position:relative}
+.otag{position:absolute;top:10px;left:10px;background:var(--gold,#C8961E);color:#1a1814;font:700 13px/1 system-ui,sans-serif;padding:6px 9px;border-radius:99px;letter-spacing:.02em}
 .stock{font-size:13px;color:var(--muted)}
 .stock.low{color:var(--gold-deep)}
 .stock.out{color:var(--bad)}
@@ -297,9 +302,18 @@ function route(){
 window.addEventListener('hashchange',route);
 
 // ---------- views ----------
+// Offers: was_price (normal price) is only sent while an offer runs; the database charges p.price
+const onOffer=p=>Number(p.was_price)>Number(p.price);
+const offPct=p=>Math.round((1-Number(p.price)/Number(p.was_price))*100);
+const endsText=d=>{const t=new Date(d+'T12:00:00');return 'Offer ends '+t.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})};
+function priceEl(p,style){
+  return h('div',{class:'pprice',style:style||null},onOffer(p)?[h('s',{class:'was','aria-label':'Was '+money(p.was_price)},money(p.was_price)),
+    h('span',{class:'now','aria-label':'Now '+money(p.price)},money(p.price)),p.offer_until?h('span',{class:'ends'},endsText(p.offer_until)):'']:money(p.price));
+}
 function pimg(p,big){
   const d=h('div',{class:'pimg'+(p.image_path?'':' ph'),on:big?{}:{click:()=>location.hash='p/'+p.id}});
   if(p.image_path)d.style.backgroundImage='url("'+imgUrl(p.image_path)+'")';else d.appendChild(h('img',{src:'assets/crown.png',alt:''}));
+  if(onOffer(p))d.appendChild(h('span',{class:'otag'},'−'+offPct(p)+'%'));
   return d;
 }
 function stockText(p){const a=Math.floor(Number(p.available));
@@ -317,7 +331,7 @@ function viewShop(){
     v.replaceChildren(h('h2',{class:'title'},'Our products'),
       h('div',{class:'look'},CAT.map((p,i)=>h('div',{class:'lrow'+(i%2?' flip':'')},pimg(p),
         h('div',null,h('div',{class:'num'},String(i+1).padStart(2,'0')),h('h3',{on:{click:()=>location.hash='p/'+p.id}},p.name),
-          p.description?h('p',{class:'desc'},p.description):'',h('div',{class:'pprice'},money(p.price)),stockText(p),
+          p.description?h('p',{class:'desc'},p.description):'',priceEl(p),stockText(p),
           h('div',{class:'act'},buy(p),h('a',{href:'#p/'+p.id,class:'btn ghost',style:'text-decoration:none'},'Details')))))),
       quotes(shopQuotes(),'What customers say'));
     return;
@@ -325,7 +339,7 @@ function viewShop(){
   v.replaceChildren(h('h2',{class:'title'},'Our products'),
     h('div',{class:'grid'},CAT.map(p=>h('div',{class:'pcard'},pimg(p),
       h('div',{class:'pbody'},h('div',{class:'pname',on:{click:()=>location.hash='p/'+p.id}},p.name),
-        h('div',{class:'pprice'},money(p.price)),stockText(p),buy(p))))),
+        priceEl(p),stockText(p),buy(p))))),
     quotes(shopQuotes(),'What customers say'));
 }
 function viewProduct(id){
@@ -335,7 +349,7 @@ function viewProduct(id){
   const qty=h('div',{class:'qty'},h('button',{'aria-label':'Fewer',on:{click:()=>{n=Math.max(1,n-1);cnt.textContent=n}}},'−'),cnt,h('button',{'aria-label':'More',on:{click:()=>{n=Math.min(Math.max(max,1),n+1);cnt.textContent=n}}},'+'));
   $('view').replaceChildren(h('a',{href:'#',class:'back'},'← All products'),
     h('div',{class:'detail'},pimg(p,true),
-      h('div',null,h('h1',null,p.name),h('div',{class:'pprice',style:'font-size:22px;margin-bottom:6px'},money(p.price)),stockText(p),
+      h('div',null,h('h1',null,p.name),priceEl(p,'font-size:22px;margin-bottom:6px'),stockText(p),
         p.description?h('p',{style:'color:var(--ink-2);margin:18px 0'},p.description):h('div',{style:'height:18px'}),
         h('div',{style:'display:flex;gap:12px;align-items:center;flex-wrap:wrap'},qty,
           h('button',{class:'btn gold',disabled:max<1,on:{click:()=>addToCart(p.id,n)}},max<1?'Sold out':'Add to cart'),
