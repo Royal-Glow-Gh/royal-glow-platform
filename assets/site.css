@@ -60,6 +60,10 @@ main{padding-bottom:72px}
 .cat{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-deep);font-weight:600}
 .meta{font-size:14px;color:var(--muted)}
 .price{font-weight:600}
+.price .was{font-weight:400;color:var(--muted);margin-right:4px;font-size:.88em}
+.price .now{color:#b3261e}
+.cimg{position:relative}
+.otag{position:absolute;top:10px;left:10px;background:var(--gold);color:#1a1814;font:700 13px/1 var(--sans,system-ui),sans-serif;padding:6px 9px;border-radius:99px}
 .slist{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .srow{display:flex;justify-content:space-between;gap:16px;padding:14px 18px;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
 .srow:last-child{border-bottom:0}
