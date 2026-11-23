@@ -87,6 +87,15 @@ details summary{cursor:pointer;color:var(--text-2)}
 <style>
 .rep{max-width:820px}
 .rep td,.rep th{padding:6px 8px}
+.hidden{display:none!important}
+.b:disabled{opacity:.5;cursor:not-allowed}
+.xbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding-bottom:2px}
+.xbar .b{font-size:13px;padding:5px 11px}
+#iTable td,#iTable th{padding:4px 8px;white-space:nowrap}
+#iTable tr.err td{background:color-mix(in srgb,var(--bad) 10%,transparent)}
+#iTable tr.warn td{background:color-mix(in srgb,var(--accent) 10%,transparent)}
+#iTable tr.added td{font-style:italic;color:var(--text-2)}
+#iTable td.st{white-space:normal;min-width:220px}
 .rep tr.sec td{font-weight:600;padding-top:18px;border-bottom:1px solid var(--border);color:var(--text-2);font-size:13px;text-transform:uppercase;letter-spacing:.04em}
 .rep tr.tot td{font-weight:700;border-top:2px solid var(--text);border-bottom:0}
 .rep tr.sub td{font-weight:600;border-top:1px solid var(--text-2)}
@@ -130,6 +139,7 @@ details summary{cursor:pointer;color:var(--text-2)}
     <button data-v="sup">Suppliers</button>
     <button data-v="jnl">Journals</button>
     <button data-v="coa">Chart of accounts</button>
+    <button data-v="imp">Import</button>
   </nav>
 </header>
 <main>
@@ -142,7 +152,9 @@ details summary{cursor:pointer;color:var(--text-2)}
     <label class="f">From<input type="date" id="pFrom"></label>
     <label class="f">To<input type="date" id="pTo"></label>
     <span class="small muted" id="pNote" style="padding-bottom:8px"></span>
-    <button class="b" id="copyCsv" style="margin-left:auto">Copy as CSV</button><span class="msg" id="csvMsg"></span>
+    <span class="xbar" style="margin-left:auto"><span class="small muted" id="xLabel">This report:</span>
+      <button class="b" id="xXlsx">Excel</button><button class="b" id="xCsv">CSV</button><button class="b" id="copyCsv">Copy</button>
+      <button class="b" id="xPack" title="Profit and loss, balance sheet, cash flow, trial balance, expenses, journals and suppliers in one Excel file">Accounts pack (Excel)</button></span><span class="msg" id="csvMsg"></span>
   </div>
 
   <section id="v-pl"><div class="card"><h2 id="plTitle">Profit and loss</h2><table class="rep"><tbody id="plBody"></tbody></table></div></section>
@@ -217,6 +229,32 @@ details summary{cursor:pointer;color:var(--text-2)}
     </div>
   </section>
 
+  <section id="v-imp" class="hidden">
+    <div class="card">
+      <h2>Import from Excel or CSV</h2>
+      <p class="small muted" style="margin-top:0">Download the template, fill it in (or paste from your own spreadsheet), save it, and choose the file here. Nothing is saved until you have checked the preview and clicked Import. An import is all-or-nothing: if any row has a problem, nothing is saved. Expense, journal and opening-balance imports can be undone below.</p>
+      <div class="row">
+        <label class="f">What to import<select id="iKind"><option value="expenses">Expenses</option><option value="opening">Opening balances</option><option value="journals">Journals</option><option value="accounts">Chart of accounts</option></select></label>
+        <button class="b" id="iTpl">Download the template</button>
+        <label class="f" id="iDateBox">Opening balances date<input type="date" id="iDate"></label>
+        <label class="f">Your file (.xlsx or .csv)<input type="file" id="iFile" accept=".xlsx,.xls,.csv,text/csv"></label>
+      </div>
+      <p class="small" id="iHelp" style="margin-bottom:0"></p>
+    </div>
+    <div class="card hidden" id="iPrev">
+      <h2>Check before importing</h2>
+      <div id="iSum" class="small" style="margin-bottom:10px"></div>
+      <div style="overflow:auto;max-height:520px"><table class="small" id="iTable"></table></div>
+      <div class="row" style="margin-top:12px;align-items:center">
+        <label class="small hidden" id="iSkipBox"><input type="checkbox" id="iSkip" checked> Leave out the rows marked as possible duplicates</label>
+        <button class="b p" id="iGo" style="margin-left:auto">Import</button><button class="b" id="iCancel">Cancel</button><span class="msg" id="iMsg"></span></div>
+    </div>
+    <div class="card">
+      <h2>Recent imports</h2>
+      <table><thead><tr><th>When</th><th>What</th><th>File</th><th class="n">Rows</th><th class="n">Total</th><th></th></tr></thead><tbody id="iList"></tbody></table>
+    </div>
+  </section>
+
   <section id="v-coa" class="hidden">
     <div class="card">
       <h2>Chart of accounts</h2>
@@ -259,6 +297,9 @@ function friendly(err){
   if(err.code==='42501'||/row-level security|not allowed/i.test(err.message||''))return 'Your role is not allowed to do this.';
   if(err.code==='23505')return 'That code is already used.';
   if(err.code==='23503')return 'This account is in use and cannot be removed. Untick it to hide it instead.';
+  if(/import_|undo_account_import|account_imports/.test(err.message||'')&&/does not exist|Could not find/i.test(err.message||''))return 'Run 012_accounts_import.sql in Supabase first.';
+  if(/expenses_amount_check/.test(err.message||''))return (err.message.match(/^Row \d+/)||[''])[0]+': the amount must be more than 0.';
+  if(/expenses_check/.test(err.message||''))return (err.message.match(/^Row \d+/)||[''])[0]+': unpaid expenses need a supplier.';
   return err.message||String(err);
 }
 async function q(promise){const r=await promise;if(r.error)throw r.error;return r.data;}
@@ -311,18 +352,17 @@ $('gLogin').addEventListener('submit',async e=>{
 async function signOut(e){if(e)e.preventDefault();await sb.auth.signOut();ME=null;boot();}
 $('gOut').addEventListener('click',signOut);$('signOut').addEventListener('click',signOut);
 
-const views=['pl','bs','cf','tb','ledger','exp','sup','jnl','coa'];let cur='pl',CSV=null;
+const views=['pl','bs','cf','tb','ledger','exp','sup','jnl','coa','imp'];let cur='pl',CSV=null;
 function show(v){if(!views.includes(v))v='pl';cur=v;views.forEach(x=>$('v-'+x).classList.toggle('hidden',x!==v));document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render(v);}
 $('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.v){location.hash=b.dataset.v;show(b.dataset.v)}});
 window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
 function render(v){
-  CSV=null;$('copyCsv').classList.toggle('hidden',!['pl','bs','cf','tb','ledger','exp'].includes(v));
-  $('periodBar').classList.toggle('hidden',v==='coa'||v==='sup');
+  CSV=null;$('periodBar').classList.toggle('hidden',v==='imp');
+  ['xLabel','xXlsx','xCsv','copyCsv'].forEach(id=>$(id).classList.toggle('hidden',v==='imp'));
+  ['pFrom','pTo','pPreset'].forEach(id=>$(id).closest('label').classList.toggle('hidden',v==='coa'||v==='sup'));
   $('pNote').textContent=['bs','tb'].includes(v)?'Shown as at the "To" date.':'';
-  ({pl:renderPL,bs:renderBS,cf:renderCF,tb:renderTB,ledger:renderLedger,exp:renderExp,sup:renderSup,jnl:renderJnl,coa:renderCoa})[v]().catch(e=>status('Error: '+friendly(e)));
+  ({pl:renderPL,bs:renderBS,cf:renderCF,tb:renderTB,ledger:renderLedger,exp:renderExp,sup:renderSup,jnl:renderJnl,coa:renderCoa,imp:renderImp})[v]().catch(e=>status('Error: '+friendly(e)));
 }
-$('copyCsv').addEventListener('click',async()=>{if(!CSV)return;const t=CSV.map(r=>r.map(v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(',')).join('\n');
-  try{await navigator.clipboard.writeText(t);$('csvMsg').textContent='Copied: paste into Excel or Google Sheets.'}catch(e){$('csvMsg').textContent='Copy blocked by the browser.'}setTimeout(()=>$('csvMsg').textContent='',3000)});
 
 // helpers for statements
 const summary=(from,to)=>q(sb.rpc('gl_summary',{p_from:from,p_to:to}));
@@ -452,6 +492,9 @@ async function renderSup(){
   $('spList').replaceChildren(...(pays.length?pays.map(p=>h('tr',null,h('td',null,p.payment_date),h('td',null,((SUPS.find(s=>s.id===p.supplier_id)||{}).name||'?').replace(' (sample)','')),h('td',null,PAY[p.method]),h('td',null,p.ref||''),h('td',{class:'n'},money(p.amount)),
     h('td',null,h('button',{class:'x',title:'Delete',on:{click:async ev=>{const b=ev.currentTarget;if(!b.dataset.arm){b.dataset.arm=1;b.textContent='delete?';b.style.fontSize='12px';return}await q(sb.from('supplier_payments').delete().eq('id',p.id));renderSup()}}},'×')))):
     [h('tr',null,h('td',{colspan:6,class:'muted small'},'No supplier payments yet.'))]));
+  const sname=id=>((SUPS.find(s=>s.id===id)||{}).name||'').replace(' (sample)','');
+  CSV=[['What we owe suppliers',today()],['Supplier','Owed'],...owed.map(b=>[b.name.replace(' (sample)',''),N(b.balance)]),['Total',N(owed.reduce((s,b)=>s+Number(b.balance),0))],[],
+    ['Payments to suppliers (latest 100)'],['Date','Supplier','Paid from','Ref','Amount'],...pays.map(p=>[p.payment_date,sname(p.supplier_id),PAY[p.method],p.ref||'',N(p.amount)])];
 }
 $('spSave').addEventListener('click',async()=>{const msg=t=>$('spMsg').textContent=t;const a=+$('spAmt').value;if(!$('spSup').value)return msg('Choose a supplier.');if(!(a>0))return msg('Enter the amount.');
   try{await q(sb.from('supplier_payments').insert({supplier_id:$('spSup').value,amount:a,method:$('spMeth').value,payment_date:$('spDate').value||today(),ref:$('spRef').value.trim()||null}));$('spAmt').value='';$('spRef').value='';msg('Saved.');setTimeout(()=>msg(''),2000);renderSup()}catch(e){msg(friendly(e))}});
@@ -493,6 +536,8 @@ async function renderJnl(){
       h('button',{class:'x',title:'Delete journal',on:{click:async ev=>{const b=ev.currentTarget;if(!b.dataset.arm){b.dataset.arm=1;b.textContent='delete?';b.style.fontSize='12px';return}await q(sb.from('journals').delete().eq('id',j.id));renderJnl()}}},'×')),
     h('table',{class:'small',style:'max-width:620px;margin-top:4px'},h('tbody',null,(j.journal_lines||[]).map(l=>h('tr',null,h('td',null,l.account_code+' · '+acc(l.account_code).name),h('td',{class:'n'},Number(l.debit)?amt(l.debit):''),h('td',{class:'n'},Number(l.credit)?amt(l.credit):''),h('td',{class:'muted'},l.memo||'')))))))
     :[h('p',{class:'muted small'},'No journals in this period.')]));
+  CSV=[['Journals',F(),T()],['Date','Description','Kind','Account code','Account','Debit','Credit','Note'],
+    ...js.flatMap(j=>(j.journal_lines||[]).map(l=>[j.entry_date,j.memo,j.kind==='opening'?'Opening balances':'Journal',l.account_code,acc(l.account_code).name,Number(l.debit)?N(l.debit):'',Number(l.credit)?N(l.credit):'',l.memo||'']))];
 }
 
 // ---------- CHART OF ACCOUNTS ----------
@@ -501,10 +546,220 @@ async function renderCoa(){
   $('cList').replaceChildren(...ACC.map(a=>{const name=h('input',{value:a.name,size:30,on:{change:async e=>{try{await q(sb.from('accounts').update({name:e.target.value.trim()||a.name}).eq('code',a.code));a.name=e.target.value.trim()||a.name;status('Saved')}catch(err){status('Error: '+friendly(err))}}}});
     const act=h('input',{type:'checkbox',checked:a.active,disabled:a.is_system,on:{change:async e=>{try{await q(sb.from('accounts').update({active:e.target.checked}).eq('code',a.code));a.active=e.target.checked;status('Saved')}catch(err){status('Error: '+friendly(err))}}}});
     return h('tr',null,h('td',null,a.code),h('td',null,name,a.is_system?h('span',{class:'pill',style:'margin-left:6px'},'auto'):''),h('td',null,TYPES[a.type]),h('td',{class:'small muted'},a.category||''),h('td',null,act))}));
+  CSV=[['Chart of accounts'],['Code','Name','Type','Active'],...ACC.map(a=>[a.code,a.name,TYPES[a.type],a.active?'yes':'no'])];
 }
 $('cAdd').addEventListener('click',async()=>{const msg=t=>$('cMsg').textContent=t;const code=$('cCode').value.trim(),name=$('cName').value.trim();
   if(!/^\d{4}$/.test(code))return msg('Use a 4-digit code (1xxx assets, 2xxx liabilities, 3xxx equity, 4xxx income, 5xxx–6xxx expenses).');if(!name)return msg('Give it a name.');
   try{await q(sb.from('accounts').insert({code,name,type:$('cType').value}));$('cCode').value='';$('cName').value='';msg('Added.');renderCoa()}catch(e){msg(friendly(e))}});
+
+// ---------- EXCEL / CSV ----------
+// SheetJS (the Excel reader/writer) loads only when someone exports or imports.
+let XLSXp=null;
+function loadXLSX(){return XLSXp||(XLSXp=new Promise((res,rej)=>{if(window.XLSX)return res(window.XLSX);const s=document.createElement('script');s.src='https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+  s.onload=()=>res(window.XLSX);s.onerror=()=>{XLSXp=null;rej(new Error('Could not load the Excel tool. Check the internet connection and try again.'))};document.head.appendChild(s)}))}
+const REPORT={pl:'Profit and loss',bs:'Balance sheet',cf:'Cash flow',tb:'Trial balance',ledger:'Account ledger',exp:'Expenses',sup:'Suppliers',jnl:'Journals',coa:'Chart of accounts'};
+const fileBase=v=>'royal-glow-'+REPORT[v].toLowerCase().replace(/[^a-z]+/g,'-')+(['coa','sup'].includes(v)?'':'-'+F()+'-to-'+T());
+const clean=r=>r.map(v=>typeof v==='string'?v.replace(/ \(sample\)/g,''):v);
+// A worksheet from rows: amounts as real numbers with 2 decimals, sensible column widths.
+function sheet(X,rows){const ws=X.utils.aoa_to_sheet(rows.map(clean));const rg=X.utils.decode_range(ws['!ref']||'A1');const w=[];
+  for(let R=rg.s.r;R<=rg.e.r;R++)for(let C=rg.s.c;C<=rg.e.c;C++){const c=ws[X.utils.encode_cell({r:R,c:C})];if(!c)continue;if(c.t==='n')c.z='#,##0.00';
+    const len=String(c.v).length+(c.t==='n'?4:1);if(R>0)w[C]=Math.min(Math.max(w[C]||8,len),60)}
+  ws['!cols']=w.map(x=>({wch:x||10}));return ws}
+function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+const xmsg=t=>{$('csvMsg').textContent=t;clearTimeout(xmsg.t);xmsg.t=setTimeout(()=>$('csvMsg').textContent='',4000)};
+const csvText=rows=>rows.map(r=>clean(r).map(v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(',')).join('\r\n');
+$('copyCsv').addEventListener('click',async()=>{if(!CSV)return;
+  try{await navigator.clipboard.writeText(csvText(CSV));xmsg('Copied: paste into Excel or Google Sheets.')}catch(e){xmsg('Copy blocked by the browser.')}});
+$('xCsv').addEventListener('click',()=>{if(!CSV)return xmsg('Wait for the report to load.');download(new Blob(['﻿'+csvText(CSV)],{type:'text/csv;charset=utf-8'}),fileBase(cur)+'.csv')});
+$('xXlsx').addEventListener('click',async()=>{if(!CSV)return xmsg('Wait for the report to load.');
+  try{const X=await loadXLSX();const wb=X.utils.book_new();X.utils.book_append_sheet(wb,sheet(X,CSV),REPORT[cur].slice(0,31));X.writeFile(wb,fileBase(cur)+'.xlsx')}catch(e){xmsg(friendly(e))}});
+// Accounts pack: every report for the period in one workbook (handy for the accountant).
+$('xPack').addEventListener('click',async()=>{const b=$('xPack');b.disabled=true;xmsg('Preparing the accounts pack…');
+  try{const X=await loadXLSX();const wb=X.utils.book_new();
+    for(const [v,fn] of [['pl',renderPL],['bs',renderBS],['cf',renderCF],['tb',renderTB],['exp',renderExp],['jnl',renderJnl],['sup',renderSup]]){CSV=null;await fn();X.utils.book_append_sheet(wb,sheet(X,CSV||[[REPORT[v]],['Nothing to show']]),REPORT[v])}
+    X.writeFile(wb,'royal-glow-accounts-'+F()+'-to-'+T()+'.xlsx');xmsg('Downloaded.')}
+  catch(e){xmsg(friendly(e))}
+  b.disabled=false;render(cur)});
+
+// ---------- IMPORT ----------
+const KINDS={
+  expenses:{label:'Expenses',cols:['Date','Account code','Amount','Paid from','Supplier','Paid to','Details'],
+    help:'One row per expense. Account code: an expense account from the Accounts sheet in the template (the code or the exact name). Paid from: bank, momo, cash, card or unpaid (unpaid needs the supplier\'s name as it appears on the Inventory page). Dates as 2026-11-05 or 05/11/2026 (day first).'},
+  opening:{label:'Opening balances',cols:['Account code','Account name','Debit','Credit'],
+    help:'What the business had and owed on the day you start the books: cash, MoMo and bank balances, equipment, loans and so on. The template lists your balance-sheet accounts; fill in the amounts and leave the rest empty. Anything left over goes to 3900 Opening balances. Enter opening stock on the Inventory page (stock adjustment, reason "opening"), not here. What customers owe and what you owe suppliers will be entered for each customer and supplier (being added before go-live), so leave those out.'},
+  journals:{label:'Journals',cols:['Journal','Date','Description','Account code','Debit','Credit','Note'],
+    help:'Several lines per journal. Give each journal its own number or name in the Journal column (J1, J2 …); its lines must balance (debits = credits). Use this for capital, loans, equipment, depreciation and transfers between cash, MoMo and bank.'},
+  accounts:{label:'Chart of accounts',cols:['Code','Name','Type','Active'],
+    help:'The template lists your current chart. Change names, add new accounts (a 4-digit code, a name and a type: asset, liability, equity, income or expense) or set Active to no to hide one. Types of existing accounts can\'t be changed. This import can\'t be undone, but names can be changed back on the Chart of accounts tab.'}};
+const norm=s=>String(s??'').toLowerCase().replace(/[^a-z]/g,'');
+const ALIAS={date:['date','expensedate','entrydate','day'],account:['accountcode','account','code','accountno','accountnumber'],amount:['amount','amountghs','amountgh','total','value'],
+  paid:['paidfrom','paidwith','paymentmethod','method','paidby'],supplier:['supplier','suppliername'],payee:['paidto','payee','vendor'],details:['details','description','memo','narration'],
+  debit:['debit','dr'],credit:['credit','cr'],note:['note','linenote'],journal:['journal','journalno','journalnumber','ref','reference','journalref'],
+  name:['name','accountname'],type:['type','accounttype'],active:['active','inuse','show']};
+const PAIDMAP={cash:'cash',cashonhand:'cash',momo:'momo',mobilemoney:'momo',mtnmomo:'momo',telecelcash:'momo',bank:'bank',banktransfer:'bank',transfer:'bank',cheque:'bank',card:'card',
+  unpaid:'payable',payable:'payable',credit:'payable',notyetpaid:'payable',owed:'payable'};
+const TYPEMAP={asset:'asset',assets:'asset',liability:'liability',liabilities:'liability',equity:'equity',capital:'equity',income:'income',revenue:'income',expense:'expense',expenses:'expense'};
+function pDate(v,X){
+  if(v instanceof Date&&!isNaN(v))return v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0');
+  // Excel day number; a value a few seconds short of midnight (written by some tools) counts as the next day.
+  if(typeof v==='number'&&v>20000&&v<80000){v=v-Math.floor(v)>0.999?Math.ceil(v):Math.floor(v);const d=X.SSF.parse_date_code(v);return d.y+'-'+String(d.m).padStart(2,'0')+'-'+String(d.d).padStart(2,'0')}
+  const s=String(v??'').trim();let m;const ok=(y,mo,d)=>{y=+y;if(y<100)y+=2000;const dt=new Date(Date.UTC(y,mo-1,d));return dt.getUTCMonth()===mo-1&&dt.getUTCDate()===+d?ymd(dt):null};
+  if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)))return ok(m[1],+m[2],+m[3]);
+  if((m=s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/)))return ok(m[3],+m[2],+m[1]); // day first (Ghana)
+  if((m=s.match(/^(\d{1,2})\s+([A-Za-z]{3})[a-z]*\.?,?\s+(\d{4})$/))){const mo='janfebmaraprmayjunjulaugsepoctnovdec'.indexOf(m[2].toLowerCase())/3+1;return mo>0?ok(m[3],mo,+m[1]):null}
+  return null;
+}
+function pNum(v){if(typeof v==='number')return v;let s=String(v??'').trim();if(!s)return null;const neg=/^\(.*\)$/.test(s)||/^-/.test(s);
+  s=s.replace(/GH[S₵C¢]?|₵|¢|,|\s|\(|\)|-/gi,'');if(!/^\d*\.?\d+$/.test(s))return NaN;return neg?-Number(s):Number(s)}
+function pAcc(v){if(v==null||v==='')return null;const s=String(typeof v==='number'?Math.round(v):v).trim();const m=s.match(/^(\d{4})\b/);if(m)return ACC.find(a=>a.code===m[1])||{code:m[1],missing:true};
+  return ACC.find(a=>a.name.toLowerCase()===s.toLowerCase())||{code:s,missing:true}}
+const supName=s=>String(s||'').replace(/ \(sample\)$/,'').trim().toLowerCase();
+
+let IMP=null; // {kind, file, rows:[{row, cells:{}, status:'ok'|'warn'|'err'|'added', msg, data}], payload}
+async function renderImp(){
+  $('iHelp').textContent=KINDS[$('iKind').value].help;$('iDateBox').classList.toggle('hidden',$('iKind').value!=='opening');
+  if(!$('iDate').value)$('iDate').value=new Date().getUTCFullYear()+'-01-01';
+  let rows=[];try{rows=await q(sb.from('account_imports').select('*').order('created_at',{ascending:false}).limit(20))}
+  catch(e){$('iList').replaceChildren(h('tr',null,h('td',{colspan:6,class:'muted small'},/account_imports/.test(e.message||'')?'Run 012_accounts_import.sql in Supabase to turn on imports.':friendly(e))));return}
+  $('iList').replaceChildren(...(rows.length?rows.map(r=>h('tr',{class:r.undone_at?'muted':''},h('td',{class:'small'},new Date(r.created_at).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Africa/Accra'})),
+    h('td',null,KINDS[r.kind].label),h('td',{class:'small'},r.file_name||''),h('td',{class:'n'},r.row_count),h('td',{class:'n'},r.kind==='accounts'?'':amt(r.total)),
+    h('td',null,r.undone_at?h('span',{class:'pill'},'Undone'):r.kind==='accounts'?'':h('button',{class:'b',style:'font-size:12px;padding:3px 9px',on:{click:async e=>{const b=e.currentTarget;
+      if(!b.dataset.arm){b.dataset.arm=1;b.textContent='Click again to undo';setTimeout(()=>{if(b.isConnected){b.removeAttribute('data-arm');b.textContent='Undo'}},3000);return}
+      b.disabled=true;try{const n=await q(sb.rpc('undo_account_import',{p_id:r.id}));status('Undone: removed '+n+' '+(r.kind==='expenses'?'expenses':'journals')+'.');renderImp()}catch(err){status('Error: '+friendly(err));b.disabled=false}}}},'Undo')))):
+    [h('tr',null,h('td',{colspan:6,class:'muted small'},'No imports yet.'))]));
+}
+$('iKind').addEventListener('change',()=>{IMP=null;$('iPrev').classList.add('hidden');$('iFile').value='';renderImp()});
+
+// Templates: headers on the first sheet; help and account lists on other sheets.
+$('iTpl').addEventListener('click',async()=>{const k=$('iKind').value,K=KINDS[k];
+  try{const X=await loadXLSX();const wb=X.utils.book_new();let data=[K.cols];
+    if(k==='opening')data=data.concat(ACC.filter(a=>['asset','liability','equity'].includes(a.type)&&a.active&&!['1100','1200','2000','3900'].includes(a.code)).map(a=>[a.code,a.name,'','']));
+    if(k==='accounts')data=data.concat(ACC.map(a=>[a.code,a.name,a.type,a.active?'yes':'no']));
+    X.utils.book_append_sheet(wb,sheet(X,data),K.label);
+    const ex={expenses:[['2026-11-01','6100',600,'bank','','Landlord','November rent'],['05/11/2026','6200 · Utilities (electricity, water)',245.5,'unpaid','ECG','ECG','October electricity bill']],
+      journals:[['J1','2026-11-01','Owner capital introduced','1020',5000,'',''],['J1','2026-11-01','Owner capital introduced','3000','',5000,''],['J2','30/11/2026','Depreciation November','6900',150,'',''],['J2','30/11/2026','Depreciation November','1510','',150,'']],
+      opening:[['1000','Cash on hand',1200,''],['1020','Bank',8500,''],['2200','Loans','',5000]],accounts:[['6350','Packaging materials','expense','yes']]}[k];
+    X.utils.book_append_sheet(wb,sheet(X,[['How to fill in the '+K.label+' sheet'],[K.help],[],['Example rows (copy the layout, not the numbers):'],K.cols,...ex]),'Help');
+    const list=k==='expenses'?ACC.filter(a=>a.type==='expense'&&a.category!=='cogs'&&a.active):ACC.filter(a=>a.active);
+    X.utils.book_append_sheet(wb,sheet(X,[['Code','Account','Type'],...list.map(a=>[a.code,a.name,a.type])]),'Accounts');
+    if(k==='expenses')X.utils.book_append_sheet(wb,sheet(X,[['Paid from: use one of these'],['bank'],['momo'],['cash'],['card'],['unpaid (owed to a supplier: fill in Supplier)'],[],['Suppliers'],...SUPS.map(s=>[s.name.replace(' (sample)','')])]),'Lists');
+    X.writeFile(wb,'royal-glow-'+k+'-template.xlsx')}catch(e){status('Error: '+friendly(e))}});
+
+$('iFile').addEventListener('change',async()=>{const f=$('iFile').files[0];if(!f)return;$('iMsg').textContent='';
+  try{status('Reading '+f.name+'…');const X=await loadXLSX();
+    // CSV is read as plain text so dates like 05/11/2026 stay day-first (not American month-first).
+    // Excel dates arrive as day numbers and are converted without time zones, so they never shift by a day.
+    const wb=/\.csv$/i.test(f.name)?X.read(await f.text(),{type:'string',raw:true}):X.read(await f.arrayBuffer());
+    const k=$('iKind').value;const name=wb.SheetNames.find(n=>norm(n)===norm(KINDS[k].label))||wb.SheetNames[0];
+    const aoa=X.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:true,defval:''});
+    await loadBase();IMP=await buildImport(k,f.name,aoa,X);drawImport();status('Connected')}
+  catch(e){status('Error: '+friendly(e));IMP=null;$('iPrev').classList.add('hidden')}});
+$('iCancel').addEventListener('click',()=>{IMP=null;$('iFile').value='';$('iPrev').classList.add('hidden')});
+$('iSkip').addEventListener('change',drawImport);
+
+// Find the header row and map columns by name (any order, extra columns ignored).
+function columns(aoa){for(let i=0;i<Math.min(aoa.length,10);i++){const map={};aoa[i].forEach((v,c)=>{const n=norm(v);for(const k in ALIAS)if(map[k]==null&&ALIAS[k].includes(n))map[k]=c});
+    if(Object.keys(map).length>=2)return {hdr:i,map}}throw new Error('Could not find the column headings. Use the template, or put headings such as Date, Account code, Amount in the first row.')}
+async function buildImport(k,file,aoa,X){
+  const {hdr,map}=columns(aoa);const need={expenses:['date','account','amount'],opening:['account'],journals:['account','date'],accounts:['account','name']}[k];
+  if(k==='opening'||k==='journals'){if(map.debit==null||map.credit==null)throw new Error('The file needs a Debit and a Credit column.')}
+  const miss=need.filter(n=>map[n]==null);if(miss.length)throw new Error('The file has no '+miss.map(m=>({date:'Date',account:'Account code',amount:'Amount',name:'Name'})[m]).join(', ')+' column.');
+  const get=(r,n)=>map[n]==null?'':r[map[n]];
+  const rows=[];aoa.slice(hdr+1).forEach((r,i)=>{if(r.every(v=>String(v).trim()===''))return;rows.push({row:hdr+i+2,r,status:'ok',msg:''})});
+  if(!rows.length)throw new Error('The sheet has headings but no rows.');
+  const bad=(o,m)=>{o.status='err';o.msg=o.msg?o.msg+'; '+m:m};
+  if(k==='expenses'){
+    const sups=new Map(SUPS.map(s=>[supName(s.name),s]));
+    rows.forEach(o=>{const r=o.r,d=pDate(get(r,'date'),X),a=pAcc(get(r,'account')),n=pNum(get(r,'amount')),pd=PAIDMAP[norm(get(r,'paid'))||'bank'];
+      const supTxt=String(get(r,'supplier')||'').trim(),sup=supTxt?sups.get(supName(supTxt)):null;
+      o.cells=[d||String(get(r,'date')),a?a.code+(a.name?' · '+a.name:''):'',n,pd?PAY[pd]:String(get(r,'paid')),supTxt,String(get(r,'payee')||''),String(get(r,'details')||'')];
+      if(!d)bad(o,'date not understood');
+      if(!a)bad(o,'no account');else if(a.missing)bad(o,'no account "'+a.code+'"');else if(a.type!=='expense'||a.category==='cogs')bad(o,a.code+' is not an expense account you can use here');else if(!a.active)bad(o,a.code+' is switched off');
+      if(n==null||isNaN(n)||n<=0)bad(o,'amount must be a number above 0');
+      if(!pd)bad(o,'paid from must be bank, momo, cash, card or unpaid');
+      if(pd==='payable'&&!sup)bad(o,supTxt?'supplier "'+supTxt+'" not found (add it on the Inventory page first)':'unpaid expenses need the supplier');
+      o.data={row:o.row,expense_date:d,account_code:a&&a.code,amount:N(n),paid_from:pd,supplier_id:pd==='payable'&&sup?sup.id:null,payee:String(get(r,'payee')||'').trim()||null,description:String(get(r,'details')||'').trim()||null}});
+    // Possible duplicates: same date, account and amount already recorded (or twice in this file).
+    const ok=rows.filter(o=>o.status==='ok');if(ok.length){const ds=ok.map(o=>o.data.expense_date).sort();
+      const have=await q(sb.from('expenses').select('expense_date,account_code,amount').gte('expense_date',ds[0]).lte('expense_date',ds[ds.length-1]));
+      const key=e=>e.expense_date+'|'+e.account_code+'|'+N(e.amount).toFixed(2);const seen=new Set(have.map(key));const inFile=new Set();
+      ok.forEach(o=>{const kk=key(o.data);if(seen.has(kk)){o.status='warn';o.msg='possible duplicate: the same date, account and amount is already recorded'}else if(inFile.has(kk)){o.status='warn';o.msg='possible duplicate of an earlier row in this file'}inFile.add(kk)})}
+    return {kind:k,file,rows,head:KINDS.expenses.cols};
+  }
+  if(k==='opening'){
+    const lines=[];rows.forEach(o=>{const r=o.r,a=pAcc(get(r,'account')),dr=pNum(get(r,'debit'))||0,cr=pNum(get(r,'credit'))||0;
+      o.cells=[a?a.code:'',a&&a.name?a.name:String(get(r,'name')||''),dr||'',cr||''];
+      if(!dr&&!cr){o.status='skip';o.msg='no amount: left out';return}
+      if(isNaN(dr)||isNaN(cr)||dr<0||cr<0)bad(o,'amounts must be positive numbers');if(dr&&cr)bad(o,'fill in Debit or Credit, not both');
+      if(!a)bad(o,'no account');else if(a.missing)bad(o,'no account "'+a.code+'"');else if(!a.active)bad(o,a.code+' is switched off');
+      else if(['1100','2000'].includes(a.code))bad(o,'what customers owe, or what you owe suppliers, has to be entered for each customer or supplier so it shows against them. That is being added before go-live; leave this row out for now');
+      else if(a.code==='1200')bad(o,'enter opening stock on the Inventory page (stock adjustment, reason "opening")');
+      if(o.status==='ok')lines.push({account_code:a.code,debit:N(dr),credit:N(cr)})});
+    const dr=N(lines.reduce((s,l)=>s+l.debit,0)),cr=N(lines.reduce((s,l)=>s+l.credit,0)),diff=N(dr-cr);
+    if(diff){const o={row:'',status:'added',msg:'added so that debits equal credits',cells:['3900','Opening balances',diff<0?-diff:'',diff>0?diff:'']};rows.push(o);lines.push({account_code:'3900',debit:diff<0?-diff:0,credit:diff>0?diff:0})}
+    const prev=await q(sb.from('journals').select('id,entry_date').eq('kind','opening'));
+    return {kind:k,file,rows,head:KINDS.opening.cols,lines,total:Math.max(dr,cr),prevOpening:prev.length};
+  }
+  if(k==='journals'){
+    // Lines belong together when they share a Journal number; without numbers, consecutive lines with
+    // the same date and description (or blank ones) form one journal.
+    const groups=[];let curG=null;
+    rows.forEach(o=>{const r=o.r,ref=String(get(r,'journal')||'').trim(),d=pDate(get(r,'date'),X),memo=String(get(r,'details')||'').trim(),a=pAcc(get(r,'account')),dr=pNum(get(r,'debit'))||0,cr=pNum(get(r,'credit'))||0;
+      let g=null;
+      if(ref)g=groups.find(x=>x.ref===ref)||null;
+      else if(curG&&!curG.ref&&(!d||d===curG.date)&&(!memo||memo===curG.memo))g=curG;
+      if(!g){g={ref,date:d,memo,rows:[]};groups.push(g)}
+      curG=g;if(!g.date&&d)g.date=d;if(!g.memo&&memo)g.memo=memo;g.rows.push(o);
+      o.cells=[ref,d||String(get(r,'date')),memo,a?a.code+(a.name?' · '+a.name:''):'',dr||'',cr||'',String(get(r,'note')||'')];
+      if(get(r,'date')!==''&&!d)bad(o,'date not understood');
+      if(!a)bad(o,'no account');else if(a.missing)bad(o,'no account "'+a.code+'"');else if(!a.active)bad(o,a.code+' is switched off');
+      if(isNaN(dr)||isNaN(cr)||dr<0||cr<0)bad(o,'amounts must be positive numbers');else if(dr&&cr)bad(o,'fill in Debit or Credit, not both');else if(!dr&&!cr)bad(o,'no amount');
+      o.line={account_code:a&&a.code,debit:N(dr),credit:N(cr),memo:String(get(r,'note')||'').trim()||null}});
+    groups.forEach((g,i)=>{g.label='Journal '+(g.ref||i+1);const dr=N(g.rows.reduce((s,o)=>s+(o.line.debit||0),0)),cr=N(g.rows.reduce((s,o)=>s+(o.line.credit||0),0));
+      const gbad=m=>g.rows.forEach(o=>bad(o,g.label+': '+m));
+      if(!g.date)gbad('no date');if(!g.memo)gbad('no description');if(g.rows.length<2)gbad('needs at least two lines');
+      if(dr!==cr)gbad('debits '+amt(dr)+' and credits '+amt(cr)+' are not equal');g.total=dr});
+    return {kind:k,file,rows,head:KINDS.journals.cols,groups};
+  }
+  // chart of accounts
+  rows.forEach(o=>{const r=o.r;let code=String(get(r,'account')??'').trim();if(/^\d{4}\.0+$/.test(code))code=code.split('.')[0];const name=String(get(r,'name')||'').trim(),tRaw=String(get(r,'type')||'').trim(),t=TYPEMAP[norm(tRaw)];
+    const actRaw=norm(get(r,'active')),act=actRaw===''?null:['yes','y','true','active'].includes(actRaw)?true:['no','n','false','hidden','off'].includes(actRaw)?false:'?';
+    const ex=ACC.find(a=>a.code===code);o.cells=[code,name,tRaw,actRaw];
+    if(!/^\d{4}$/.test(code))bad(o,'code must be 4 digits');if(!name)bad(o,'no name');if(act==='?')bad(o,'Active must be yes or no');
+    if(tRaw&&!t)bad(o,'type must be asset, liability, equity, income or expense');
+    if(ex&&t&&t!==ex.type)bad(o,'already '+(/^[ae]/.test(ex.type)?'an ':'a ')+ex.type+' account; the type can\'t be changed');
+    if(!ex&&!t&&o.status!=='err')bad(o,'new account: give its type');
+    if(o.status!=='err'){if(!ex)o.msg='new account';else if(ex.name===name&&(act==null||ex.is_system||act===ex.active)){o.status='skip';o.msg='no change'}else o.msg=ex.is_system&&act===false?'renamed (automatic accounts stay on)':'changed'}
+    o.data={row:o.row,code,name,type:t||(ex&&ex.type)||null,active:act===null||act==='?'?null:act}});
+  return {kind:k,file,rows,head:KINDS.accounts.cols};
+}
+function drawImport(){if(!IMP)return;const R=IMP.rows,skipDup=$('iSkip').checked;
+  const errs=R.filter(o=>o.status==='err'),warns=R.filter(o=>o.status==='warn'),use=R.filter(o=>o.status==='ok'||(o.status==='warn'&&!skipDup));
+  $('iSkipBox').classList.toggle('hidden',!warns.length);
+  const cellTxt=v=>typeof v==='number'?amt(v):String(v??'');
+  $('iTable').replaceChildren(h('thead',null,h('tr',null,h('th',null,'Row'),...IMP.head.map(c=>h('th',null,c)),h('th',null,'Check'))),
+    h('tbody',null,R.map(o=>h('tr',{class:o.status==='err'?'err':o.status==='warn'?'warn':o.status==='added'?'added':o.status==='skip'?'muted':''},h('td',null,o.row),...o.cells.map(v=>h('td',{class:typeof v==='number'?'n':''},cellTxt(v))),
+      h('td',{class:'st'},o.status==='err'?'✗ '+o.msg:o.status==='warn'?(skipDup?'Left out: ':'⚠ ')+o.msg:o.status==='skip'?o.msg:o.status==='added'?'+ '+o.msg:'✓'+(o.msg?' '+o.msg:''))))));
+  let sum='';
+  if(IMP.kind==='expenses')sum=use.length+' expense'+(use.length===1?'':'s')+' ready, total GH₵ '+amt(use.reduce((s,o)=>s+o.data.amount,0))+'.';
+  if(IMP.kind==='opening')sum='One opening-balances journal dated '+dLong($('iDate').value||today())+', '+IMP.lines.length+' lines, total GH₵ '+amt(IMP.total)+'.'+(IMP.prevOpening?' Note: opening balances have already been entered '+IMP.prevOpening+' time(s); importing again adds to them.':'');
+  if(IMP.kind==='journals'){const g=IMP.groups;sum=g.length+' journal'+(g.length===1?'':'s')+' ready ('+R.length+' lines), total GH₵ '+amt(g.reduce((s,x)=>s+x.total,0))+'.'}
+  if(IMP.kind==='accounts'){const n=R.filter(o=>o.status==='ok');sum=n.filter(o=>o.msg==='new account').length+' new, '+n.filter(o=>o.msg!=='new account').length+' changed, '+R.filter(o=>o.status==='skip').length+' unchanged.'}
+  $('iSum').replaceChildren(errs.length?h('span',{class:'bad'},'✗ '+errs.length+' row'+(errs.length===1?' has a problem':'s have problems')+'. Fix '+(errs.length===1?'it':'them')+' in the file, save, and choose it again. Nothing has been saved. '):'',
+    h('span',null,errs.length?'':sum),warns.length?h('span',{class:'up'},' '+warns.length+' possible duplicate'+(warns.length===1?'':'s')+'.'):'');
+  $('iGo').disabled=!!errs.length||(IMP.kind==='expenses'&&!use.length)||(IMP.kind==='accounts'&&!R.some(o=>o.status==='ok'))||(IMP.kind==='opening'&&!IMP.lines.length);
+  $('iGo').textContent='Import'+(IMP.kind==='expenses'&&use.length?' '+use.length+' expense'+(use.length===1?'':'s'):'');
+  $('iPrev').classList.remove('hidden');
+}
+$('iGo').addEventListener('click',async()=>{if(!IMP)return;const b=$('iGo'),msg=t=>$('iMsg').textContent=t;b.disabled=true;msg('Importing…');
+  try{let done='';
+    if(IMP.kind==='expenses'){const use=IMP.rows.filter(o=>o.status==='ok'||(o.status==='warn'&&!$('iSkip').checked)).map(o=>o.data);
+      await q(sb.rpc('import_expenses',{p_file:IMP.file,p_rows:use}));done=use.length+' expenses imported.'}
+    if(IMP.kind==='opening'){await q(sb.rpc('import_journals',{p_file:IMP.file,p_kind:'opening',p_journals:[{label:'Opening balances',entry_date:$('iDate').value||today(),memo:'Opening balances',lines:IMP.lines}]}));done='Opening balances imported.'}
+    if(IMP.kind==='journals'){await q(sb.rpc('import_journals',{p_file:IMP.file,p_kind:'journals',p_journals:IMP.groups.map(g=>({label:g.label,entry_date:g.date,memo:g.memo,lines:g.rows.map(o=>o.line)}))}));done=IMP.groups.length+' journals imported.'}
+    if(IMP.kind==='accounts'){const r=await q(sb.rpc('import_accounts',{p_file:IMP.file,p_rows:IMP.rows.filter(o=>o.status==='ok').map(o=>o.data)}));await loadBase();done=r.added+' accounts added, '+r.updated+' changed.'}
+    IMP=null;$('iFile').value='';$('iPrev').classList.add('hidden');status(done+(done.includes('accounts')?'':' You can undo it below.'));renderImp()}
+  catch(e){msg(friendly(e));b.disabled=false}});
 
 // ---------- SAMPLE ----------
 $('loadSample').addEventListener('click',async()=>{const btn=$('loadSample');btn.disabled=true;btn.textContent='Loading…';
