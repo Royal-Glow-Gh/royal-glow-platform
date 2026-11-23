@@ -11,7 +11,7 @@
   - apps/staff/spa.html: spa (day calendar per therapist, phone bookings, confirm/complete/no-show/cancel, treatments, therapists & time off, opening hours & booking rules, spa reports)
   - apps/staff/blog-admin.html: blog (article list, editor with live preview, cover and inline photos, publish/unpublish, copy announcement, subscriber list)
   - apps/staff/website.html: website (design style, home-page text and photos, hero slides, announcement bar, testimonials, feedback links, About & contact, history with restore, Publish website now)
-  - apps/staff/accounts.html: accounts (profit and loss, balance sheet, cash flow, trial balance, account ledger, expenses, supplier balances and payments, journals incl. opening balances, chart of accounts); admin + accounts roles only
+  - apps/staff/accounts.html: accounts (profit and loss, balance sheet, cash flow, trial balance, account ledger, expenses, supplier balances and payments, journals incl. opening balances, chart of accounts, Import); every report downloads as Excel or CSV, plus an "Accounts pack" workbook; admin + accounts roles only. Excel reading/writing uses SheetJS 0.20.3 from cdn.sheetjs.com, loaded only when needed.
   - apps/staff/config.js: Supabase URL + publishable key (never the secret key). config.example.js is the template.
   - apps/staff/assets/: logo and favicons
   - supabase/migrations/001_production.sql: staff, items, batches, batch_inputs; views batch_costs, item_current_cost
@@ -31,6 +31,7 @@
   - supabase/migrations/009_blog.sql: blog_posts (draft/published, simple Markdown body), blog_subscribers; subscribe_blog / unsubscribe_blog (public), list_blog_subscribers (admin/blog staff); blog-images storage bucket; new staff role 'content' (shown as "Blog")
   - supabase/migrations/010_accounting.sql: accounts (chart), gl_lines (ledger derived from all operational records + expenses + supplier payments + journals), gl_summary / cash_flow / account_ledger functions, supplier_balances view, expenses, supplier_payments, journals (+ post_journal, which enforces balance), purchase payment method, cost snapshots on adjustments and returns, new role 'accounts'
   - supabase/migrations/011_website.sql: site_settings (one JSON document: design, home text, section photos, about, contact, social) + site_settings_history (last 30, restore), site_slides, site_announcements (public only within their dates), testimonials (publish only with consent), feedback_links + public feedback_info/submit_feedback, site_publish_log, site-images storage bucket
+  - supabase/migrations/012_accounts_import.sql: import_id on expenses and journals, account_imports log, import_expenses / import_journals (journals and opening balances) / import_accounts (all-or-nothing, row numbers in errors), undo_account_import
   - supabase/functions/publish-site/index.ts: Edge Function behind "Publish website now": checks admin/Blog role, one-minute cooldown, asks GitHub to run publish-site.yml (GITHUB_TOKEN secret)
   - .github/workflows/publish-staff.yml: on push to main, copies apps/staff to the deploy-staff branch
   - .github/workflows/publish-shop.yml: on push to main, copies apps/shop to the deploy-shop branch
@@ -90,6 +91,7 @@ Remove access or change roles on the same page (tick/untick; at least one role m
   - Payment method -> account: cash 1000, MoMo 1010, card and bank 1020, credit 1100 (customers) / 2000 (suppliers).
   - Shop delivery fees are not yet in the books (they sit on the order). Inventory in the ledger is valued at the cost when goods moved; the Inventory page values stock at today's cost, so the two can differ slightly.
   - These are management accounts. Statutory accounts and GRA/VAT filings should be prepared or checked by an accountant.
+- Imports (Accounts -> Import): download the template, fill it in, choose the file, check the preview, Import. All-or-nothing: one bad row and nothing is saved. Dates day-first (05/11/2026) or 2026-11-05. Possible duplicate expenses (same date, account and amount) are left out unless unticked. Expense, journal and opening-balance imports can be undone from Recent imports; chart-of-accounts imports can't (rename back instead).
 - Customer sign-ups (account_type 'customer') get a shop profile and never appear in the staff approval list.
 
 ## Data status
@@ -146,6 +148,8 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - [x] Accounting release 1: ledger, chart of accounts, expenses, supplier credit and payments, journals and opening balances, P&L, balance sheet, cash flow, trial balance, account ledger (010)
 - [ ] Accounting release 2: month-end close (lock past periods), receivables/payables ageing, VAT if registered, depreciation schedule, delivery fees into the books, budgets
 - [ ] Decide how distributors fit in (e.g. pickup points)
+- [x] Excel/CSV for accounts: every report to Excel or CSV, an accounts pack (all reports in one workbook), imports with templates, preview and checks for expenses, opening balances, journals and the chart of accounts; imports are all-or-nothing and undoable (012)
+- [ ] Opening balances per customer and per supplier (what each owed on the start date), before go-live
 - [ ] Go-live: clear all sample data, enter real data
 
 ## Next up
@@ -154,5 +158,4 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 
 ## Later (backlog)
 - [x] Design templates, main website: 3 home-page styles (Classic, Light editorial, Showcase) and 2 blog styles (Magazine, Minimal), switchable on the Website page, previews at /preview/, design guide (docs/design-guide/design-guide.pdf)
-- [ ] Excel/CSV import and export for accounts (expenses, opening balances, journals, chart of accounts; report exports to .xlsx)
 - [ ] Other items as they come up
