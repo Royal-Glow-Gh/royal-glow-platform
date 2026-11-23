@@ -113,6 +113,7 @@ details summary{cursor:pointer;color:var(--text-2)}
     <button data-v="customers">Customers &amp; credit</button>
     <button data-v="returns">Returns</button>
     <button data-v="prices">Price list</button>
+    <button data-v="sets">Sets</button>
     <button data-v="reports">Reports</button>
   </nav>
 </header>
@@ -200,6 +201,7 @@ details summary{cursor:pointer;color:var(--text-2)}
         <label class="f">Date<input type="date" id="rDate"></label>
       </div>
       <p class="small muted" style="margin:8px 0 0">If a customer is chosen, the credit value reduces what they owe. Damaged goods are credited but not put back into stock.</p>
+      <p class="small" id="rSetNote" style="margin:6px 0 0;color:var(--accent)"></p>
       <div class="row" style="margin-top:12px"><button class="b p" id="rSave">Save return</button><span class="msg" id="rMsg"></span></div>
     </div>
     <div class="card">
@@ -217,6 +219,31 @@ details summary{cursor:pointer;color:var(--text-2)}
     </div>
   </section>
 
+  <!-- SETS -->
+  <section id="v-sets" class="hidden">
+    <div class="card">
+      <h2>Sets</h2>
+      <p class="small muted" style="margin-top:0">A set (such as "Radiant Set") is shown and sold as one item and packed when it is bought. It has no stock of its own: a sale of a set is recorded as its products, with the set price shared over them in proportion to their normal prices, so stock, product reports and the accounts stay right. Show a set on the website from Online shop &rarr; Products (photo, description, offers). For gift sets packed in advance, make an ordinary product and record a production batch instead.</p>
+      <table><thead><tr><th>Set</th><th>Contents</th><th class="n">Parts at normal prices</th><th class="n">Set price</th><th class="n">Saving</th><th class="n">Can make now</th><th></th></tr></thead><tbody id="sList"></tbody></table>
+      <div class="row" style="margin-top:10px"><button class="b" id="sNew">+ New set</button></div>
+    </div>
+    <div class="card hidden" id="sEdit">
+      <h2 id="sTitle">New set</h2>
+      <div class="row">
+        <label class="f" style="flex:1">Name<input id="sName" placeholder="e.g. Radiant Set" style="min-width:220px"></label>
+        <label class="f">Sold as<input id="sUnit" value="set" size="8"></label>
+      </div>
+      <table class="noexport" style="margin-top:12px"><thead><tr><th>In the set</th><th class="n">Quantity</th><th class="n">Normal price each</th><th class="n">Cost each</th><th></th></tr></thead><tbody id="sComp"></tbody></table>
+      <div class="row" style="margin-top:8px"><select id="sAddItem"></select><button class="b" id="sAddBtn">+ Add to set</button></div>
+      <div class="row" style="margin-top:14px">
+        <label class="f">Set price, retail GH&#8373;<input type="number" id="sRetail" min="0" step="any" style="width:120px"></label>
+        <label class="f">Set price, wholesale GH&#8373;<input type="number" id="sWhole" min="0" step="any" style="width:120px"></label>
+      </div>
+      <div class="tot" id="sPrev" style="margin-top:10px"></div>
+      <div class="row" style="margin-top:12px"><button class="b p" id="sSave">Save set</button><button class="b" id="sCancel">Cancel</button><button class="b" id="sDel">Delete set</button><span class="msg" id="sMsg"></span></div>
+    </div>
+  </section>
+
   <!-- REPORTS -->
   <section id="v-reports" class="hidden">
     <div class="card">
@@ -231,6 +258,9 @@ details summary{cursor:pointer;color:var(--text-2)}
       <table><thead><tr><th>Method</th><th class="n">Sales</th><th class="n">Revenue</th></tr></thead><tbody id="rpPay"></tbody></table>
       <h3 class="small muted" style="margin:20px 0 6px">TOP PRODUCTS</h3>
       <table><thead><tr><th>Item</th><th class="n">Qty sold</th><th class="n">Revenue (before discounts)</th><th class="n">Gross margin</th></tr></thead><tbody id="rpTop"></tbody></table>
+      <h3 class="small muted" style="margin:20px 0 6px">SETS SOLD</h3>
+      <p class="small muted" style="margin:0 0 6px">Sets packed when sold. Their products are also counted in Top products above.</p>
+      <table><thead><tr><th>Set</th><th class="n">Sets sold</th><th class="n">Revenue (before discounts)</th><th class="n">Gross margin</th></tr></thead><tbody id="rpSets"></tbody></table>
     </div>
   </section>
 </main>
@@ -272,8 +302,9 @@ async function q(promise){const r=await promise;if(r.error)throw r.error;return 
 let D={items:[],cost:{},locs:[],custs:[],sales:[],pays:[],rets:[],soh:[],bal:{}};
 async function loadAll(){
   status('Loading…');
-  const [items,costs,locs,custs,sales,pays,rets,soh,bals,opens]=await Promise.all([
-    q(sb.from('items').select('id,name,kind,unit,retail_price,wholesale_price').order('name')),
+  const [items,comps,costs,locs,custs,sales,pays,rets,soh,bals,opens]=await Promise.all([
+    q(sb.from('items').select('id,name,kind,unit,retail_price,wholesale_price,active,is_set').order('name')),
+    q(sb.from('set_components').select('set_id,item_id,qty,sort').order('sort')),
     q(sb.from('item_current_cost').select('id,current_unit_cost')),
     q(sb.from('locations').select('*').order('created_at')),
     q(sb.from('customers').select('*').order('name')),
@@ -286,6 +317,7 @@ async function loadAll(){
   ]);
   D.items=items.map(i=>({...i,retail_price:Number(i.retail_price)||0,wholesale_price:Number(i.wholesale_price)||0}));
   D.cost=Object.fromEntries(costs.map(c=>[c.id,Number(c.current_unit_cost)]));
+  D.comps={};comps.forEach(c=>(D.comps[c.set_id]=D.comps[c.set_id]||[]).push({item_id:c.item_id,qty:Number(c.qty)}));
   D.locs=locs;D.custs=custs;D.pays=pays;D.rets=rets;D.opens=opens||[];
   D.sales=sales.map(s=>{const lines=(s.sale_lines||[]).map(l=>({...l,qty:Number(l.qty),unit_price:Number(l.unit_price),unit_cost:Number(l.unit_cost)}));
     const gross=lines.reduce((t,l)=>t+l.qty*l.unit_price,0),cost=lines.reduce((t,l)=>t+l.qty*l.unit_cost,0);
@@ -297,10 +329,17 @@ async function loadAll(){
 const item=id=>D.items.find(i=>i.id===id);
 const loc=id=>D.locs.find(l=>l.id===id);
 const cust=id=>D.custs.find(c=>c.id===id);
-const costOf=id=>D.cost[id]||0;
+const costOf=id=>isSet(id)?comps(id).reduce((s,c)=>s+c.qty*(D.cost[c.item_id]||0),0):(D.cost[id]||0);
 const onHand=(itemId,locId)=>D.soh.filter(r=>r.item_id===itemId&&(!locId||r.location_id===locId)).reduce((s,r)=>s+r.qty,0);
 const activeLocs=()=>D.locs.filter(l=>l.active!==false);
-const sellable=()=>D.items.filter(i=>i.kind==='product'||i.kind==='goods').sort((a,b)=>a.name.localeCompare(b.name));
+const sellable=()=>D.items.filter(i=>(i.kind==='product'||i.kind==='goods')&&(!i.is_set||(i.active!==false&&comps(i.id).length))).sort((a,b)=>a.name.localeCompare(b.name));
+// Sets packed when sold: no stock of their own; a sale records their products
+const isSet=id=>!!(item(id)||{}).is_set;
+const comps=id=>D.comps[id]||[];
+const partsValue=id=>comps(id).reduce((s,c)=>s+c.qty*((item(c.item_id)||{}).retail_price||0),0);
+const canMake=(id,L)=>{const cs=comps(id);return cs.length?Math.max(0,Math.min(...cs.map(c=>Math.floor(onHand(c.item_id,L)/c.qty+1e-9)))):0};
+const contentsText=id=>comps(id).map(c=>(c.qty!==1?num(c.qty)+' × ':'')+((item(c.item_id)||{}).name||'?')).join(', ');
+const setLabel=it=>it.name+(it.is_set?' (set)':'');
 const priceFor=(it,tier)=>tier==='wholesale'?it.wholesale_price:it.retail_price;
 
 // ---------- gate ----------
@@ -320,7 +359,7 @@ async function boot(){
   $('whoami').textContent=ME.full_name+' ('+ME.roles.join(', ')+')';
   try{await loadAll()}catch(e){status('Error: '+friendly(e))}
   $('gate').classList.add('hidden');$('app').classList.remove('hidden');
-  document.querySelectorAll('#nSave,#nAdd,#cAdd,#ySave,#rSave,#loadSample').forEach(b=>b.disabled=!canWrite());
+  document.querySelectorAll('#nSave,#nAdd,#cAdd,#ySave,#rSave,#loadSample,#sNew').forEach(b=>b.disabled=!canWrite());
   $('roBanner').classList.toggle('hidden',canWrite());
   ['nDate','yDate','rDate','hTo','rpTo'].forEach(id=>{if(!$(id).value)$(id).value=today()});
   ['hFrom','rpFrom'].forEach(id=>{if(!$(id).value)$(id).value=daysAgo(90)});
@@ -337,13 +376,13 @@ async function signOut(e){if(e)e.preventDefault();await sb.auth.signOut();ME=nul
 $('gOut').addEventListener('click',signOut);$('signOut').addEventListener('click',signOut);
 
 // ---------- tabs ----------
-const views=['newsale','history','customers','returns','prices','reports'];
+const views=['newsale','history','customers','returns','prices','sets','reports'];
 function show(v){if(!views.includes(v))v='newsale';views.forEach(x=>$('v-'+x).classList.toggle('hidden',x!==v));document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render(v);}
 $('tabs').addEventListener('click',e=>{const v=e.target.dataset&&e.target.dataset.v;if(v){location.hash=v;show(v)}});
 window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
 function render(v){
   $('sampleBanner').classList.toggle('hidden',!(canWrite()&&!D.sales.length&&!D.custs.length));
-  ({newsale:renderNew,history:renderHistory,customers:renderCustomers,returns:renderReturns,prices:renderPrices,reports:renderReports})[v]();
+  ({newsale:renderNew,history:renderHistory,customers:renderCustomers,returns:renderReturns,prices:renderPrices,sets:renderSets,reports:renderReports})[v]();
 }
 const refresh=async v=>{await loadAll();render(v)};
 function delBtn(onConfirm){
@@ -363,12 +402,12 @@ function renderNew(){
   const L=$('nLoc').value,tier=tierNow();
   $('nTier').textContent=tier==='wholesale'?'wholesale':'retail';
   const avail=sellable().filter(i=>!draft.some(d=>d.itemId===i.id));
-  fillSelect($('nAddItem'),avail.map(i=>({id:i.id,name:i.name+' — '+num(onHand(i.id,L))+' '+i.unit+' here'})),false);
+  fillSelect($('nAddItem'),avail.map(i=>({id:i.id,name:i.is_set?i.name+' (set) — can make '+canMake(i.id,L)+' here':i.name+' — '+num(onHand(i.id,L))+' '+i.unit+' here'})),false);
   const tb=$('nLines');tb.replaceChildren();
-  draft.forEach((d,ix)=>{const it=item(d.itemId),stock=onHand(d.itemId,L);
+  draft.forEach((d,ix)=>{const it=item(d.itemId),set=!!it.is_set,stock=set?canMake(d.itemId,L):onHand(d.itemId,L);
     const noPrice=d.price>0?'':' No price set: add it under Price list.';
-    const warn=h('div',{class:'small up'},(d.qty>stock+1e-9?'More than the recorded stock here.':'')+noPrice);
-    tb.appendChild(h('tr',null,h('td',null,it.name,warn),h('td',{class:'n'},num(stock)+' '+it.unit),
+    const warn=h('div',{class:'small up'},(d.qty>stock+1e-9?(set?'Not enough of its products here.':'More than the recorded stock here.'):'')+noPrice);
+    tb.appendChild(h('tr',null,h('td',null,it.name,set?h('div',{class:'small muted'},'Set: '+contentsText(it.id)):'',warn),h('td',{class:'n'},set?'can make '+num(stock):num(stock)+' '+it.unit),
       h('td',{class:'n'},h('input',{type:'number',step:'any',min:'0',value:d.qty||'',style:'width:80px;text-align:right',on:{input:e=>{d.qty=+e.target.value;warn.textContent=(d.qty>stock+1e-9?'More than the recorded stock here.':'')+noPrice;nTotals()}}})),
       h('td',{class:'n'},h('input',{type:'number',step:'any',min:'0',value:d.price,style:'width:100px;text-align:right',on:{input:e=>{d.price=+e.target.value;nTotals()}}})),
       h('td',{class:'n',id:'nlc'+ix}),
@@ -395,21 +434,39 @@ $('nSave').addEventListener('click',async()=>{
   if(!$('nLoc').value)return msg('Choose where the sale was made.');
   if($('nPay').value==='credit'&&!$('nCust').value)return msg('A credit sale needs a named customer.');
   if(!lines.length)return msg('Add at least one item with a quantity.');
+  if(lines.some(d=>isSet(d.itemId)&&d.qty!==Math.floor(d.qty)))return msg('Sets are sold in whole numbers.');
   const sub=lines.reduce((t,d)=>t+d.qty*d.price,0);if((+$('nDisc').value||0)>sub+1e-9)return msg('The discount is larger than the subtotal.');
   $('nSave').disabled=true;msg('Saving…');
   try{
     await saveSale({sale_date:$('nDate').value||today(),location_id:$('nLoc').value,customer_id:$('nCust').value||null,payment_method:$('nPay').value,
-      receipt_no:$('nReceipt').value.trim()||null,discount:+$('nDisc').value||0},lines);
+      receipt_no:$('nReceipt').value.trim()||null,discount:+$('nDisc').value||0},await expandSets(lines));
     draft=[];$('nReceipt').value='';$('nDisc').value=0;await refresh('newsale');msg('Saved.');setTimeout(()=>msg(''),2500);
   }catch(e){msg(friendly(e))}finally{$('nSave').disabled=!canWrite()}
 });
+// A set becomes its products, the set price shared out by the database (set_split), each line tagged with the set
+async function expandSets(lines){
+  const out=[];
+  for(const d of lines){
+    if(!isSet(d.itemId)){out.push(d);continue}
+    const rows=await q(sb.rpc('set_split',{p_set:d.itemId,p_price:+(+d.price).toFixed(2)}));
+    rows.forEach(r=>out.push({itemId:r.item_id,qty:Number(r.qty)*d.qty,price:Number(r.unit_price),setId:d.itemId,setQty:d.qty}));
+  }
+  return out;
+}
 async function saveSale(head,lines){
   const row=await q(sb.from('sales').insert(head).select('id').single());
-  try{await q(sb.from('sale_lines').insert(lines.map(d=>({sale_id:row.id,item_id:d.itemId,qty:d.qty,unit_price:+(+d.price).toFixed(2),unit_cost:+costOf(d.itemId).toFixed(4)}))))}
+  try{await q(sb.from('sale_lines').insert(lines.map(d=>({sale_id:row.id,item_id:d.itemId,qty:d.qty,unit_price:+(+d.price).toFixed(2),unit_cost:+costOf(d.itemId).toFixed(4),
+      ...(d.setId?{set_id:d.setId,set_qty:d.setQty}:{})}))))}
   catch(e){await sb.from('sales').delete().eq('id',row.id);throw e}
 }
 
 // ---------- HISTORY ----------
+// Lines of one sale, with the lines of each set together
+function groupLines(lines){const out=[],bySet={};
+  lines.forEach(l=>{if(!l.set_id){out.push({lines:[l]});return}
+    let g=bySet[l.set_id];if(!g){g=bySet[l.set_id]={set:l.set_id,setQty:Number(l.set_qty)||1,lines:[],total:0};out.push(g)}
+    g.lines.push(l);g.total+=l.qty*l.unit_price});
+  return out}
 const inRange=(d,from,to)=>(!from||d>=from)&&(!to||d<=to);
 function renderHistory(){
   fillSelect($('hLoc'),activeLocs(),true,'All locations');
@@ -420,9 +477,11 @@ function renderHistory(){
   const tb=$('hList');tb.replaceChildren();
   list.forEach(s=>tb.appendChild(h('tr',null,h('td',null,s.sale_date),h('td',null,s.receipt_no||'—'),h('td',null,(loc(s.location_id)||{}).name),
     h('td',null,s.customer_id?(cust(s.customer_id)||{}).name:'Walk-in'),h('td',null,PAY[s.payment_method]),
-    h('td',null,h('details',null,h('summary',null,s.lines.length+' item'+(s.lines.length===1?'':'s')),h('div',{class:'small',style:'margin-top:4px'},
-      s.lines.map(l=>{const it=item(l.item_id)||{};return h('div',null,(it.name||'?')+' — '+num(l.qty)+' × '+money(l.unit_price))}),
-      Number(s.discount)?h('div',null,'Discount −'+money(s.discount)):''))),
+    h('td',null,(g=>h('details',null,h('summary',null,g.length+' item'+(g.length===1?'':'s')),h('div',{class:'small',style:'margin-top:4px'},
+      g.map(x=>x.set?h('div',null,((item(x.set)||{}).name||'Set')+' — '+num(x.setQty)+' × '+money(x.total/x.setQty),
+          h('div',{class:'muted',style:'padding-left:12px'},x.lines.map(l=>((item(l.item_id)||{}).name||'?')+' '+num(l.qty)+' × '+money(l.unit_price)).join(' · ')))
+        :h('div',null,((item(x.lines[0].item_id)||{}).name||'?')+' — '+num(x.lines[0].qty)+' × '+money(x.lines[0].unit_price))),
+      Number(s.discount)?h('div',null,'Discount −'+money(s.discount)):'')))(groupLines(s.lines))),
     h('td',{class:'n'},money(s.total)),
     h('td',null,delBtn(async()=>{await q(sb.from('sales').delete().eq('id',s.id));await refresh('history')})))));
   if(!list.length)tb.appendChild(h('tr',null,h('td',{colspan:8,class:'muted small'},'No sales in this period.')));
@@ -466,15 +525,16 @@ $('ySave').addEventListener('click',async()=>{
 });
 
 // ---------- RETURNS ----------
-function rPrefill(){const it=item($('rItem').value);if(!it)return;const c=cust($('rCust').value);$('rPrice').value=priceFor(it,c?c.price_tier:'retail');}
+function rPrefill(){const it=item($('rItem').value);if(!it)return;const c=cust($('rCust').value);$('rPrice').value=priceFor(it,c?c.price_tier:'retail');
+  $('rSetNote').textContent=it.is_set?'Set: '+contentsText(it.id)+'. Enter the value credited for one set; it is shared over its products, which go back to stock if ticked.':'';}
 function renderReturns(){
   fillSelect($('rCust'),custOptions(),true,'— No customer (walk-in) —');
   fillSelect($('rLoc'),activeLocs(),true);
-  fillSelect($('rItem'),sellable().map(i=>({id:i.id,name:i.name+' ('+i.unit+')'})),true);
+  fillSelect($('rItem'),sellable().map(i=>({id:i.id,name:i.is_set?i.name+' (set)':i.name+' ('+i.unit+')'})),true);
   if($('rPrice').value==='')rPrefill();
   const tb=$('rList');tb.replaceChildren();
   D.rets.forEach(r=>{const it=item(r.item_id)||{};tb.appendChild(h('tr',null,h('td',null,r.return_date),h('td',null,r.customer_id?(cust(r.customer_id)||{}).name:'Walk-in'),
-    h('td',null,it.name||'?'),h('td',{class:'n'},num(r.qty)),h('td',{class:'n'},money(Number(r.qty)*Number(r.unit_price))),
+    h('td',null,it.name||'?',r.set_id?h('span',{class:'small muted'},' · from '+((item(r.set_id)||{}).name||'a set')):''),h('td',{class:'n'},num(r.qty)),h('td',{class:'n'},money(Number(r.qty)*Number(r.unit_price))),
     h('td',null,RREASON[r.reason]+(r.restock?'':' (not restocked)')),h('td',null,(loc(r.location_id)||{}).name),
     h('td',null,delBtn(async()=>{await q(sb.from('sale_returns').delete().eq('id',r.id));await refresh('returns')}))))});
   if(!D.rets.length)tb.appendChild(h('tr',null,h('td',{colspan:8,class:'muted small'},'No returns recorded yet.')));
@@ -484,8 +544,12 @@ $('rReason').addEventListener('change',()=>{$('rRestock').checked=$('rReason').v
 $('rSave').addEventListener('click',async()=>{
   const msg=t=>{$('rMsg').textContent=t};const qty=+$('rQty').value;
   if(!$('rItem').value||!$('rLoc').value)return msg('Choose an item and a location.');if(!(qty>0))return msg('Enter the quantity returned.');
-  try{await q(sb.from('sale_returns').insert({return_date:$('rDate').value||today(),customer_id:$('rCust').value||null,location_id:$('rLoc').value,item_id:$('rItem').value,
-      qty,unit_price:+$('rPrice').value||0,reason:$('rReason').value,restock:$('rRestock').checked}));
+  const base={return_date:$('rDate').value||today(),customer_id:$('rCust').value||null,location_id:$('rLoc').value,reason:$('rReason').value,restock:$('rRestock').checked};
+  if(isSet($('rItem').value)&&qty!==Math.floor(qty))return msg('Sets are returned in whole numbers.');
+  try{if(isSet($('rItem').value)){const sid=$('rItem').value;
+      const rows=await q(sb.rpc('set_split',{p_set:sid,p_price:+(+$('rPrice').value||0).toFixed(2)}));
+      await q(sb.from('sale_returns').insert(rows.map(r=>({...base,item_id:r.item_id,qty:Number(r.qty)*qty,unit_price:Number(r.unit_price),set_id:sid,set_qty:qty}))));
+    }else await q(sb.from('sale_returns').insert({...base,item_id:$('rItem').value,qty,unit_price:+$('rPrice').value||0}));
     $('rQty').value='';await refresh('returns');msg('Saved.');setTimeout(()=>msg(''),2500)}catch(e){msg(friendly(e))}
 });
 
@@ -499,10 +563,75 @@ function renderPrices(){
     const save=async()=>{try{await q(sb.rpc('set_prices',{p_item:it.id,p_retail:it.retail_price,p_wholesale:it.wholesale_price}));status('Saved')}catch(e){status('Error: '+friendly(e))}};
     const inp=(key)=>h('input',{type:'number',step:'any',min:'0',value:it[key],disabled:!can,style:'width:100px;text-align:right',on:{change:e=>{it[key]=+e.target.value||0;upd();save()}}});
     upd();
-    tb.appendChild(h('tr',null,h('td',null,it.name,h('span',{class:'small muted'},' per '+it.unit)),h('td',{class:'n'},money(c)),h('td',{class:'n'},inp('retail_price')),mr,h('td',{class:'n'},inp('wholesale_price')),mw));
+    tb.appendChild(h('tr',null,h('td',null,it.name,h('span',{class:'small muted'},' per '+it.unit+(it.is_set?' · set, parts '+money(partsValue(it.id))+' at normal prices':''))),h('td',{class:'n'},money(c)),h('td',{class:'n'},inp('retail_price')),mr,h('td',{class:'n'},inp('wholesale_price')),mw));
   });
   if(!tb.children.length)tb.appendChild(h('tr',null,h('td',{colspan:6,class:'muted small'},'No products or resale goods yet.')));
 }
+
+// ---------- SETS ----------
+let SE=null;   // the set being edited: {id, comps:[{item_id, qty}]}
+function renderSets(){
+  const can=canWrite(),tb=$('sList');tb.replaceChildren();
+  const list=D.items.filter(i=>i.is_set&&i.active!==false);
+  list.forEach(it=>{const pv=partsValue(it.id),pr=it.retail_price;
+    tb.appendChild(h('tr',null,h('td',null,h('b',null,it.name)),h('td',{class:'small'},contentsText(it.id)||h('span',{class:'up'},'No products yet')),
+      h('td',{class:'n'},money(pv)),h('td',{class:'n'},pr?money(pr):h('span',{class:'up'},'not set')),
+      h('td',{class:'n'},pr&&pv>pr?money(pv-pr)+' ('+pct((pv-pr)/pv)+')':'—'),
+      h('td',{class:'n'},num(canMake(it.id))),
+      h('td',null,h('button',{class:'b',style:'padding:3px 10px;font-size:13px',disabled:!can,on:{click:()=>openSet(it.id)}},'Edit'))))});
+  if(!list.length)tb.appendChild(h('tr',null,h('td',{colspan:7,class:'muted small'},'No sets yet. Click "+ New set" to make one, e.g. a Radiant Set of a cleanser, an oil, a body butter and a gift box.')));
+  if(SE)drawSet();
+}
+function openSet(id){
+  const it=id?item(id):null;
+  SE={id:id||null,comps:id?comps(id).map(c=>({...c})):[]};
+  $('sTitle').textContent=id?'Edit set: '+it.name:'New set';
+  $('sName').value=it?it.name:'';$('sUnit').value=it?it.unit:'set';
+  $('sRetail').value=it&&it.retail_price?it.retail_price:'';$('sWhole').value=it&&it.wholesale_price?it.wholesale_price:'';
+  $('sDel').classList.toggle('hidden',!id);$('sMsg').textContent='';
+  $('sEdit').classList.remove('hidden');drawSet();$('sEdit').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function drawSet(){
+  const tb=$('sComp');tb.replaceChildren();
+  SE.comps.forEach((c,ix)=>{const it=item(c.item_id)||{};
+    tb.appendChild(h('tr',null,h('td',null,it.name||'?',it.kind==='packaging'?h('span',{class:'small muted'},' · packaging'):''),
+      h('td',{class:'n'},h('input',{type:'number',min:'0',step:'any',value:c.qty,style:'width:80px;text-align:right',on:{input:e=>{c.qty=+e.target.value;setPrev()}}})),
+      h('td',{class:'n'},it.retail_price?money(it.retail_price):'—'),h('td',{class:'n'},money(D.cost[c.item_id]||0)),
+      h('td',null,h('button',{class:'x',title:'Remove',on:{click:()=>{SE.comps.splice(ix,1);drawSet()}}},'×'))))});
+  if(!SE.comps.length)tb.appendChild(h('tr',null,h('td',{colspan:5,class:'muted small'},'Add the products that go in the set, and the gift box or bag if it uses one.')));
+  const avail=D.items.filter(i=>!i.is_set&&i.active!==false&&['product','goods','packaging'].includes(i.kind)&&!SE.comps.some(c=>c.item_id===i.id))
+    .sort((a,b)=>(a.kind==='packaging')-(b.kind==='packaging')||a.name.localeCompare(b.name));
+  fillSelect($('sAddItem'),avail.map(i=>({id:i.id,name:i.name+(i.kind==='packaging'?' (packaging)':'')})),false);
+  setPrev();
+}
+function setPrev(){
+  const pv=SE.comps.reduce((t,c)=>t+c.qty*((item(c.item_id)||{}).retail_price||0),0),cost=SE.comps.reduce((t,c)=>t+c.qty*(D.cost[c.item_id]||0),0);
+  const r=+$('sRetail').value||0,w=+$('sWhole').value||0;
+  $('sPrev').replaceChildren('Parts at normal prices ',h('b',null,money(pv)),' · cost ',h('b',null,money(cost)),
+    ...(r?[' · retail set price ',h('b',null,money(r)),pv>r?' (saving '+money(pv-r)+')':'',' · margin '+pct((r-cost)/r)]:[]),
+    ...(w?[' · wholesale margin '+pct((w-cost)/w)]:[]),
+    ...(r&&r<cost?[h('div',{class:'up small'},'The retail set price is below its cost.')]:[]));
+}
+['sRetail','sWhole'].forEach(id=>$(id).addEventListener('input',()=>SE&&setPrev()));
+$('sNew').addEventListener('click',()=>openSet(null));
+$('sAddBtn').addEventListener('click',()=>{const id=$('sAddItem').value;if(!id)return;SE.comps.push({item_id:id,qty:1});drawSet()});
+$('sCancel').addEventListener('click',()=>{SE=null;$('sEdit').classList.add('hidden')});
+$('sSave').addEventListener('click',async()=>{const msg=t=>{$('sMsg').textContent=t};
+  if(!$('sName').value.trim())return msg('Give the set a name.');
+  if(!SE.comps.length)return msg('Add the products that go in the set.');
+  if(SE.comps.some(c=>!(c.qty>0)))return msg('Every product needs a quantity.');
+  $('sSave').disabled=true;msg('Saving…');
+  try{const id=await q(sb.rpc('save_set',{p_id:SE.id,p_name:$('sName').value.trim(),p_unit:$('sUnit').value.trim()||'set',p_components:SE.comps.map(c=>({item_id:c.item_id,qty:c.qty}))}));
+    await q(sb.rpc('set_prices',{p_item:id,p_retail:+$('sRetail').value||0,p_wholesale:+$('sWhole').value||0}));
+    SE=null;$('sEdit').classList.add('hidden');await refresh('sets');
+    status('Set saved. To show it on the website, open Online shop → Products.')}
+  catch(e){msg(friendly(e))}finally{$('sSave').disabled=!canWrite()}});
+$('sDel').addEventListener('click',async e=>{const b=e.currentTarget;
+  if(!b.dataset.arm){b.dataset.arm=1;b.textContent='Click again to delete';setTimeout(()=>{b.removeAttribute('data-arm');b.textContent='Delete set'},3000);return}
+  b.removeAttribute('data-arm');b.textContent='Delete set';
+  try{const r=await q(sb.rpc('delete_set',{p_id:SE.id}));SE=null;$('sEdit').classList.add('hidden');await refresh('sets');
+    status(r==='retired'?'The set has been sold before, so it is kept in the sales history but no longer sold or shown.':'Set deleted.')}
+  catch(err){$('sMsg').textContent=friendly(err)}});
 
 // ---------- REPORTS ----------
 function renderReports(){
@@ -521,6 +650,10 @@ function renderReports(){
   $('rpPay').replaceChildren(...(byPay.length?byPay.map(([k,g])=>h('tr',null,h('td',null,PAY[k]),h('td',{class:'n'},String(g.n)),h('td',{class:'n'},money(g.rev)))):[empty(3)]));
   const prod={};list.forEach(s=>s.lines.forEach(l=>{const p=prod[l.item_id]||(prod[l.item_id]={qty:0,rev:0,cost:0});p.qty+=l.qty;p.rev+=l.qty*l.unit_price;p.cost+=l.qty*l.unit_cost}));
   const top=Object.entries(prod).sort((a,b)=>b[1].rev-a[1].rev).slice(0,10);
+  const sets={};list.forEach(s=>groupLines(s.lines).forEach(g=>{if(!g.set)return;const x=sets[g.set]||(sets[g.set]={n:0,rev:0,cost:0});
+    x.n+=g.setQty;x.rev+=g.total;x.cost+=g.lines.reduce((t,l)=>t+l.qty*l.unit_cost,0)}));
+  const st=Object.entries(sets).sort((a,b)=>b[1].rev-a[1].rev);
+  $('rpSets').replaceChildren(...(st.length?st.map(([k,x])=>h('tr',null,h('td',null,(item(k)||{}).name||'?'),h('td',{class:'n'},num(x.n)),h('td',{class:'n'},money(x.rev)),h('td',{class:'n'},money(x.rev-x.cost)))):[h('tr',null,h('td',{colspan:4,class:'muted small'},'No sets sold in this period.'))]));
   $('rpTop').replaceChildren(...(top.length?top.map(([k,p])=>{const it=item(k)||{};return h('tr',null,h('td',null,it.name||'?'),h('td',{class:'n'},num(p.qty)+' '+(it.unit||'')),h('td',{class:'n'},money(p.rev)),h('td',{class:'n'},money(p.rev-p.cost)))}):[empty(4)]));
 }
 ['rpFrom','rpTo'].forEach(id=>$(id).addEventListener('change',renderReports));

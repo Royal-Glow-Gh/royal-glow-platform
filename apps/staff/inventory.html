@@ -308,7 +308,7 @@ let D={items:[],cost:{},locs:[],sups:[],purchases:[],transfers:[],adjs:[],soh:[]
 async function loadAll(){
   status('Loading…');
   const [items,costs,locs,sups,purchases,transfers,adjs,soh]=await Promise.all([
-    q(sb.from('items').select('id,name,kind,unit,unit_cost,reorder_level').order('name')),
+    q(sb.from('items').select('id,name,kind,unit,unit_cost,reorder_level,is_set').order('name')),
     q(sb.from('item_current_cost').select('id,current_unit_cost')),
     q(sb.from('locations').select('*').order('created_at')),
     q(sb.from('suppliers').select('*').order('name')),
@@ -317,7 +317,8 @@ async function loadAll(){
     q(sb.from('stock_adjustments').select('*').order('adj_date',{ascending:false})),
     q(sb.from('stock_on_hand').select('*'))
   ]);
-  D.items=items.map(i=>({...i,unit_cost:Number(i.unit_cost),reorder_level:Number(i.reorder_level)||0}));
+  // sets packed when sold have no stock of their own: not shown here
+  D.items=items.filter(i=>!i.is_set).map(i=>({...i,unit_cost:Number(i.unit_cost),reorder_level:Number(i.reorder_level)||0}));
   D.cost=Object.fromEntries(costs.map(c=>[c.id,Number(c.current_unit_cost)]));
   D.locs=locs;D.sups=sups;D.purchases=purchases;D.transfers=transfers;D.adjs=adjs;
   D.soh=soh.map(r=>({item_id:r.item_id,location_id:r.location_id,qty:Number(r.qty)}));

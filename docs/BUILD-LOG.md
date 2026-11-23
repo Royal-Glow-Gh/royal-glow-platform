@@ -5,7 +5,7 @@
   - apps/staff/index.html: staff home (sign-in, then the apps this person's roles allow)
   - apps/staff/production.html: production batch costing
   - apps/staff/inventory.html: inventory (stock on hand, purchases, transfers, adjustments, stock count, movements, setup). Stock count: pick location and date, type what is on the shelf; differences are saved as 'count' adjustments in one go (entries kept on the device until saved; blank = not counted; count sheet downloads as Excel/CSV)
-  - apps/staff/sales.html: sales (new sale, history, customers & credit, returns, price list, reports)
+  - apps/staff/sales.html: sales (new sale, history, customers & credit, returns, price list, sets, reports incl. sets sold)
   - apps/staff/staff.html: staff & account (sign-up, forgot password, change password; admins approve staff and set roles)
   - apps/staff/shop-admin.html: online shop management (orders, products shown on the website with photos, delivery/MoMo settings, ship-from and pickup locations)
   - apps/staff/spa.html: spa (day calendar per therapist, phone bookings, confirm/complete/no-show/cancel, treatments, therapists & time off, opening hours & booking rules, spa reports)
@@ -38,6 +38,7 @@
   - supabase/migrations/013_opening_and_imports.sql: books_settings (start date), party_openings (opening balance per customer/supplier, in customer_balances, supplier_balances and the ledger against 3900), import_id on items/customers/suppliers/stock_adjustments, import_items / import_customers / import_suppliers / import_opening_stock, undo_import (removes what an import created; keeps customers/suppliers/items already in use)
   - supabase/migrations/014_transaction_imports.sql: import_id on purchases, sales, customer/supplier payments; stock_at(); import_purchases, import_sales (stock check unless older-records mode; refuses receipts already in the system; part payment on credit sales), import_payments; undo_import covers all kinds
   - supabase/migrations/015_shop_offers.sql: online offers: items.offer_price / offer_from / offer_until; shop_price(); shop_catalog returns was_price + offer_until while an offer runs; set_shop_offer (admin, sales); place_order charges the offer price
+  - supabase/migrations/016_sets.sql: sets packed when sold: items.is_set, set_components, set_split() (shares a set price over its products, exact to the pesewa), save_set / delete_set (admin, sales), set_id + set_qty on sale lines, order lines and returns (one-line-per-product rule dropped), guard so a set never moves as stock, shop_free(); shop_catalog adds is_set, contents, parts_value; place_order, fulfil_order and import_sales expand sets
   - supabase/email-templates/: Royal Glow versions of the account emails (sign-up confirmation, password reset, email change, sign-in link, invitation) + README with subjects
   - supabase/functions/publish-site/index.ts: Edge Function behind "Publish website now": checks admin/Blog role, one-minute cooldown, asks GitHub to run publish-site.yml (GITHUB_TOKEN secret)
   - .github/workflows/publish-staff.yml: on push to main, copies apps/staff to the deploy-staff branch
@@ -101,6 +102,7 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - Getting records in: set the books start date (Import page) to the first day of the records you'll load. Opening balances are as at that day: stock (Import -> Opening stock), what each customer owed and what was owed to each supplier (Import -> Customers / Suppliers), cash, bank, loans and equipment (Accounts -> Import -> Opening balances). Purchases, sales and payments from that day on are imported as transactions (Import page); dates before the start date are refused. Import order: products, customers, suppliers, opening stock, purchases, sales, payments. Sales normally need the stock to be there; for paper/old-system records tick "Older records" (stock may go below zero, shown as warnings) and do a stock count afterwards. Receipt numbers (sales) and invoice numbers per supplier (purchases) already in the system are left out, so overlapping files are safe. Older history before the start date, if wanted in reports, goes in as summary journals.
 - Imports (Accounts -> Import): download the template, fill it in, choose the file, check the preview, Import. All-or-nothing: one bad row and nothing is saved. Dates day-first (05/11/2026) or 2026-11-05. Possible duplicate expenses (same date, account and amount) are left out unless unticked. Expense, journal and opening-balance imports can be undone from Recent imports; chart-of-accounts imports can't (rename back instead).
 - Online offers (Online shop -> Products -> Online offer): offer price with optional from/until dates. Shop and website show the normal price crossed out, the offer price, a "−x%" tag and the end date. The crossed-out price is always the real normal (retail) price. Online shop only; in-store sales keep the normal price. The normal price returns by itself after the end date. Customers are charged the offer price (checked in the database).
+- Sets (Sales -> Sets), e.g. "Radiant Set": advertised and sold as one item, packed when bought. No stock of their own. A sale (in store, online or imported) is recorded as the set's products, with the set price shared over them in proportion to their normal retail prices, and each line tagged with the set; the contents are copied onto the sale, so editing a set never changes past sales. Stock, product reports, margins and the accounts work as for any sale; Reports shows sets sold. The shop shows the contents and "worth GH₵ x bought separately"; a set is in stock while all its products (and gift box) are. A set can be returned as a whole (its products go back to stock). Sets can't be produced, purchased, moved or counted. A set already sold is retired, not deleted. Gift sets packed in advance are ordinary products made with a production batch.
 - Customer sign-ups (account_type 'customer') get a shop profile and never appear in the staff approval list.
 
 ## Data status
@@ -127,6 +129,7 @@ Remove access or change roles on the same page (tick/untick; at least one role m
    delete from public.purchases;          -- also removes purchase_lines
    delete from public.suppliers;
    delete from public.batches;            -- also removes batch_inputs
+   delete from public.set_components;     -- sets' contents (then the sets themselves go with the items)
    delete from public.items;
    delete from public.locations where kind <> 'factory';
    delete from public.delivery_zones where name like '%(sample)%';   -- then add your real areas
@@ -166,6 +169,7 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - [x] Stock count screen (Inventory -> Stock count)
 - [x] Artwork brief for the graphic designer (docs/design-guide/designer-brief.pdf)
 - [x] Online offers: was/now prices in the shop and on the website (015)
+- [x] Sets packed when sold: Sets tab, sales/returns/imports/online orders record the products, sets sold report, contents and savings on the shop and website (016)
 - [ ] Photos from the designer uploaded (logo and icons stay as they are)
 - [ ] Go-live: clear all sample data, enter real data
 

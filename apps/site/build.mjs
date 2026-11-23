@@ -179,9 +179,14 @@ const onOffer = p => Number(p.was_price) > Number(p.price);
 const priceHtml = p => onOffer(p)
   ? `<s class="was">${money(p.was_price)}</s> <span class="now">${money(p.price)}</span>`
   : money(p.price);
+// Sets packed when bought: their contents, and the saving on buying them separately
+const qtyTxt = v => (Number(v) === 1 ? '' : `${+Number(v).toFixed(3)} × `);
+const setHtml = p => (p.is_set && Array.isArray(p.contents)
+  ? `<p class="setc">Set: ${esc(p.contents.map(c => qtyTxt(c.qty) + c.name).join(', '))}${Number(p.parts_value) > Number(p.price) ? `<br><span class="worth">Worth ${money(p.parts_value)} bought separately</span>` : ''}</p>`
+  : '');
 const productCard = p => `<a class="card" href="${SHOP}/#p/${esc(p.id)}">
   <div class="cimg sq${p.image_path ? '' : ' ph'}"${bg(img('product-images', p.image_path))}>${p.image_path ? '' : crownPh}${onOffer(p) ? `<span class="otag">−${Math.round((1 - p.price / p.was_price) * 100)}%</span>` : ''}</div>
-  <div class="cbody"><h3>${esc(clean(p.name))}</h3><div class="price">${priceHtml(p)}</div>${p.description ? `<p>${esc(p.description)}</p>` : ''}</div></a>`;
+  <div class="cbody"><h3>${esc(clean(p.name))}</h3>${setHtml(p)}<div class="price">${priceHtml(p)}</div>${p.description ? `<p>${esc(p.description)}</p>` : ''}</div></a>`;
 const spaRow = s => `<a class="srow" href="${SHOP}/#spa/${esc(s.id)}"><span><b>${esc(clean(s.name))}</b><small>${s.duration_min} min${s.description ? ' · ' + esc(s.description) : ''}</small></span><span class="price">${money(s.price)}</span></a>`;
 const ctaButtons = (dark) => `<div class="cta"><a class="btn gold" href="${SHOP}/">Shop products</a><a class="btn ${dark ? 'outline' : 'ghost'}" href="${SHOP}/#spa">Book a spa treatment</a></div>`;
 const head = (title, href, label) => `<div class="bhead"><h2>${esc(title)}</h2><a href="${href}">${label}</a></div>`;

@@ -54,6 +54,9 @@ h2.title{font:600 32px/1.1 var(--serif);margin:0 0 20px}
 .pprice .now{color:var(--bad,#b3261e)}
 .pprice .ends{display:block;font-weight:400;font-size:13px;color:var(--gold-deep)}
 .pimg{position:relative}
+.setc{font-size:14px;color:var(--ink-2)}
+.setc ul{margin:6px 0 0;padding-left:18px}
+.worth{font-size:13px;color:var(--gold-deep)}
 .otag{position:absolute;top:10px;left:10px;background:var(--gold,#C8961E);color:#1a1814;font:700 13px/1 system-ui,sans-serif;padding:6px 9px;border-radius:99px;letter-spacing:.02em}
 .stock{font-size:13px;color:var(--muted)}
 .stock.low{color:var(--gold-deep)}
@@ -306,6 +309,14 @@ window.addEventListener('hashchange',route);
 const onOffer=p=>Number(p.was_price)>Number(p.price);
 const offPct=p=>Math.round((1-Number(p.price)/Number(p.was_price))*100);
 const endsText=d=>{const t=new Date(d+'T12:00:00');return 'Offer ends '+t.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})};
+// Sets packed when bought: what is in them, and what they would cost separately
+const qtyTxt=v=>{const n=Number(v);return n===1?'':String(+n.toFixed(3))+' × '};
+function setInfo(p,full){
+  if(!p.is_set||!Array.isArray(p.contents))return '';
+  const worth=Number(p.parts_value)>Number(p.price)?h('div',{class:'worth'},'Worth '+money(p.parts_value)+' bought separately: you save '+money(Number(p.parts_value)-Number(p.price))):'';
+  return full?h('div',{class:'setc'},h('b',null,'In this set'),h('ul',null,p.contents.map(c=>h('li',null,qtyTxt(c.qty)+c.name))),worth)
+    :h('div',{class:'setc'},'Set: '+p.contents.map(c=>qtyTxt(c.qty)+c.name).join(', '),worth);
+}
 function priceEl(p,style){
   return h('div',{class:'pprice',style:style||null},onOffer(p)?[h('s',{class:'was','aria-label':'Was '+money(p.was_price)},money(p.was_price)),
     h('span',{class:'now','aria-label':'Now '+money(p.price)},money(p.price)),p.offer_until?h('span',{class:'ends'},endsText(p.offer_until)):'']:money(p.price));
@@ -331,7 +342,7 @@ function viewShop(){
     v.replaceChildren(h('h2',{class:'title'},'Our products'),
       h('div',{class:'look'},CAT.map((p,i)=>h('div',{class:'lrow'+(i%2?' flip':'')},pimg(p),
         h('div',null,h('div',{class:'num'},String(i+1).padStart(2,'0')),h('h3',{on:{click:()=>location.hash='p/'+p.id}},p.name),
-          p.description?h('p',{class:'desc'},p.description):'',priceEl(p),stockText(p),
+          p.description?h('p',{class:'desc'},p.description):'',setInfo(p,true),priceEl(p),stockText(p),
           h('div',{class:'act'},buy(p),h('a',{href:'#p/'+p.id,class:'btn ghost',style:'text-decoration:none'},'Details')))))),
       quotes(shopQuotes(),'What customers say'));
     return;
@@ -339,7 +350,7 @@ function viewShop(){
   v.replaceChildren(h('h2',{class:'title'},'Our products'),
     h('div',{class:'grid'},CAT.map(p=>h('div',{class:'pcard'},pimg(p),
       h('div',{class:'pbody'},h('div',{class:'pname',on:{click:()=>location.hash='p/'+p.id}},p.name),
-        priceEl(p),stockText(p),buy(p))))),
+        setInfo(p,false),priceEl(p),stockText(p),buy(p))))),
     quotes(shopQuotes(),'What customers say'));
 }
 function viewProduct(id){
@@ -351,6 +362,7 @@ function viewProduct(id){
     h('div',{class:'detail'},pimg(p,true),
       h('div',null,h('h1',null,p.name),priceEl(p,'font-size:22px;margin-bottom:6px'),stockText(p),
         p.description?h('p',{style:'color:var(--ink-2);margin:18px 0'},p.description):h('div',{style:'height:18px'}),
+        p.is_set?h('div',{style:'margin:-4px 0 18px'},setInfo(p,true)):'',
         h('div',{style:'display:flex;gap:12px;align-items:center;flex-wrap:wrap'},qty,
           h('button',{class:'btn gold',disabled:max<1,on:{click:()=>addToCart(p.id,n)}},max<1?'Sold out':'Add to cart'),
           h('a',{href:'#cart',class:'btn ghost',style:'text-decoration:none'},'View cart')))));
@@ -575,15 +587,19 @@ async function viewAccount(){
           if(error)return setMsg(error.message,true);await setUser(USER);setMsg('Saved.')}}},'Save details'),
         h('button',{class:'btn ghost full',style:'margin-top:10px',on:{click:async()=>{await sb.auth.signOut();await setUser(null);viewAccount()}}},'Sign out'),msg)));
   loadMyBookings(spaBox);
-  const {data,error}=await sb.from('shop_orders').select('order_no,created_at,status,delivery_method,delivery_fee,fee_confirmed,fee_to_rider,payment_method,shop_order_lines(qty,unit_price,item_name)').eq('customer_user_id',USER.id).order('created_at',{ascending:false});
+  const {data,error}=await sb.from('shop_orders').select('order_no,created_at,status,delivery_method,delivery_fee,fee_confirmed,fee_to_rider,payment_method,shop_order_lines(qty,unit_price,item_name,set_id,set_qty,set_name)').eq('customer_user_id',USER.id).order('created_at',{ascending:false});
   if(error){ordersBox.replaceChildren(h('p',{class:'muted'},'Could not load your orders.'));return}
   if(!data.length){ordersBox.replaceChildren(h('p',{class:'muted'},'No orders yet. ',h('a',{href:'#'},'Start shopping')));return}
   ordersBox.replaceChildren(...data.map(o=>{const lines=o.shop_order_lines||[];const tbc=o.delivery_method==='delivery'&&!o.fee_confirmed;const tot=lines.reduce((s,l)=>s+Number(l.qty)*Number(l.unit_price),0)+(o.delivery_method==='delivery'&&o.fee_confirmed&&!o.fee_to_rider?Number(o.delivery_fee||0):0);
     return h('div',{class:'order'},h('div',{style:'display:flex;justify-content:space-between;gap:8px'},h('b',null,o.order_no),h('span',{class:'badge'},STATUS[o.status]||o.status)),
       h('div',{class:'muted',style:'font-size:14px'},new Date(o.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+' · '+money(tot)+(tbc?' + delivery fee (to be confirmed)':'')),
-      h('div',{style:'font-size:14px;margin-top:4px'},lines.map(l=>l.qty+' × '+(l.item_name||'Item')).join(', ')))}));
+      h('div',{style:'font-size:14px;margin-top:4px'},orderSummary(lines)))}));
 }
 
+// one entry per set, then the loose products
+function orderSummary(lines){const seen={},out=[];
+  lines.forEach(l=>{if(l.set_id){if(seen[l.set_id])return;seen[l.set_id]=1;out.push(+Number(l.set_qty||1)+' × '+(l.set_name||'Set'))}else out.push(+Number(l.qty)+' × '+(l.item_name||'Item'))});
+  return out.join(', ')}
 const SPASTATUS={booked:'Booked',confirmed:'Confirmed',completed:'Completed',cancelled:'Cancelled',no_show:'Missed'};
 async function loadMyBookings(box){
   const {data,error}=await sb.from('spa_bookings').select('booking_no,service_name,starts_at,status,price').eq('customer_user_id',USER.id).order('starts_at',{ascending:false});
