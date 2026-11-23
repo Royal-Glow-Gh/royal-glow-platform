@@ -126,7 +126,7 @@ details summary{cursor:pointer;color:var(--text-2)}
 <header>
   <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
     <h1 class="brand"><a href="index.html"><img src="assets/logo.png" alt="Royal Glow" class="logo"></a><span class="applabel">Accounts</span></h1>
-    <div class="small muted"><span class="apps"><a href="index.html">Home</a><a href="production.html">Production</a><a href="inventory.html">Inventory</a><a href="sales.html">Sales</a><a href="shop-admin.html">Online shop</a><a href="spa.html">Spa</a><a href="blog-admin.html">Blog</a><a href="website.html">Website</a><a href="accounts.html" aria-current="page">Accounts</a><a href="staff.html">Account</a></span> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
+    <div class="small muted"><span class="apps"><a href="index.html">Home</a><a href="production.html">Production</a><a href="inventory.html">Inventory</a><a href="sales.html">Sales</a><a href="shop-admin.html">Online shop</a><a href="spa.html">Spa</a><a href="blog-admin.html">Blog</a><a href="website.html">Website</a><a href="accounts.html" aria-current="page">Accounts</a><a href="import.html">Import</a><a href="staff.html">Account</a></span> · <span id="whoami"></span> · <span id="status">Connected</span> · <a href="#" id="signOut" style="color:var(--accent)">Sign out</a></div>
   </div>
   <p class="sub">Management accounts built automatically from sales, purchases, production, stock, spa and payments, plus the expenses and journals entered here. Amounts in GH₵.</p>
   <nav id="tabs">
@@ -586,7 +586,7 @@ const KINDS={
   expenses:{label:'Expenses',cols:['Date','Account code','Amount','Paid from','Supplier','Paid to','Details'],
     help:'One row per expense. Account code: an expense account from the Accounts sheet in the template (the code or the exact name). Paid from: bank, momo, cash, card or unpaid (unpaid needs the supplier\'s name as it appears on the Inventory page). Dates as 2026-11-05 or 05/11/2026 (day first).'},
   opening:{label:'Opening balances',cols:['Account code','Account name','Debit','Credit'],
-    help:'What the business had and owed on the day you start the books: cash, MoMo and bank balances, equipment, loans and so on. The template lists your balance-sheet accounts; fill in the amounts and leave the rest empty. Anything left over goes to 3900 Opening balances. Enter opening stock on the Inventory page (stock adjustment, reason "opening"), not here. What customers owe and what you owe suppliers will be entered for each customer and supplier (being added before go-live), so leave those out.'},
+    help:'What the business had and owed on the day you start the books: cash, MoMo and bank balances, equipment, loans and so on. The template lists your balance-sheet accounts; fill in the amounts and leave the rest empty. Anything left over goes to 3900 Opening balances. Enter opening stock on the Inventory page (stock adjustment, reason "opening"), not here. What customers owe and what you owe suppliers go in on the Import page (Customers and Suppliers, "Owed on start date"), so they show against each one; leave those out here.'},
   journals:{label:'Journals',cols:['Journal','Date','Description','Account code','Debit','Credit','Note'],
     help:'Several lines per journal. Give each journal its own number or name in the Journal column (J1, J2 …); its lines must balance (debits = credits). Use this for capital, loans, equipment, depreciation and transfers between cash, MoMo and bank.'},
   accounts:{label:'Chart of accounts',cols:['Code','Name','Type','Active'],
@@ -692,7 +692,7 @@ async function buildImport(k,file,aoa,X){
       if(!dr&&!cr){o.status='skip';o.msg='no amount: left out';return}
       if(isNaN(dr)||isNaN(cr)||dr<0||cr<0)bad(o,'amounts must be positive numbers');if(dr&&cr)bad(o,'fill in Debit or Credit, not both');
       if(!a)bad(o,'no account');else if(a.missing)bad(o,'no account "'+a.code+'"');else if(!a.active)bad(o,a.code+' is switched off');
-      else if(['1100','2000'].includes(a.code))bad(o,'what customers owe, or what you owe suppliers, has to be entered for each customer or supplier so it shows against them. That is being added before go-live; leave this row out for now');
+      else if(['1100','2000'].includes(a.code))bad(o,'enter what each customer owes, or what you owe each supplier, on the Import page (Customers / Suppliers, "Owed on start date") so it shows against each one');
       else if(a.code==='1200')bad(o,'enter opening stock on the Inventory page (stock adjustment, reason "opening")');
       if(o.status==='ok')lines.push({account_code:a.code,debit:N(dr),credit:N(cr)})});
     const dr=N(lines.reduce((s,l)=>s+l.debit,0)),cr=N(lines.reduce((s,l)=>s+l.credit,0)),diff=N(dr-cr);
