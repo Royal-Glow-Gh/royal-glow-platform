@@ -4,7 +4,7 @@
 - GitHub: Royal-Glow-Gh/royal-glow-platform (private monorepo)
   - apps/staff/index.html: staff home (sign-in, then the apps this person's roles allow)
   - apps/staff/production.html: production batch costing
-  - apps/staff/inventory.html: inventory (stock on hand, purchases, transfers, adjustments, movements, setup)
+  - apps/staff/inventory.html: inventory (stock on hand, purchases, transfers, adjustments, stock count, movements, setup). Stock count: pick location and date, type what is on the shelf; differences are saved as 'count' adjustments in one go (entries kept on the device until saved; blank = not counted; count sheet downloads as Excel/CSV)
   - apps/staff/sales.html: sales (new sale, history, customers & credit, returns, price list, reports)
   - apps/staff/staff.html: staff & account (sign-up, forgot password, change password; admins approve staff and set roles)
   - apps/staff/shop-admin.html: online shop management (orders, products shown on the website with photos, delivery/MoMo settings, ship-from and pickup locations)
@@ -27,6 +27,7 @@
     Pages also: /feedback/?t=<token> ("How was your visit?" form, hidden from Google).
     Design styles (Website page -> Design): home "classic" | "editorial" | "showcase"; blog "magazine" | "minimal". All styles are always built at /preview/ (hidden from Google) with labelled placeholders for missing images and clearly marked sample quotes (never on the live site).
   - docs/design-guide/design-guide.tex (+ .pdf): design guide for designers and editors: Website page tabs, styles and sections, slides/announcements/testimonials, image sizes and safe areas, text limits, checklist. Rebuild the PDF with pdflatex after editing.
+  - docs/design-guide/designer-brief.tex (+ .pdf): artwork brief for a graphic designer: every file needed for go-live with size, file name, priority (must / recommended / optional), safe areas, file rules, rights and hand-over.
   - supabase/migrations/006_shop.sql: shop fields on items/locations, shop_settings, shop_profiles (auto-created for customer sign-ups), shop_orders + lines, public functions shop_catalog/shop_info/place_order, staff functions set_shop_product/fulfil_order, product-images storage bucket
   - supabase/migrations/007_delivery_zones.sql: delivery_zones (fee, who delivers, fee paid to Royal Glow or rider); orders store zone, fee_confirmed, fee_to_rider; place_order takes a zone (none = "somewhere else", fee confirmed by staff)
   - supabase/migrations/008_spa.sql: spa_services, spa_therapists (+ which treatments each does), spa_hours, spa_time_off, spa_settings, spa_bookings (database blocks double-booking); public functions spa_info/spa_slots/book_spa, cancel_my_spa_booking; new staff role 'spa'
@@ -36,6 +37,7 @@
   - supabase/migrations/012_accounts_import.sql: import_id on expenses and journals, account_imports log, import_expenses / import_journals (journals and opening balances) / import_accounts (all-or-nothing, row numbers in errors), undo_account_import
   - supabase/migrations/013_opening_and_imports.sql: books_settings (start date), party_openings (opening balance per customer/supplier, in customer_balances, supplier_balances and the ledger against 3900), import_id on items/customers/suppliers/stock_adjustments, import_items / import_customers / import_suppliers / import_opening_stock, undo_import (removes what an import created; keeps customers/suppliers/items already in use)
   - supabase/migrations/014_transaction_imports.sql: import_id on purchases, sales, customer/supplier payments; stock_at(); import_purchases, import_sales (stock check unless older-records mode; refuses receipts already in the system; part payment on credit sales), import_payments; undo_import covers all kinds
+  - supabase/migrations/015_shop_offers.sql: online offers: items.offer_price / offer_from / offer_until; shop_price(); shop_catalog returns was_price + offer_until while an offer runs; set_shop_offer (admin, sales); place_order charges the offer price
   - supabase/email-templates/: Royal Glow versions of the account emails (sign-up confirmation, password reset, email change, sign-in link, invitation) + README with subjects
   - supabase/functions/publish-site/index.ts: Edge Function behind "Publish website now": checks admin/Blog role, one-minute cooldown, asks GitHub to run publish-site.yml (GITHUB_TOKEN secret)
   - .github/workflows/publish-staff.yml: on push to main, copies apps/staff to the deploy-staff branch
@@ -98,6 +100,7 @@ Remove access or change roles on the same page (tick/untick; at least one role m
   - These are management accounts. Statutory accounts and GRA/VAT filings should be prepared or checked by an accountant.
 - Getting records in: set the books start date (Import page) to the first day of the records you'll load. Opening balances are as at that day: stock (Import -> Opening stock), what each customer owed and what was owed to each supplier (Import -> Customers / Suppliers), cash, bank, loans and equipment (Accounts -> Import -> Opening balances). Purchases, sales and payments from that day on are imported as transactions (Import page); dates before the start date are refused. Import order: products, customers, suppliers, opening stock, purchases, sales, payments. Sales normally need the stock to be there; for paper/old-system records tick "Older records" (stock may go below zero, shown as warnings) and do a stock count afterwards. Receipt numbers (sales) and invoice numbers per supplier (purchases) already in the system are left out, so overlapping files are safe. Older history before the start date, if wanted in reports, goes in as summary journals.
 - Imports (Accounts -> Import): download the template, fill it in, choose the file, check the preview, Import. All-or-nothing: one bad row and nothing is saved. Dates day-first (05/11/2026) or 2026-11-05. Possible duplicate expenses (same date, account and amount) are left out unless unticked. Expense, journal and opening-balance imports can be undone from Recent imports; chart-of-accounts imports can't (rename back instead).
+- Online offers (Online shop -> Products -> Online offer): offer price with optional from/until dates. Shop and website show the normal price crossed out, the offer price, a "−x%" tag and the end date. The crossed-out price is always the real normal (retail) price. Online shop only; in-store sales keep the normal price. The normal price returns by itself after the end date. Customers are charged the offer price (checked in the database).
 - Customer sign-ups (account_type 'customer') get a shop profile and never appear in the staff approval list.
 
 ## Data status
@@ -140,7 +143,7 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - [x] Staff management: self sign-up, admin approval and roles, forgot/change password (004)
 - [x] Multiple roles per person (005)
 - [x] Custom SMTP for auth emails: "Royal Glow" <hello@royalglowgh.com> (Hostinger mailbox, smtp.hostinger.com:465); emails per hour raised to ~100
-- [ ] Royal Glow wording for the account emails (supabase/email-templates: paste into Authentication -> Emails -> Templates)
+- [x] Royal Glow wording for the account emails (supabase/email-templates, pasted into Authentication -> Emails -> Templates)
 - [x] Online storefront, customer accounts, online orders (006)
 - [x] Delivery areas with their own fees (007)
 - [ ] Paystack online payments (MoMo + card) (deferred)
@@ -160,10 +163,14 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - [x] Excel/CSV for accounts: every report to Excel or CSV, an accounts pack (all reports in one workbook), imports with templates, preview and checks for expenses, opening balances, journals and the chart of accounts; imports are all-or-nothing and undoable (012)
 - [x] Books start date, opening balances per customer and per supplier, Import page for products and prices, customers, suppliers and opening stock, with column matching (013)
 - [x] Imports for purchases, sales (receipts or daily totals, older-records mode) and customer/supplier payments; Excel/CSV download links on every table (014)
+- [x] Stock count screen (Inventory -> Stock count)
+- [x] Artwork brief for the graphic designer (docs/design-guide/designer-brief.pdf)
+- [x] Online offers: was/now prices in the shop and on the website (015)
+- [ ] Photos from the designer uploaded (logo and icons stay as they are)
 - [ ] Go-live: clear all sample data, enter real data
 
 ## Next up
-- [x] Staff apps live at staff.royalglowgh.com (deploy-staff, auto-deployment on). Remaining clean-up: remove the production.royalglowgh.com redirect URL in Supabase, the production subdomain in Hostinger and the deploy-production branch.
+- [x] Staff apps live at staff.royalglowgh.com (deploy-staff, auto-deployment on). Old production.royalglowgh.com address, redirect URL and deploy-production branch removed.
 - [x] Design templates, online shop: 2 styles (Grid, Lookbook), switchable on the Website page, announcement bar and testimonials in the shop and spa booking, design guide v3
 
 ## Later (backlog)

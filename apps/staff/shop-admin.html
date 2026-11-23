@@ -202,7 +202,7 @@ async function loadAll(){
   status('Loading…');
   const [orders,items,locs,settings,zones]=await Promise.all([
     q(sb.from('shop_orders').select('*, shop_order_lines(*)').order('created_at',{ascending:false})),
-    q(sb.from('items').select('id,name,kind,unit,retail_price,shop_visible,shop_description,image_path').order('name')),
+    q(sb.from('items').select('id,name,kind,unit,retail_price,shop_visible,shop_description,image_path,offer_price,offer_from,offer_until').order('name')),
     q(sb.from('locations').select('*').order('created_at')),
     q(sb.from('shop_settings').select('*').maybeSingle()),
     q(sb.from('delivery_zones').select('*').order('sort_order').order('name'))
@@ -334,8 +334,38 @@ function renderProducts(){
       h('div',{style:'flex:1;display:flex;flex-direction:column;gap:6px'},
         h('div',null,h('b',null,it.name),h('span',{class:'small muted'},' · '+(Number(it.retail_price)>0?money(it.retail_price)+' per '+it.unit:'no retail price yet'))),
         h('label',{class:'small',style:'display:flex;gap:6px;align-items:center'},vis,'Show on website'),
-        desc,h('div',{class:'small'},'Photo: ',file,msg))));
+        desc,h('div',{class:'small'},'Photo: ',file,msg),offerBox(it,can))));
   });
+}
+// Online offer: "was" is always the normal retail price; customers pay the offer price online only
+const isoToday=()=>new Date().toISOString().slice(0,10);
+function offerState(it){const op=Number(it.offer_price),rp=Number(it.retail_price),t=isoToday();
+  if(!(op>0))return null;if(!(op<rp))return 'invalid';
+  if(it.offer_from&&it.offer_from>t)return 'future';if(it.offer_until&&it.offer_until<t)return 'ended';return 'live'}
+const pct=(was,now)=>Math.round((1-now/was)*100);
+function offerBox(it,can){
+  const rp=Number(it.retail_price);if(!(rp>0))return '';
+  const st=offerState(it),m=h('span',{class:'msg'});
+  const price=h('input',{type:'number',step:'0.01',min:'0.01',value:it.offer_price??'',placeholder:'e.g. '+(rp*0.8).toFixed(2),style:'width:110px',disabled:!can});
+  const from=h('input',{type:'date',value:it.offer_from||'',disabled:!can}),until=h('input',{type:'date',value:it.offer_until||'',disabled:!can});
+  const show=()=>{const v=Number(price.value);m.textContent=v>0&&v<rp?'Shows as: was '+money(rp)+', now '+money(v)+' ('+pct(rp,v)+'% off)':v>=rp?'Must be less than the normal price, '+money(rp)+'.':''};
+  price.addEventListener('input',show);
+  const save=h('button',{class:'b',disabled:!can},st?'Update offer':'Start offer');
+  const stop=h('button',{class:'b',disabled:!can},'End offer');
+  const call=async(p)=>{try{await q(sb.rpc('set_shop_offer',{p_item:it.id,p_price:p,p_from:p==null?null:(from.value||null),p_until:p==null?null:(until.value||null)}));
+      Object.assign(it,{offer_price:p,offer_from:p==null?null:(from.value||null),offer_until:p==null?null:(until.value||null)});render('products')}
+    catch(e){m.textContent=friendly(e)}};
+  save.addEventListener('click',()=>{const v=Number(price.value);if(!(v>0)){m.textContent='Enter the offer price.';return}call(v)});
+  stop.addEventListener('click',()=>call(null));
+  const label={live:['On offer now','partner'],future:['Offer starts '+it.offer_from,''],ended:['Offer ended '+it.offer_until+' (normal price shown)',''],
+    invalid:['Offer not shown: the normal price is now at or below the offer price','']}[st]||null;
+  return h('details',{class:'small',open:st==='live'||st==='future'?true:null,style:'margin-top:2px'},
+    h('summary',{style:'cursor:pointer'},'Online offer',label?[' · ',h('span',{class:'pill '+label[1]},label[0])]:'',
+      st==='live'?' was '+money(rp)+', now '+money(it.offer_price)+(it.offer_until?' until '+it.offer_until:''):''),
+    h('div',{class:'row',style:'margin-top:6px;align-items:flex-end;gap:8px;flex-wrap:wrap'},
+      h('label',{class:'f'},'Offer price',price),h('label',{class:'f'},'From (blank = today)',from),h('label',{class:'f'},'Until (blank = until ended)',until),
+      save,st?stop:''),
+    h('div',{class:'muted',style:'margin-top:4px'},'The crossed-out "was" price is always the normal price ('+money(rp)+'). Applies to the online shop only; in-store sales keep the normal price. The normal price returns by itself after the end date.'),m);
 }
 
 // ---------- SETTINGS ----------

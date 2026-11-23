@@ -1,0 +1,171 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\IfFileExists{lmodern.sty}{\usepackage{lmodern}}{\usepackage{mathpazo}\usepackage[scaled=.92]{helvet}}
+\renewcommand\ttdefault{pcr}\usepackage{etoolbox}\AtBeginEnvironment{longtable}{\small}
+\usepackage[margin=2cm]{geometry}
+\usepackage{graphicx,booktabs,tabularx,array,xcolor,enumitem,longtable,tikz,fancyhdr}
+\usepackage{xurl}\usepackage[hidelinks]{hyperref}
+\usepackage{titlesec}
+\definecolor{gold}{HTML}{C8961E}
+\definecolor{golddeep}{HTML}{8F6A0F}
+\definecolor{goldsoft}{HTML}{F6ECD2}
+\definecolor{night}{HTML}{0D0D0C}
+\titleformat{\section}{\Large\bfseries\color{golddeep}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.6em}{}
+\setlist{itemsep=2pt,topsep=4pt}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcommand{\key}[1]{{\footnotesize\texttt{#1}}}
+\newcommand{\swatch}[1]{\textcolor[HTML]{#1}{\rule{1.1em}{1.1em}}}
+\newcommand{\must}{\textbf{\textcolor{golddeep}{Must}}}
+\newcommand{\rec}{Recommended}
+\newcommand{\opt}{\textcolor{gray}{Optional}}
+\setlength{\parindent}{0pt}\setlength{\parskip}{6pt}
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[L]{\small\color{gray}Royal Glow: artwork brief for the website launch}
+\fancyfoot[R]{\small\color{gray}\thepage}
+
+% safe-area drawing: width, height (cm), then the tikz body
+\newcommand{\safeframe}[3]{\begin{tikzpicture}[x=1cm,y=1cm]
+  \fill[goldsoft] (0,0) rectangle (#1,#2); #3
+  \draw[golddeep,line width=0.6pt] (0,0) rectangle (#1,#2);\end{tikzpicture}}
+\tikzset{txt/.style={fill=night!70,opacity=.55},safe/.style={draw=gold,dashed,line width=1pt,fill=gold!25},
+  lab/.style={font=\scriptsize\sffamily,align=center}}
+
+\begin{document}
+\begin{center}
+\includegraphics[width=4.6cm]{../../apps/site/assets/logo.png}\\[8pt]
+{\LARGE\bfseries Artwork brief for the website launch}\\[4pt]
+{\large What to design, at what size, and how to hand it over}\\[6pt]
+\small Royal Glow Company Limited \textperiodcentered{} November 2026 \textperiodcentered{} royalglowgh.com and shop.royalglowgh.com
+\end{center}
+
+\section*{The job in one paragraph}
+Royal Glow makes skincare products and runs a spa in Ghana. The new website (\url{https://royalglowgh.com}) and online shop (\url{https://shop.royalglowgh.com}) are built and working; they now need real artwork. Please supply the files in the list in section~\ref{sec:list}, each at the exact size given. You do \textbf{not} need to design web pages, write code or put text on the images: the website lays out the pages and types the headlines over your photos. Your job is well-composed, retouched photographs cropped to the right shapes. The logo and icons already exist and are \textbf{not} being redesigned.
+
+You can see every place an image goes, with dashed gold boxes showing the name and size of each missing picture, at \url{https://royalglowgh.com/preview/}. Look at it on a computer and on a phone before you start.
+
+\section{Rules for every file}
+\begin{enumerate}
+  \item \textbf{Exact pixel size} as listed. Larger is fine if the shape (aspect ratio) is the same; smaller will look soft and the upload page will warn about it.
+  \item \textbf{Photos:} JPEG (quality about 80) or WebP, \textbf{sRGB} colour (not CMYK, not Adobe RGB). Each file \textbf{under 500\,KB}; slides under 700\,KB. Files over 5\,MB are refused by the upload page.
+  \item \textbf{No text, prices or buttons inside photos.} Headlines and buttons are typed on the website, so they stay sharp, can be changed and can be read by Google. The only text allowed is what is really in the photo, such as a product label.
+  \item \textbf{Keep the subject in the safe area} (section~\ref{sec:safe}). The website crops pictures for different screens and puts text over parts of them.
+  \item \textbf{File names:} lower case, hyphens, no spaces, exactly as in the ``File name'' column. For products and blog covers, use the product or article name, e.g.\ \key{product-shea-body-butter.jpg}.
+  \item \textbf{Real products only.} Show Royal Glow's own products and spa. No competitor products or logos in view.
+  \item \textbf{Rights.} Any stock photo must be licensed for commercial web use (keep the licence). Anyone recognisable in a photo must have signed a model release giving Royal Glow permission. Never use images found on Google or social media.
+  \item \textbf{Hand over the source files too} (PSD, AI, Figma or RAW), so the images can be re-cropped later.
+\end{enumerate}
+
+\section{Brand basics}
+\begin{tabularx}{\textwidth}{@{}l l L@{}}
+\toprule
+\textbf{Colour} & \textbf{Hex} & \textbf{Use} \\ \midrule
+\swatch{0D0D0C} Night & \#0D0D0C & Dark backgrounds: header, footer, hero \\
+\swatch{C8961E} Gold & \#C8961E & Main accent, buttons \\
+\swatch{8F6A0F} Deep gold & \#8F6A0F & Gold on light backgrounds \\
+\swatch{F7E7BF} Pale gold & \#F7E7BF & Headlines on dark backgrounds \\
+\swatch{F6ECD2} Gold tint & \#F6ECD2 & Soft panels \\
+\swatch{FAF7F1} Cream & \#FAF7F1 & Page background \\
+\swatch{1A1814} Ink & \#1A1814 & Body text \\ \bottomrule
+\end{tabularx}
+
+\textbf{Fonts} (free, Google Fonts): \emph{Cormorant Garamond} 600 for headings; \emph{DM Sans} 400--600 for text. You only need these for the share image or mock-ups; there is no text in the photos.
+
+\textbf{Photo mood.} Warm, natural light; gold, cream, honey and deep brown tones; clean surfaces (wood, linen, stone); real hands and skin, lightly retouched (no heavy skin smoothing). Shea butter, oils and natural ingredients make good supporting props. Leave calm, uncluttered space where the safe-area drawings show text.
+
+\textbf{The logo stays as it is.} The gold ``RoyalGlow'' wordmark, with a crown over the R and an oil drop as the o, is already on the website, the shop, the staff pages and the emails, together with its icons. Do not redesign, recolour or redraw it.
+
+\section{The list}\label{sec:list}
+\textbf{Must} = needed before the site goes live. \textbf{Recommended} = the site works without it but looks unfinished. \textbf{Optional} = only if time and budget allow.
+
+\subsection{Logo and icons: already done}
+These files already exist and work on the live site. Nothing here is needed for launch.
+
+\begin{longtable}{@{}P{3.2cm} P{2.1cm} P{3.9cm} P{3.75cm} l@{}}
+\toprule
+\textbf{Item} & \textbf{Size (px)} & \textbf{File name} & \textbf{Notes} & \textbf{Priority} \\ \midrule\endhead
+Logo, gold & 720 × 230 & \key{logo.png} & In use. No change & Done \\
+Crown alone & 320 × 202 & \key{crown.png} & In use. No change & Done \\
+App and browser icons & 512, 192, 180, 32, 16 & \key{icon-512.png} etc. & In use. No change & Done \\
+Social share image & 1200 × 630 & \key{og-default.jpg} & In use: gold logo on black. A version with the logo beside a product photo (all important parts inside the centre 1000 × 500) would look better when links are shared on WhatsApp & \opt \\
+Logo master, vector & any & \key{logo.svg} & Only if Royal Glow does not already have the original file from whoever designed the logo. Trace the existing logo exactly; useful for print, signs and packaging, not for the website & \opt \\ \bottomrule
+\end{longtable}
+
+\subsection{Home page and other pages}
+These cover all three home-page styles, so Royal Glow can switch style later without new artwork.
+
+\begin{longtable}{@{}P{3.2cm} P{2.1cm} P{3.9cm} P{3.75cm} l@{}}
+\toprule
+\textbf{Item} & \textbf{Size (px)} & \textbf{File name} & \textbf{Notes} & \textbf{Priority} \\ \midrule\endhead
+Slide 1, computer & 2400 × 1200 (2:1) & \key{slide-1-wide.jpg} & Main brand image: hero products or the spa & \must \\
+Slide 1, phone & 1080 × 1620 (2:3) & \key{slide-1-phone.jpg} & The same scene, recomposed for a tall screen (not just cropped) & \must \\
+Slides 2 and 3, computer & 2400 × 1200 & \key{slide-2-wide.jpg}, \key{slide-3-wide.jpg} & Suggested themes: the spa; ingredients or the making process & \rec \\
+Slides 2 and 3, phone & 1080 × 1620 & \key{slide-2-phone.jpg}, \key{slide-3-phone.jpg} & As above & \rec \\
+Our products (making) & 1200 × 900 (4:3) & \key{home-making.jpg} & Products being made, or ingredients & \must \\
+Spa & 1200 × 900 (4:3) & \key{home-spa.jpg} & Treatment room or a treatment in progress & \must \\
+Stockists & 1200 × 900 (4:3) & \key{home-stockists.jpg} & Products on a shop or pharmacy shelf & \must \\
+Editorial hero & 1200 × 1500 (4:5) & \key{home-editorial.jpg} & Tall lifestyle photo, shown inside an arch. Needed only for the ``Editorial'' style & \rec \\
+About banner & 1600 × 900 (16:9) & \key{about-banner.jpg} & The team, the premises or the founder & \must \\
+Online shop banner & 2400 × 900 (8:3) & \key{shop-banner.jpg} & Group shot of the range & \opt \\ \bottomrule
+\end{longtable}
+
+\subsection{Products and blog}
+\begin{longtable}{@{}P{3.2cm} P{2.1cm} P{3.9cm} P{3.75cm} l@{}}
+\toprule
+\textbf{Item} & \textbf{Size (px)} & \textbf{File name} & \textbf{Notes} & \textbf{Priority} \\ \midrule\endhead
+Product photo, one per product on sale & 1600 × 1600 (1:1) & \key{product-<name>.jpg} & Front view, label readable, product centred with about 10\% margin. \textbf{Same background, light and angle for every product.} Royal Glow will give you the product list & \must \\
+Blog cover, one per article & 1600 × 900 (16:9) & \key{blog-<article>.jpg} & For the first 3 articles at launch. The bottom 90\,px may be covered by the title panel & \must \\
+Extra product photos (in use, texture, ingredients) & 1600 × 1600 & \key{product-<name>-2.jpg} & For social media and later use; the shop shows one photo per product for now & \opt \\ \bottomrule
+\end{longtable}
+
+\textbf{Quantities at launch}: no brand files (the logo and icons are done), 6 page images (11 with the recommended slides and editorial hero, 12 with the shop banner), one photo per product, and 3 blog covers.
+
+\section{Safe areas}\label{sec:safe}
+Gold dashed box = where the subject should be. Dark shading = covered by text or darkened on the website.
+
+\begin{center}
+\resizebox{\textwidth}{!}{\begin{tabular}{ccc}
+\safeframe{6}{3}{\fill[txt] (0,0) rectangle (2.7,3); \fill[txt] (2.7,0) rectangle (6,1);
+  \draw[safe] (3.1,1.1) rectangle (5.8,2.8);
+  \node[lab,white] at (1.35,1.5) {headline\\and button};\node[lab] at (4.45,1.95) {subject};}
+&
+\safeframe{2}{3}{\fill[txt] (0,0) rectangle (2,1.5);\draw[safe] (0.3,1.7) rectangle (1.7,2.9);
+  \node[lab,white] at (1,.75) {text};\node[lab] at (1,2.3) {subject};}
+&
+\safeframe{2.4}{3}{\fill[white] (0,3) -- (0,2.2) arc (180:90:0.8) -- cycle; \fill[white] (2.4,3) -- (2.4,2.2) arc (0:90:0.8) -- cycle;
+  \draw[safe] (0.36,0.2) rectangle (2.04,2.5);\node[lab] at (1.2,1.35) {subject};} \\[2pt]
+\small Slide, computer 2400 × 1200 & \small Slide, phone 1080 × 1620 & \small Editorial hero 1200 × 1500 \\[10pt]
+\safeframe{4}{3}{\fill[txt] (0,0) rectangle (4,1.2);\draw[safe] (0.6,1.4) rectangle (3.4,2.85);
+  \node[lab,white] at (2,.6) {tile title (Showcase)};\node[lab] at (2,2.1) {subject};}
+&
+\safeframe{3}{3}{\draw[safe] (0.3,0.3) rectangle (2.7,2.7);\node[lab] at (1.5,1.5) {product,\\centred};}
+&
+\safeframe{5.33}{3}{\fill[txt] (0,0) rectangle (5.33,0.3);\draw[safe] (0.6,0.6) rectangle (4.73,2.4);
+  \node[lab] at (2.66,1.5) {subject in the middle band};\node[lab,white] at (2.66,.15) {\tiny title panel (blog)};}
+\\[2pt]
+\small Making, spa, stockists 1200 × 900 & \small Product 1600 × 1600 & \small About banner and blog cover 1600 × 900
+\end{tabular}}
+\end{center}
+
+\begin{itemize}
+  \item \textbf{Slides, computer:} the headline covers the left 45\%; one style also darkens the bottom third. Very wide screens trim about 10\% top and bottom.
+  \item \textbf{Slides, phone:} text covers the lower half; phones may trim up to 15\% from each side.
+  \item \textbf{Editorial hero:} the arch cuts the top corners; keep the subject in the central 70\% of the width.
+  \item \textbf{Making, spa, stockists:} in one style the title covers the bottom 40\%. The spa photo may also be cropped taller, so keep its subject centred.
+  \item \textbf{Shop banner:} keep the subject in the upper right; the headline sits on the left.
+  \item \textbf{About banner:} shown as a wide strip 220--420\,px tall, so the top and bottom are often cut off.
+\end{itemize}
+
+\section{Handing over}
+\begin{enumerate}
+  \item Put the final files in one shared folder (Google Drive or similar) with three sub-folders: \key{brand}, \key{website}, \key{products-blog}. Put source files in a fourth, \key{source}.
+  \item For the first review, send the slide, home and about images as low-resolution drafts. Royal Glow uploads them to the Website page and checks them in the preview on a computer and a phone, then sends back comments.
+  \item After approval, send the finals. Royal Glow staff upload them on the staff Website, Online shop and Blog pages (a new share image, if made, is added by Royal Glow's developer). You do not need any login.
+  \item Include a short note listing any stock photos used, with their licence links, and confirming model releases for anyone recognisable.
+\end{enumerate}
+
+\textbf{Contact:} \href{mailto:hello@royalglowgh.com}{hello@royalglowgh.com}
+
+\end{document}

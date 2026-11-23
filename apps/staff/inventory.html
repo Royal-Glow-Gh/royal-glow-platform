@@ -112,6 +112,7 @@ details summary{cursor:pointer;color:var(--text-2)}
     <button data-v="purchases">Purchases</button>
     <button data-v="transfers">Transfers</button>
     <button data-v="adjust">Adjustments</button>
+    <button data-v="count">Stock count</button>
     <button data-v="moves">Movements</button>
     <button data-v="setup">Setup</button>
   </nav>
@@ -203,6 +204,29 @@ details summary{cursor:pointer;color:var(--text-2)}
     <div class="card">
       <h2>Adjustment history</h2>
       <table><thead><tr><th>Date</th><th>Item</th><th>Location</th><th>Reason</th><th class="n">Change</th><th>Notes</th><th></th></tr></thead><tbody id="aList"></tbody></table>
+    </div>
+  </section>
+
+  <!-- STOCK COUNT -->
+  <section id="v-count" class="hidden">
+    <div class="card">
+      <h2>Count stock</h2>
+      <p class="small muted" style="margin-top:0">Count what is physically there, enter it below, and save. Only the items you fill in are changed: the difference between your count and the system becomes a "Stock count" adjustment, so stock and the accounts match the shelf. Leave an item blank if you didn't count it. Your entries are kept on this device until you save, so a long count isn't lost.</p>
+      <div class="row">
+        <label class="f">Location<select id="cLoc"></select></label>
+        <label class="f">Count date<input type="date" id="cDate"></label>
+        <label class="f">Show<select id="cKind"><option value="">All items</option><option value="product">Products</option><option value="goods">Bought-in goods</option><option value="raw">Raw materials</option><option value="packaging">Packaging</option><option value="label">Labels</option></select></label>
+        <label class="f">Find<input id="cFind" placeholder="Item name" size="16"></label>
+        <button class="b" id="cZero" title="Fill every blank with the system quantity, then change only what differs">Fill blanks with system quantity</button>
+        <button class="b" id="cClear">Clear entries</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2><span id="cTitle">Count sheet</span></h2>
+      <table id="cTable"><thead><tr><th>Item</th><th>Kind</th><th class="n">In the system</th><th class="n">Counted</th><th class="n">Difference</th><th class="n">Value of difference</th></tr></thead><tbody id="cList"></tbody></table>
+      <div class="tot" id="cSum" style="margin-top:10px"></div>
+      <div class="row" style="margin-top:12px"><label class="f" style="flex:1">Note for these adjustments<input id="cNote" placeholder="e.g. Year-end count by Ama and Kofi"></label>
+        <button class="b p" id="cSave">Save count</button><span class="msg" id="cMsg"></span></div>
     </div>
   </section>
 
@@ -327,7 +351,8 @@ async function boot(){
   $('gate').classList.add('hidden');$('app').classList.remove('hidden');
   document.querySelectorAll('#pSave,#pAdd,#tSave,#tAdd,#aSave,#lAdd,#supAdd,#loadSample').forEach(b=>b.disabled=!canWrite());
   $('roBanner').classList.toggle('hidden',canWrite());
-  ['pDate','tDate','aDate'].forEach(id=>{if(!$(id).value)$(id).value=today()});
+  ['pDate','tDate','aDate','cDate'].forEach(id=>{if(!$(id).value)$(id).value=today()});
+  $('cSave').disabled=$('cZero').disabled=!canWrite();
   show(location.hash.slice(1)||'stock');
 }
 $('gLogin').addEventListener('submit',async e=>{
@@ -341,13 +366,13 @@ async function signOut(e){if(e)e.preventDefault();await sb.auth.signOut();ME=nul
 $('gOut').addEventListener('click',signOut);$('signOut').addEventListener('click',signOut);
 
 // ---------- tabs ----------
-const views=['stock','purchases','transfers','adjust','moves','setup'];
+const views=['stock','purchases','transfers','adjust','count','moves','setup'];
 function show(v){if(!views.includes(v))v='stock';views.forEach(x=>$('v-'+x).classList.toggle('hidden',x!==v));document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render(v);}
 $('tabs').addEventListener('click',e=>{const v=e.target.dataset&&e.target.dataset.v;if(v){location.hash=v;show(v)}});
 window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
 function render(v){
   $('sampleBanner').classList.toggle('hidden',!(canWrite()&&!D.purchases.length&&!D.transfers.length&&!D.adjs.length));
-  ({stock:renderStock,purchases:renderPurchases,transfers:renderTransfers,adjust:renderAdjust,moves:renderMoves,setup:renderSetup})[v]();
+  ({stock:renderStock,purchases:renderPurchases,transfers:renderTransfers,adjust:renderAdjust,count:renderCount,moves:renderMoves,setup:renderSetup})[v]();
 }
 const refresh=async v=>{await loadAll();render(v)};
 // two-click delete button
@@ -522,6 +547,63 @@ $('aSave').addEventListener('click',async()=>{
     $('aQty').value='';$('aNotes').value='';await refresh('adjust');msg('Saved.');setTimeout(()=>msg(''),2500);
   }catch(e){msg(friendly(e))}finally{$('aSave').disabled=!canWrite()}
 });
+
+// ---------- STOCK COUNT ----------
+// System quantity = everything recorded up to the end of the count date at that location.
+const KNAME={product:'Product',goods:'Bought-in',raw:'Raw material',packaging:'Packaging',label:'Label'};
+let CNT={sys:{},key:''};
+const cKey=()=>'rg-count:'+$('cLoc').value+':'+$('cDate').value;
+function cDraft(){try{return JSON.parse(localStorage.getItem(cKey())||'{}')}catch(_){return {}}}
+function cKeep(d){try{Object.keys(d).length?localStorage.setItem(cKey(),JSON.stringify(d)):localStorage.removeItem(cKey())}catch(_){}}
+async function renderCount(){
+  if(!$('cLoc').options.length||![...$('cLoc').options].some(o=>o.value))fillSelect($('cLoc'),activeLocs(),false);
+  if(!$('cDate').value)$('cDate').value=today();
+  const L=$('cLoc').value,dt=$('cDate').value;if(!L)return;
+  const key=L+'|'+dt;
+  if(CNT.key!==key){status('Loading stock at '+dt+'…');
+    try{const rows=await q(sb.from('stock_ledger').select('item_id,qty_change').eq('location_id',L).lte('move_date',dt));
+      CNT={key,sys:{}};rows.forEach(r=>{CNT.sys[r.item_id]=(CNT.sys[r.item_id]||0)+Number(r.qty_change)});status('Connected')}
+    catch(e){status('Error: '+friendly(e));return}}
+  drawCount();
+}
+function drawCount(){
+  const draft=cDraft(),kind=$('cKind').value,find=$('cFind').value.trim().toLowerCase();
+  const list=sortItems(D.items).filter(i=>i.active!==false&&(!kind||i.kind===kind)&&(!find||i.name.toLowerCase().includes(find)));
+  $('cTitle').textContent='Count sheet: '+((loc($('cLoc').value)||{}).name||'')+', '+$('cDate').value;
+  $('cList').replaceChildren(...(list.length?list.map(i=>{const sys=Math.round((CNT.sys[i.id]||0)*1000)/1000;
+    const inp=h('input',{type:'number',step:'any',min:'0',style:'width:100px;text-align:right',value:draft[i.id]??'',disabled:!canWrite(),'aria-label':'Counted '+i.name});
+    const diff=h('td',{class:'n'}),val=h('td',{class:'n'});
+    const upd=()=>{const v=inp.value.trim();if(v===''){diff.textContent='';val.textContent='';diff.className='n'}
+      else{const d=Math.round((Number(v)-sys)*1000)/1000;diff.textContent=d?signed(d)+' '+i.unit:'✓';diff.className='n '+(d<0?'up':d>0?'down':'');val.textContent=d?money(d*costOf(i.id)):''}};
+    inp.addEventListener('input',()=>{const d=cDraft();if(inp.value.trim()==='')delete d[i.id];else d[i.id]=inp.value.trim();cKeep(d);upd();cTotals()});
+    upd();return h('tr',null,h('td',null,i.name+' ('+i.unit+')'),h('td',{class:'small muted'},KNAME[i.kind]||i.kind),h('td',{class:'n'},num(sys)),h('td',{class:'n'},inp),diff,val)}):
+    [h('tr',null,h('td',{colspan:6,class:'muted small'},'No items match.'))]));
+  cTotals();
+}
+function cChanges(){const d=cDraft();return Object.entries(d).map(([id,v])=>{const it=item(id);if(!it||v===''||isNaN(Number(v))||Number(v)<0)return null;
+  const ch=Math.round((Number(v)-(CNT.sys[id]||0))*10000)/10000;return {it,counted:Number(v),ch}}).filter(Boolean)}
+function cTotals(){const c=cChanges(),ch=c.filter(x=>x.ch),bad=Object.values(cDraft()).filter(v=>isNaN(Number(v))||Number(v)<0).length;
+  const up=ch.filter(x=>x.ch>0).reduce((s,x)=>s+x.ch*costOf(x.it.id),0),down=ch.filter(x=>x.ch<0).reduce((s,x)=>s+x.ch*costOf(x.it.id),0);
+  $('cSum').replaceChildren(c.length+' item'+(c.length===1?'':'s')+' counted · '+ch.length+' differ',
+    ch.length?' · stock found '+money(up)+', stock missing '+money(-down)+', net '+money(up+down):'',bad?h('span',{class:'up'},' · '+bad+' entr'+(bad===1?'y is':'ies are')+' not a valid quantity'):'');
+  $('cSave').textContent=ch.length?'Save count ('+ch.length+' adjustment'+(ch.length===1?'':'s')+')':'Save count';
+  $('cSave').disabled=!canWrite()||!c.length||!!bad;
+}
+['cLoc','cDate'].forEach(id=>$(id).addEventListener('change',()=>renderCount()));
+['cKind'].forEach(id=>$(id).addEventListener('change',drawCount));$('cFind').addEventListener('input',drawCount);
+$('cZero').addEventListener('click',()=>{const d=cDraft();sortItems(D.items).filter(i=>i.active!==false&&(!$('cKind').value||i.kind===$('cKind').value)).forEach(i=>{if(d[i.id]==null)d[i.id]=String(Math.round((CNT.sys[i.id]||0)*1000)/1000)});cKeep(d);drawCount()});
+$('cClear').addEventListener('click',e=>{const b=e.currentTarget;if(!b.dataset.arm){b.dataset.arm=1;b.textContent='Click again to clear';setTimeout(()=>{b.removeAttribute('data-arm');b.textContent='Clear entries'},3000);return}
+  cKeep({});b.removeAttribute('data-arm');b.textContent='Clear entries';drawCount()});
+$('cSave').addEventListener('click',async()=>{const msg=t=>{$('cMsg').textContent=t};const b=$('cSave');
+  const ch=cChanges().filter(x=>x.ch);
+  if(!ch.length){cKeep({});drawCount();return msg('Everything counted matches the system. Nothing to change.')}
+  if(!b.dataset.arm){b.dataset.arm=1;msg('This records '+ch.length+' adjustment'+(ch.length===1?'':'s')+' dated '+$('cDate').value+'. Click Save again to confirm.');setTimeout(()=>b.removeAttribute('data-arm'),5000);return}
+  b.removeAttribute('data-arm');b.disabled=true;msg('Saving…');
+  const note=($('cNote').value.trim()||'Stock count')+' ('+$('cDate').value+')';
+  try{// one request = all or nothing
+    await q(sb.from('stock_adjustments').insert(ch.map(x=>({adj_date:$('cDate').value,item_id:x.it.id,location_id:$('cLoc').value,qty_change:x.ch,reason:'count',notes:note}))));
+    cKeep({});CNT.key='';$('cNote').value='';await refresh('count');msg('Saved: '+ch.length+' adjustment'+(ch.length===1?'':'s')+'. Stock now matches your count.')}
+  catch(e){msg(friendly(e));b.disabled=false}});
 
 // ---------- MOVEMENTS ----------
 async function renderMoves(){
