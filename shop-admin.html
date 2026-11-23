@@ -202,7 +202,7 @@ async function loadAll(){
   status('Loading…');
   const [orders,items,locs,settings,zones]=await Promise.all([
     q(sb.from('shop_orders').select('*, shop_order_lines(*)').order('created_at',{ascending:false})),
-    q(sb.from('items').select('id,name,kind,unit,retail_price,shop_visible,shop_description,image_path,offer_price,offer_from,offer_until').order('name')),
+    q(sb.from('items').select('id,name,kind,unit,retail_price,shop_visible,shop_description,image_path,offer_price,offer_from,offer_until,is_set,active').order('name')),
     q(sb.from('locations').select('*').order('created_at')),
     q(sb.from('shop_settings').select('*').maybeSingle()),
     q(sb.from('delivery_zones').select('*').order('sort_order').order('name'))
@@ -300,16 +300,29 @@ function renderOrders(){
       h('div',{class:'small',style:'margin:6px 0'},h('b',null,o.full_name),' · ',o.phone,o.email?' · '+o.email:'',
         h('br'),o.delivery_method==='delivery'?deliveryLine(o):'Pickup at: '+((loc(o.pickup_location_id)||{}).name||'?'),
         o.notes?[h('br'),'Note: '+o.notes]:''),
-      h('table',{class:'small'},h('tbody',null,lines.map(l=>{const it=item(l.item_id)||{};return h('tr',null,h('td',null,it.name||'?'),h('td',{class:'n'},num(l.qty)+' × '+money(l.unit_price)),h('td',{class:'n'},money(Number(l.qty)*Number(l.unit_price))))}))),
+      h('table',{class:'small'},h('tbody',null,orderRows(lines))),
       actions.length?h('div',{style:'margin-top:10px'},actions,msg):(o.sale_id?h('div',{class:'small muted',style:'margin-top:8px'},'Recorded as a sale (receipt '+o.order_no+').'):'')));
   });
 }
 $('oStatus').addEventListener('change',renderOrders);
 
+// Order lines, with the products of each set listed under it as a packing list
+function orderRows(lines){const out=[],seen={};
+  lines.forEach(l=>{if(!l.set_id){const it=item(l.item_id)||{};
+      out.push(h('tr',null,h('td',null,it.name||l.item_name||'?'),h('td',{class:'n'},num(l.qty)+' × '+money(l.unit_price)),h('td',{class:'n'},money(Number(l.qty)*Number(l.unit_price)))));return}
+    if(seen[l.set_id])return;seen[l.set_id]=1;
+    const g=lines.filter(x=>x.set_id===l.set_id),n=Number(l.set_qty)||1,tot=g.reduce((t,x)=>t+Number(x.qty)*Number(x.unit_price),0);
+    const qty={};g.forEach(x=>{qty[x.item_id]=(qty[x.item_id]||0)+Number(x.qty)});
+    out.push(h('tr',null,h('td',null,h('b',null,l.set_name||(item(l.set_id)||{}).name||'Set'),
+        h('div',{class:'muted'},'Pack: '+Object.entries(qty).map(([id,q])=>num(q)+' × '+((item(id)||{}).name||'?')).join(', '))),
+      h('td',{class:'n'},num(n)+' × '+money(tot/n)),h('td',{class:'n'},money(tot))));
+  });
+  return out}
+
 // ---------- PRODUCTS ----------
 function renderProducts(){
   const box=$('pList');box.replaceChildren();const can=canWrite();
-  const list=D.items.filter(i=>i.kind==='product'||i.kind==='goods');
+  const list=D.items.filter(i=>(i.kind==='product'||i.kind==='goods')&&!(i.is_set&&i.active===false));
   if(!list.length){box.appendChild(h('p',{class:'muted small'},'No products or resale goods yet.'));return}
   list.forEach(it=>{
     const msg=h('span',{class:'msg'});
@@ -332,7 +345,7 @@ function renderProducts(){
     box.appendChild(h('div',{style:'display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start'},
       img,
       h('div',{style:'flex:1;display:flex;flex-direction:column;gap:6px'},
-        h('div',null,h('b',null,it.name),h('span',{class:'small muted'},' · '+(Number(it.retail_price)>0?money(it.retail_price)+' per '+it.unit:'no retail price yet'))),
+        h('div',null,h('b',null,it.name),it.is_set?h('span',{class:'pill partner',style:'margin-left:6px'},'Set'):'',h('span',{class:'small muted'},' · '+(Number(it.retail_price)>0?money(it.retail_price)+' per '+it.unit:'no retail price yet')+(it.is_set?' · contents and prices on Sales → Sets':''))),
         h('label',{class:'small',style:'display:flex;gap:6px;align-items:center'},vis,'Show on website'),
         desc,h('div',{class:'small'},'Photo: ',file,msg),offerBox(it,can))));
   });

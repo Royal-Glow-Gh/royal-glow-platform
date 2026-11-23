@@ -257,7 +257,7 @@ async function loadAll(){
     q(sb.from('items').select('*').order('name')),
     q(sb.from('batches').select('*, batch_inputs(*)').order('batch_date'))
   ]);
-  S.items=items.map(r=>({id:r.id,name:r.name,kind:r.kind,unit:r.unit,unitCost:Number(r.unit_cost)}));
+  S.items=items.filter(r=>!r.is_set).map(r=>({id:r.id,name:r.name,kind:r.kind,unit:r.unit,unitCost:Number(r.unit_cost)}));  // sets packed when sold are made on the Sales page
   S.batches=batches.map(b=>({id:b.id,productId:b.product_id,date:b.batch_date,code:b.code||'',outputQty:Number(b.output_qty),otherCost:Number(b.other_cost),
     inputs:(b.batch_inputs||[]).map(x=>({itemId:x.item_id,qty:Number(x.qty),unitCost:Number(x.unit_cost)}))}));
   status('Connected');

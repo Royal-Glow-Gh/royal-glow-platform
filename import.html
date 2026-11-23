@@ -267,11 +267,14 @@ async function signOut(e){if(e)e.preventDefault();await sb.auth.signOut();ME=nul
 $('gOut').addEventListener('click',signOut);$('signOut').addEventListener('click',signOut);
 
 async function loadAll(){
-  const [items,customers,suppliers,locations,bs]=await Promise.all([
-    q(sb.from('items').select('id,name,kind,unit,unit_cost,retail_price,wholesale_price,active').order('name')),
+  const [items,customers,suppliers,locations,bs,comps]=await Promise.all([
+    q(sb.from('items').select('id,name,kind,unit,unit_cost,retail_price,wholesale_price,active,is_set').order('name')),
     q(sb.from('customers').select('id,name,price_tier').order('name')),q(sb.from('suppliers').select('id,name').order('name')),
-    q(sb.from('locations').select('id,name,kind,active').order('name')),q(sb.from('books_settings').select('start_date').eq('id',1).maybeSingle())]);
-  Object.assign(D,{items,customers,suppliers,locations,start:bs&&bs.start_date});
+    q(sb.from('locations').select('id,name,kind,active').order('name')),q(sb.from('books_settings').select('start_date').eq('id',1).maybeSingle()),
+    sb.from('set_components').select('set_id,item_id,qty').then(r=>r.error?[]:r.data)]);
+  // sets packed when sold: a set on a receipt becomes its products (shared out by the database)
+  const SC={};(comps||[]).forEach(c=>(SC[c.set_id]=SC[c.set_id]||[]).push({item_id:c.item_id,qty:Number(c.qty)}));
+  Object.assign(D,{items,customers,suppliers,locations,start:bs&&bs.start_date,setComps:SC});
   $('sDate').value=D.start||'';$('sDate').disabled=$('sSave').disabled=!has('accounts');
 }
 $('sSave').addEventListener('click',async()=>{try{const r=await q(sb.from('books_settings').update({start_date:$('sDate').value}).eq('id',1).select());if(!r.length)throw {code:'42501'};
@@ -431,7 +434,8 @@ async function previewTx(rows,get,bad,money){
     let have=[];try{have=await q(sb.from('sales').select('receipt_no').not('receipt_no','is',null))}catch(_){}
     const haveSet=new Set(have.map(x=>String(x.receipt_no).toLowerCase()));
     // stock on hand before the file, per item and location, by date
-    const ids=[...new Set(rows.filter(o=>o.p.it).map(o=>o.p.it.id))];let ledger=[];
+    const needsOf=l=>D.setComps[l.item_id]?D.setComps[l.item_id].map(c=>({item_id:c.item_id,qty:c.qty*l.qty,set:l.item_id})):[{item_id:l.item_id,qty:l.qty}];
+    const ids=[...new Set(rows.filter(o=>o.p.it).flatMap(o=>needsOf({item_id:o.p.it.id,qty:1}).map(n=>n.item_id)))];let ledger=[];
     if(ids.length)try{ledger=await q(sb.from('stock_ledger').select('item_id,location_id,move_date,qty_change').in('item_id',ids))}catch(_){}
     payload=[];const sales=[];
     groups.forEach((g,i)=>{const f=g.rows[0].p,label='Receipt '+(f.receipt||'#'+(i+1));
@@ -445,11 +449,11 @@ async function previewTx(rows,get,bad,money){
       g.rows.forEach(o=>{o.msg=label+o.p.src});
       sales.push({g,label,f,lines:[...lines.values()],disc,pn,gross})});
     // stock check, in date order, counting earlier sales in this file
-    const used=new Map();sales.sort((a,b)=>a.f.d<b.f.d?-1:a.f.d>b.f.d?1:0).forEach(s=>s.lines.forEach(l=>{const k=l.item_id+'|'+s.f.loc.id;
+    const used=new Map();sales.sort((a,b)=>a.f.d<b.f.d?-1:a.f.d>b.f.d?1:0).forEach(s=>s.lines.forEach(L=>needsOf(L).forEach(n=>{const l={...n,row:L.row},k=l.item_id+'|'+s.f.loc.id;
       const before=ledger.filter(x=>x.item_id===l.item_id&&x.location_id===s.f.loc.id&&x.move_date<=s.f.d).reduce((t,x)=>t+Number(x.qty_change),0)-(used.get(k)||0);
       used.set(k,(used.get(k)||0)+l.qty);
-      if(before<l.qty){const m='only '+(Math.round(before*100)/100)+' '+clean(D.items.find(i=>i.id===l.item_id).name)+' in stock at '+clean(s.f.loc.name)+' on '+s.f.d;
-        if(older){if(l.row.status==='ok'){l.row.status='warn';l.row.msg+=' · stock goes below zero ('+m+')'}}else bad(l.row,m+'. Import purchases and opening stock first, or tick "Older records"')}}));
+      if(before<l.qty){const m='only '+(Math.round(before*100)/100)+' '+clean(D.items.find(i=>i.id===l.item_id).name)+(n.set?' (for '+clean(D.items.find(i=>i.id===n.set).name)+')':'')+' in stock at '+clean(s.f.loc.name)+' on '+s.f.d;
+        if(older){if(l.row.status==='ok'){l.row.status='warn';l.row.msg+=' · stock goes below zero ('+m+')'}}else bad(l.row,m+'. Import purchases and opening stock first, or tick "Older records"')}})));
     sales.forEach(s=>{if(s.g.rows.some(o=>o.status==='err'))return;count++;total+=s.gross-s.disc;
       payload.push({label:s.label,sale_date:s.f.d,location_id:s.f.loc.id,customer_id:s.f.cust?s.f.cust.id:null,payment_method:s.f.pay,receipt_no:s.f.receipt||null,discount:N(s.disc),
         paid_now:s.pn?N(s.pn):null,paid_now_method:s.g.rows.find(o=>o.p.pn)?.p.pnw||'cash',lines:s.lines.map(l=>({item_id:l.item_id,qty:l.qty,unit_price:l.unit_price}))})});
