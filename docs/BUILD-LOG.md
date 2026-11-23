@@ -36,6 +36,7 @@
   - supabase/migrations/012_accounts_import.sql: import_id on expenses and journals, account_imports log, import_expenses / import_journals (journals and opening balances) / import_accounts (all-or-nothing, row numbers in errors), undo_account_import
   - supabase/migrations/013_opening_and_imports.sql: books_settings (start date), party_openings (opening balance per customer/supplier, in customer_balances, supplier_balances and the ledger against 3900), import_id on items/customers/suppliers/stock_adjustments, import_items / import_customers / import_suppliers / import_opening_stock, undo_import (removes what an import created; keeps customers/suppliers/items already in use)
   - supabase/migrations/014_transaction_imports.sql: import_id on purchases, sales, customer/supplier payments; stock_at(); import_purchases, import_sales (stock check unless older-records mode; refuses receipts already in the system; part payment on credit sales), import_payments; undo_import covers all kinds
+  - supabase/email-templates/: Royal Glow versions of the account emails (sign-up confirmation, password reset, email change, sign-in link, invitation) + README with subjects
   - supabase/functions/publish-site/index.ts: Edge Function behind "Publish website now": checks admin/Blog role, one-minute cooldown, asks GitHub to run publish-site.yml (GITHUB_TOKEN secret)
   - .github/workflows/publish-staff.yml: on push to main, copies apps/staff to the deploy-staff branch
   - .github/workflows/publish-shop.yml: on push to main, copies apps/shop to the deploy-shop branch
@@ -46,7 +47,7 @@
 ## Supabase Auth settings (Authentication -> ...)
 - Sign In / Providers: "Allow new users to sign up" ON; email confirmation ON.
 - URL Configuration: Site URL https://staff.royalglowgh.com ; Redirect URLs include https://staff.royalglowgh.com/** and https://shop.royalglowgh.com/**
-- Supabase's built-in email sender is limited and meant for testing. Before go-live, set up custom SMTP (e.g. a Royal Glow mailbox on Hostinger) so confirmation and reset emails are reliable and come from Royal Glow.
+- Emails: custom SMTP through the Hostinger mailbox hello@royalglowgh.com (host smtp.hostinger.com, port 465, sender name "Royal Glow"). Authentication -> Rate Limits: emails per hour ~100. Email wording: supabase/email-templates (README lists the subject for each).
 
 ## How a change goes live
 Edit in Codespace -> commit -> Sync -> GitHub Action updates deploy-staff -> Hostinger redeploys.
@@ -138,7 +139,8 @@ Remove access or change roles on the same page (tick/untick; at least one role m
 - [x] Sales, customers, credit, payments, returns, price list, reports (003)
 - [x] Staff management: self sign-up, admin approval and roles, forgot/change password (004)
 - [x] Multiple roles per person (005)
-- [ ] Custom SMTP for auth emails (before go-live): sender "Royal Glow" <hello@royalglowgh.com>, a real monitored Hostinger mailbox
+- [x] Custom SMTP for auth emails: "Royal Glow" <hello@royalglowgh.com> (Hostinger mailbox, smtp.hostinger.com:465); emails per hour raised to ~100
+- [ ] Royal Glow wording for the account emails (supabase/email-templates: paste into Authentication -> Emails -> Templates)
 - [x] Online storefront, customer accounts, online orders (006)
 - [x] Delivery areas with their own fees (007)
 - [ ] Paystack online payments (MoMo + card) (deferred)
